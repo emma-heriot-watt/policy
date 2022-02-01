@@ -1,0 +1,79 @@
+---
+# Labels names are important as they are used by Release Drafter to decide
+# regarding where to record them in changelog or if to skip them.
+#
+# The repository labels will be automatically configured using this file and
+# the GitHub Action https://github.com/marketplace/actions/github-labeler.
+## more info https://github.com/crazy-max/ghaction-github-labeler
+- name: breaking
+  description: Breaking Changes
+  color: AB2232
+- name: bug
+  description: Something isn't working
+  color: d23832
+- name: build
+  description: Compiling and packaging
+  color: "962EDD"
+- name: continuous integration
+  description: Continuous Integration
+  color: FCBFE3
+- name: deployment
+  description: Continuous Deployment
+  color: E1BFFC
+- name: developer tools
+  description: Developer tools and automation
+  color: "A8D8F0"
+- name: configuration
+  description: Model configurations
+  color: 8334C4
+- name: dependencies
+  description: Pull requests that update a dependency file
+  color: 0366d6
+- name: documentation
+  description: Improvements or additions to documentation
+  color: F695C4
+- name: duplicate
+  description: This issue or pull request already exists
+  color: ffffff
+- name: enhancement
+  description: New feature or request
+  color: 0A8844
+- name: good first issue
+  description: Good for newcomers
+  color: "42CD7D"
+- name: help wanted
+  description: Extra attention is needed
+  color: 95FFA4
+- name: invalid
+  description: This doesn't seem right
+  color: ffffff
+- name: performance
+  description: Performance
+  color: "F2A33C"
+- name: question
+  description: Further information is requested
+  color: EE328E
+- name: refactoring
+  description: Refactoring
+  color: FBCA0C
+- name: removal
+  description: Removals and Deprecations
+  color: FFCC73
+- name: stale
+  description: Stale
+  color: ffffff
+- name: style
+  description: Code style and linting
+  color: FAC580
+- name: question
+  description: Further information is requested
+  color: EE328E
+- name: testing
+  description: Testing
+  color: FEEDB2
+- name: training
+  description: Training models
+  color: CD93F3
+- name: wontfix
+  description: This will not be worked on
+  color: ffffff

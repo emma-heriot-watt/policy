@@ -1,0 +1,5 @@
+_target_: src.models.BoringModel
+
+model_name: allenai/longformer-base-4096
+lr: 0.001
+weight_decay: 0.0005

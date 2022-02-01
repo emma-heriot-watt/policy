@@ -1,0 +1,100 @@
+[flake8]
+ignore =
+		# Allow function call as argument default
+		B008,
+		# Do not enforce trailing comma (lets Black decide what is best)
+		C812,
+		# Don't ask for docstring at top of module --- put it in the functions/classes
+		D100,
+		# Do not check for docstring within __init__ method
+    D107,
+		# Ignore whitespace before ';'
+    E203,
+		; Don't ask about line length, Black recommends using bugbear B950 instead
+		E501,
+		# Stop finding commented out code because it's mistaking shape annotations for code
+		E800,
+		# Ignore errors for internal mypy traceback, stderr output, or an unmatched line.
+    T499,
+		# Do not complain about line-break before binary operator (caused by Black)
+		W503,
+		# Do not warn on too many module members
+		WPS202,
+		# Do not warn when too many arguments in functions
+		WPS211,
+		# Do not warn on too many methods
+		WPS214,
+		# Do not warn on complex f-string
+		WPS237,
+		# Allow relative module references
+		WPS300,
+		# Allow f-strings
+    WPS305,
+		# Do not force base classes to inherit object
+		WPS306,
+		# Allow return statement that simply returns a prior statement
+		WPS331,
+		# Allow new lines to start with a dot (caused by Black)
+    WPS348,
+		# Allow logic in __init__ modules
+    WPS412,
+		# Google Python style is not RST until after processed by Napoleon
+		# See https://github.com/peterjc/flake8-rst-docstrings/issues/17
+		RST201,RST203,RST301,
+extend-select =
+	# Should raise AssertionError instead of assert False
+	B011,
+	# Use of break, continue or return in finally blocks will silence exceptions.
+	B012,
+	# Redundant exception types in except
+	B014,
+	# Pointless comparisons
+	B015,
+	# Cannot raise a literal
+	B016,
+	# Do not use `self.assertRaises(Exception)`
+	B017,
+	# Find useless expressions
+	B018,
+	# Use namedtuple instead of dataclass when only `__init__` attributes are set
+	B903,
+	# Within an except clause, raise exceptions with `raise ... from err` or `raise ...
+	# from None` to distinguish them from errors in exception handling
+	B904,
+	# Alternative to E501 regarding line length
+	B950,
+	#	Counterpart to W503, enforce having the operator at the start of a new line.
+	W504,
+
+max-line-length = 99
+max-complexity = 18
+max-methods = 10
+max-imports = 15
+max-line-complexity = 18
+max-local-variables = 20
+max-expressions = 20
+max-string-usages = 10
+format = wemake
+
+# Black enforces double quotes.
+inline-quotes = double
+
+docstring-convention = google
+
+# Darglint
+docstring_style = google
+strictness = long
+
+
+allowed-domain-names =
+		data
+		utils
+		util
+		params
+
+per-file-ignores =
+    src/__init__.py:D,F401
+    src/**/__init__.py:D,F401
+		tests/*:D,F401,WPS118,WPS202,WPS204,WPS214,WPS218,WPS235,WPS226,WPS301,WPS432,WPS437,WPS442,S101
+		test_fixtures/*:D,B950,E501,WPS226
+		scripts/update_torch_cuda.py:S404,S603,S607,WPS323,WPS333,WPS432,WPS433,WPS459

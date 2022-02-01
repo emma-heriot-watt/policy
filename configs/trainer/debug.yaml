@@ -1,0 +1,18 @@
+defaults:
+  - default.yaml
+
+gpus: 0
+
+min_epochs: 1
+max_epochs: 2
+
+# prints
+progress_bar_refresh_rate: null
+weights_summary: "false"
+profiler: null
+
+# debugs
+fast_dev_run: true
+overfit_batches: 3
+track_grad_norm: -1
+detect_anomaly: false

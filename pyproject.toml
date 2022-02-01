@@ -1,0 +1,118 @@
+[tool.poetry]
+name = "python-template"
+version = "0.1.0"
+description = ""
+authors = ["Amit Parekh <amit.parekh@hw.ac.uk>"]
+readme = "README.md"
+repository = "https://github.com/emma-simbot/python-template"
+
+packages = [{ include = "src" }]
+
+[tool.poe]
+envfile = ".env"
+
+[tool.poe.tasks]
+format = { cmd = "pre-commit run --all-files", help = "Format using pre-commit hooks" }
+typecheck = { cmd = "mypy src/", help = "Check types with mypy" }
+lint = { cmd = "flake8 src/", help = "Lint with flake8" }
+test = { cmd = "pytest --cov=src -m 'not slow'", help = "Run fast Python tests" }
+cov-export = "pytest --cov=src --cov-report xml:coverage.xml"
+## See https://github.com/python-poetry/poetry/issues/2543
+update-torch-cuda = { shell = "python scripts/update_torch_cuda.py", help = "Update torch to use the latest CUDA version" }
+
+
+[tool.poetry.dependencies]
+python = "^3.9"
+torch = "^1.10.0"
+pytorch-lightning = "^1.5.9"
+torchvision = "^0.11.1"
+wandb = "^0.12.9"
+torchmetrics = "^0.7.0"
+hydra-core = "^1.1.1"
+hydra-colorlog = "^1.1.0"
+transformers = "^4.16.0"
+pydantic = { extras = ["dotenv"], version = "^1.9.0" }
+rich = "^11.1.0"
+overrides = "^6.1.0"
+numpy = "^1.22.1"
+
+
+[tool.poetry.dev-dependencies]
+wemake-python-styleguide = "^0.16.0"
+flake8 = "^4.0"
+mypy = "^0.931"
+pytest = "^6.2.5"
+ipykernel = "^6.7.0"
+pre-commit = "^2.17.0"
+poethepoet = "^0.12.2"
+pytest-cov = "^3.0.0"
+jupyterlab = "^3.2.8"
+pudb = "^2022.1"
+isort = "^5.10.1"
+pytest-cases = "^3.6.8"
+black = {version = "^22.1.0", extras = ["jupyter"]}
+
+[tool.black]
+line-length = 99
+
+[tool.isort]
+profile = "black"
+combine_as_imports = true
+lines_after_imports = 2
+line_length = 99
+known_first_party = ["src"]
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::UserWarning", "ignore::DeprecationWarning"]
+markers = [
+	"slow: mark test as slow",
+	"multiprocessing: mark test as using multiprocessing",
+]
+
+
+[tool.mypy]
+python_version = "3.9"
+# Import discovery
+ignore_missing_imports = true
+
+# Untyped definitions and calls
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_decorators = false
+
+# None and Optional handling
+no_implicit_optional = true
+
+# Warnings
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unused_configs = true
+warn_unreachable = true
+
+# Config error messages
+show_error_context = false
+show_column_numbers = true
+show_error_codes = true
+pretty = false
+
+plugins = ["pydantic.mypy", "numpy.typing.mypy_plugin"]
+
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+# Issue with transformers and mypy. Waiting for fix: https://github.com/python/mypy/pull/11344
+module = "transformers.*"
+follow_imports = "skip"
+
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

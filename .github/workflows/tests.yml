@@ -1,0 +1,45 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore: ["**/*.md", "**/*.rst"]
+  push:
+    branches:
+      - main
+
+env:
+  PYTHON_VERSION: 3.9
+
+jobs:
+  python:
+    name: Run Python test suite
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: Gr1N/setup-poetry@v7
+
+      - name: Load cached Python
+        uses: actions/cache@v2
+        id: python-cache
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+
+      - name: Install dependencies
+        if: steps.python-cache.outputs.cache-hit != 'true'
+        run: |
+          poetry install
+
+      - name: Run test suite
+        run: |
+          poetry run pytest --cov=src -m 'not slow and not multiprocessing' -v

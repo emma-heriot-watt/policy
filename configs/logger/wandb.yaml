@@ -1,0 +1,10 @@
+wandb:
+  _target_: pytorch_lightning.loggers.wandb.WandbLogger
+  project: "example"
+  name: ${name}
+  save_dir: "."
+  offline: False # set True to store all logs only locally
+  id: null # pass correct id to resume experiment!
+  entity: "emma-simbot"
+  log_model: False
+  job_type: "train"

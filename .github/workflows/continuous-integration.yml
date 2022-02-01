@@ -1,0 +1,123 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+env:
+  PYTHON_VERSION: 3.9
+
+jobs:
+  changes:
+    name: Check for Python file changes
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{steps.filter.outputs.python}}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            python:
+              - '**/*.py'
+
+  typecheck:
+    name: Type check Python
+    needs: [changes]
+    if: ${{needs.changes.outputs.python == 'true'}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Load cached Python
+        uses: actions/cache@v2
+        id: python-cache
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install mypy
+        if: steps.python-cache.outputs.cache-hit != 'true'
+        run: |
+          pip install mypy
+
+      - uses: tsuyoshicho/action-mypy@v3
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          level: error
+
+  lint:
+    name: Lint Python
+    needs: [changes]
+    if: ${{needs.changes.outputs.python == 'true'}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - uses: wemake-services/wemake-python-styleguide@master
+        with:
+          reporter: "github-pr-review"
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_token }}
+
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Load cached Python
+        uses: actions/cache@v2
+        id: python-cache
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install pre-commit
+        run: |
+          pip install pre-commit
+
+      - name: Load cached pre-commit environment
+        uses: actions/cache@v2
+        id: pre-commit-cache
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ runner.os }}-pre-commit-${{ hashFiles('**/.pre-commit-config.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pre-commit-
+
+      - name: Run pre-commit hook
+        id: run-pre-commit-hooks
+        run: |
+          git add .pre-commit-config.yaml
+          pre-commit run --color=always --all-files
+
+      - name: Annotate any changes using reviewdog
+        if: ${{ failure() }}
+        id: reviewdog-suggester
+        uses: reviewdog/action-suggester@v1
+        with:
+          tool_name: pre-commit

@@ -1,0 +1,131 @@
+repos:
+  # -------------------------- Version control checks -------------------------- #
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: check-added-large-files
+        name: Check for added large files
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: check-vcs-permalinks
+        name: Ensure links to VCS websites are permalinks
+      - id: detect-private-key
+        name: Detect private key
+      - id: check-case-conflict
+        name: Check issues with file name casing
+      - id: check-symlinks
+        name: Check for symlinks which point to nothing
+      - id: destroyed-symlinks
+        name: Check for destroyed symlinks
+
+  - repo: https://github.com/sirosen/check-jsonschema
+    rev: 0.6.0
+    hooks:
+      - id: check-github-workflows
+        name: Validate GitHub workflows
+
+  # ----------------------------- Check file issues ---------------------------- #
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: check-toml
+        name: Check TOML
+      - id: check-yaml
+        name: Check YAML
+        args: [--allow-multiple-documents]
+      - id: end-of-file-fixer
+        name: Fix end of files
+        types: [text]
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+        args: [--markdown-linebreak-ext=md]
+        types: [text]
+      - id: mixed-line-ending
+        name: Check line endings
+      - id: fix-encoding-pragma
+        name: Remove any encoding pragma
+        args: [--remove]
+
+  # ------------------------------ Python checking ----------------------------- #
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: debug-statements
+        name: Check for debugger statements
+
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.9.0
+    hooks:
+      - id: python-use-type-annotations
+        name: Using type annotations over comments
+      - id: python-check-blanket-noqa
+        name: Check for blanket `# noqa`
+      - id: python-check-blanket-type-ignore
+        name: "Check for blanket `# type: ignore`"
+      - id: python-no-log-warn
+        name: Check for deprecated `.warn()` method of python loggers
+
+  # ----------------------------- Automatic linters ---------------------------- #
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.29.0
+    hooks:
+      - id: pyupgrade
+        name: Update syntax for newer Python
+        args: ["--py39-plus"]
+  - repo: https://github.com/sirosen/fix-smartquotes
+    rev: 0.1.1
+    hooks:
+      - id: fix-smartquotes
+        name: Fix Smart Quotes
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.3.0
+    hooks:
+      - id: yesqa
+        name: Remove unnecessary `# noqa` comments
+        additional_dependencies: [wemake-python-styleguide]
+
+  # ------------------------------ Python imports ------------------------------ #
+  - repo: https://github.com/hakancelik96/unimport
+    rev: 0.9.2
+    hooks:
+      - id: unimport
+        name: Remove any unused imports
+        args:
+          [
+            --remove,
+            --requirements,
+            --include-star-import,
+            --ignore-init,
+            --gitignore,
+          ]
+  - repo: https://github.com/MarcoGorelli/absolufy-imports
+    rev: v0.3.0
+    hooks:
+      - id: absolufy-imports
+        name: Convert relative imports to absolute
+        args: ["--application-directories", "."]
+  - repo: https://github.com/timothycrosley/isort
+    rev: 5.8.0
+    hooks:
+      - id: isort
+        name: Format imports
+        additional_dependencies: [toml]
+        exclude: ^.*/?setup\.py$
+
+  # -------------------------------- Formatting -------------------------------- #
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v2.4.1
+    hooks:
+      - id: prettier
+        name: Prettier
+  - repo: https://github.com/myint/docformatter
+    rev: v1.4
+    hooks:
+      - id: docformatter
+        name: Format docstrings
+        args: [--in-place, --wrap-summaries=99, --wrap-descriptions=99]
+  - repo: https://github.com/psf/black
+    rev: 21.10b0
+    hooks:
+      - id: black-jupyter
+        name: Format code

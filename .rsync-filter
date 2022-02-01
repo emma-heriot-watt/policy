@@ -1,0 +1,7 @@
+- **/*cache*/
+- .venv/
+- **/.DS_Store
+- .hypothesis/
+- *.tar.gz
+- storage/
+- .git/

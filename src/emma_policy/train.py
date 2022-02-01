@@ -17,7 +17,7 @@ from pytorch_lightning.trainer.connectors.logger_connector.result import (  # no
 )
 from pytorch_lightning.utilities import rank_zero_only
 
-from src.utils import count_model_parameters, dump_config, get_logger
+from emma_policy.utils import count_model_parameters, dump_config, get_logger
 
 
 log = get_logger(__name__)

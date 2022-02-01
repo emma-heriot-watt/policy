@@ -4,7 +4,7 @@ from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, DataCollatorForLanguageModeling
 
-from src.datamodules.fake_dataset import FakeDataset
+from emma_policy.datamodules.fake_dataset import FakeDataset
 
 
 class FakeDataModule(LightningDataModule):

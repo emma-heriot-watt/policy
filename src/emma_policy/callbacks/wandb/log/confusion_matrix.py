@@ -7,7 +7,7 @@ from pytorch_lightning import LightningModule, Trainer
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 from sklearn import metrics
 
-from src.callbacks.wandb.base import WandbCallbackBase
+from emma_policy.callbacks.wandb.base import WandbCallbackBase
 
 
 class ConfusionMatrix(WandbCallbackBase):

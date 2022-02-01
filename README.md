@@ -1,6 +1,6 @@
 <div align='center'>
 
-# EMMA SimBot Research Base
+# EMMA SimBot: Policy
 
 <a href="https://www.python.org/">
   <img alt="Python 3.9" src="https://img.shields.io/badge/-Python 3.9+-blue?logo=python&logoColor=white">
@@ -33,14 +33,14 @@
 
 <br>
 
-[![Continuous Integration](https://github.com/emma-simbot/research-base/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/emma-simbot/research-base/actions/workflows/continuous-integration.yml)
-[![Tests](https://github.com/emma-simbot/research-base/actions/workflows/tests.yml/badge.svg)](https://github.com/emma-simbot/research-base/actions/workflows/tests.yml)
+[![Continuous Integration](https://github.com/emma-simbot/policy/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/emma-simbot/policy/actions/workflows/continuous-integration.yml)
+[![Tests](https://github.com/emma-simbot/policy/actions/workflows/tests.yml/badge.svg)](https://github.com/emma-simbot/policy/actions/workflows/tests.yml)
 
   </div>
 
 ---
 
-A clean and scalable [PyTorch Lightning and Hydra Template](https://github.com/ashleve/lightning-hydra-template) for deep learning research, with the simplicity of [Hypermodern Python](https://github.com/cjolowicz/cookiecutter-hypermodern-python) tooling.
+## Quick start
 
 Assuming you have [pyenv](https://github.com/pyenv/pyenv) and [Poetry](https://python-poetry.org/), clone the repository and run:
 
@@ -60,6 +60,8 @@ poetry shell
 # Install pre-commit hooks
 pre-commit install
 ```
+
+Check out the [CONTRIBUTING.md](https://github.com/emma-simbot/policy/blob/main/CONTRIBUTING.md) for more detailed information on getting started.
 
 ## Writing code and running things
 

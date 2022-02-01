@@ -4,7 +4,7 @@ import wandb
 from pytorch_lightning import LightningModule, Trainer
 from pytorch_lightning.utilities import rank_zero_only
 
-from src.callbacks.wandb.base import WandbCallbackBase
+from emma_policy.callbacks.wandb.base import WandbCallbackBase
 
 
 class UploadCheckpoints(WandbCallbackBase):

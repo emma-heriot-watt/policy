@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "python-template"
+name = "emma-policy"
 version = "0.1.0"
 description = ""
 authors = ["Amit Parekh <amit.parekh@hw.ac.uk>"]
 readme = "README.md"
-repository = "https://github.com/emma-simbot/python-template"
+repository = "https://github.com/emma-simbot/policy"
 
-packages = [{ include = "src" }]
+packages = [{ include = "emma_policy", from = "src" }]
 
 [tool.poe]
 envfile = ".env"

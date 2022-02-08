@@ -32,7 +32,7 @@ hydra-core = "^1.1.1"
 hydra-colorlog = "^1.1.0"
 transformers = "^4.16.0"
 pydantic = { extras = ["dotenv"], version = "^1.9.0" }
-rich = "^11.1.0"
+rich = "^11.2.0"
 overrides = "^6.1.0"
 numpy = "^1.22.2"
 

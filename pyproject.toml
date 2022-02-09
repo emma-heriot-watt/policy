@@ -49,7 +49,7 @@ pytest-cov = "^3.0.0"
 jupyterlab = "^3.2.9"
 pudb = "^2022.1"
 isort = "^5.10.1"
-pytest-cases = "^3.6.8"
+pytest-cases = "^3.6.9"
 black = {version = "^22.1.0", extras = ["jupyter"]}
 
 [tool.black]

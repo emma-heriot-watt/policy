@@ -1,8 +1,7 @@
 import itertools
 from typing import Callable, Iterator
 
-from emma_datasets.datamodels import Caption, Instance
-from emma_datasets.datamodels.dataset_metadata import MediaType
+from emma_datasets.datamodels import Caption, Instance, MediaType
 
 from emma_policy.datamodules.pretrain_instances.datamodels import PretrainInstance, Task
 

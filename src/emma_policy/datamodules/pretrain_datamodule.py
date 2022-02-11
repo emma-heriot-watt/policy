@@ -1,12 +1,13 @@
 from pathlib import Path
 from typing import Optional, Union
 
-from emma_datasets.common import Settings, get_progress
+from emma_datasets.common import Settings
 from emma_datasets.datamodels import Instance
 from emma_datasets.db import DatasetDb
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 
+from emma_policy.common import get_progress
 from emma_policy.datamodules.pretrain_dataset import EmmaDatasetOutput, EmmaPretrainDataset
 from emma_policy.datamodules.pretrain_instances import convert_instance_to_pretrain_instances
 

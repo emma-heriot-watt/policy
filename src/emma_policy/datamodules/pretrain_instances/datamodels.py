@@ -1,6 +1,6 @@
 from enum import Enum
 from types import MappingProxyType
-from typing import Optional
+from typing import Mapping, Optional
 
 from emma_datasets.datamodels import Instance, Region
 
@@ -21,7 +21,7 @@ class Task(Enum):
     vtm = "Video-Text Matching"
 
 
-TASK_PREFIX_MAP = MappingProxyType(
+TASK_PREFIX_MAP: Mapping[Task, str] = MappingProxyType(
     {
         Task.mlm: "denoise",
         Task.itm: "evaluate statement",

@@ -35,6 +35,7 @@ pydantic = { extras = ["dotenv"], version = "^1.9.0" }
 rich = "^11.2.0"
 overrides = "^6.1.0"
 numpy = "^1.22.2"
+emma-datasets = { git = "https://github.com/emma-simbot/datasets", rev = "main" }
 
 
 [tool.poetry.dev-dependencies]
@@ -50,7 +51,7 @@ jupyterlab = "^3.2.9"
 pudb = "^2022.1"
 isort = "^5.10.1"
 pytest-cases = "^3.6.9"
-black = {version = "^22.1.0", extras = ["jupyter"]}
+black = { version = "^22.1.0", extras = ["jupyter"] }
 
 [tool.black]
 line-length = 99
@@ -60,7 +61,7 @@ profile = "black"
 combine_as_imports = true
 lines_after_imports = 2
 line_length = 99
-known_first_party = ["src"]
+known_first_party = ["src, emma_policy"]
 
 
 [tool.pytest.ini_options]

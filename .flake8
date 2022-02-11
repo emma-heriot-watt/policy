@@ -74,6 +74,7 @@ max-line-complexity = 18
 max-local-variables = 20
 max-expressions = 20
 max-string-usages = 10
+min-name-length = 1
 format = wemake
 
 # Black enforces double quotes.

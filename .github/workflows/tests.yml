@@ -35,6 +35,12 @@ jobs:
           path: ~/.cache/pypoetry/virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}-${{ hashFiles('pyproject.toml') }}
 
+      - name: Configure GitHub to download private repos
+        env:
+          PAT: ${{ secrets.PAT }}
+        run: |
+          git config --global url."https://${PAT}@github.com/".insteadOf "https://github.com/"
+
       - name: Install dependencies
         if: steps.python-cache.outputs.cache-hit != 'true'
         run: |

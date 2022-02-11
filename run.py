@@ -4,7 +4,7 @@ import dotenv
 import hydra
 from omegaconf import DictConfig
 
-from src import train_model
+from emma_policy import train_model
 
 
 dotenv.load_dotenv(override=True)

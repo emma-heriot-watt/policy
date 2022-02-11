@@ -35,7 +35,7 @@ def main(args: Namespace) -> None:
     object_tokens = [f"<vis_token_{i}>" for i in range(1, args.num_visual_tokens + 1)]
 
     tokenizer = tokenizer.train_new_from_iterator(
-        itertools.chain(TASK_PREFIX_MAP.values(), data_iterator),
+        itertools.chain(*TASK_PREFIX_MAP.values(), data_iterator),
         vocab_size=args.vocab_size,
         min_frequency=args.min_frequency,
         new_special_tokens=object_tokens,

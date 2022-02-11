@@ -21,19 +21,19 @@ class Task(Enum):
     vtm = "Video-Text Matching"
 
 
-TASK_PREFIX_MAP: Mapping[Task, str] = MappingProxyType(
+TASK_PREFIX_MAP: Mapping[Task, list[str]] = MappingProxyType(
     {
-        Task.mlm: "denoise",
-        Task.itm: "evaluate statement",
-        Task.visual_grounding: "select reference",
-        Task.dense_captioning: "describe region",
-        Task.captioning: "describe scene",
-        Task.vqa: "answer question",
-        Task.instruction_prediction: "predict instruction",
-        Task.action_execution: "execute actions",
+        Task.mlm: ["denoise"],
+        Task.itm: ["evaluate statement"],
+        Task.visual_grounding: ["select reference"],
+        Task.dense_captioning: ["describe region"],
+        Task.captioning: ["describe scene"],
+        Task.vqa: ["answer question"],
+        Task.instruction_prediction: ["predict instruction"],
+        Task.action_execution: ["execute actions"],
         # TODO: check whether we can put together the entire trajectory
-        # Task.goal_prediction: "predict goal",
-        Task.vtm: "evaluate statement",
+        # Task.goal_prediction: ["predict goal"],
+        Task.vtm: ["evaluate statement"],
     }
 )
 

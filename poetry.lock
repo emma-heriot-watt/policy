@@ -233,14 +233,14 @@ webencodings = "*"
 
 [[package]]
 name = "boto3"
-version = "1.20.52"
+version = "1.20.53"
 description = "The AWS SDK for Python"
 category = "main"
 optional = false
 python-versions = ">= 3.6"
 
 [package.dependencies]
-botocore = ">=1.23.52,<1.24.0"
+botocore = ">=1.23.53,<1.24.0"
 jmespath = ">=0.7.1,<1.0.0"
 s3transfer = ">=0.5.0,<0.6.0"
 
@@ -249,7 +249,7 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.23.52"
+version = "1.23.53"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
@@ -458,7 +458,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "emma-datasets"
-version = "0.5.4"
+version = "0.6.0"
 description = ""
 category = "main"
 optional = false
@@ -466,7 +466,7 @@ python-versions = "^3.9"
 develop = false
 
 [package.dependencies]
-boto3 = "^1.20.52"
+boto3 = "^1.20.53"
 numpy = "^1.22.2"
 orjson = "^3.6.6"
 overrides = "^6.1.0"
@@ -474,8 +474,6 @@ Pillow = "^9.0.1"
 py7zr = "^0.17.4"
 pydantic = {version = "^1.8.2", extras = ["dotenv"]}
 rich = "^11.2.0"
-tokenizers = "^0.11.4"
-transformers = "^4.16.2"
 typer = "^0.4.0"
 
 [package.extras]
@@ -485,7 +483,7 @@ torch = ["torch (>=1.10.2,<2.0.0)"]
 type = "git"
 url = "https://github.com/emma-simbot/datasets"
 reference = "main"
-resolved_reference = "23585f09f5991290b78130a7c84887a3a649a940"
+resolved_reference = "3915b946ad05aacd0e5f7d336182b5fbb6aee777"
 
 [[package]]
 name = "entrypoints"
@@ -887,7 +885,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "importlib-metadata"
-version = "4.10.1"
+version = "4.11.0"
 description = "Read metadata from Python packages"
 category = "main"
 optional = false
@@ -1642,7 +1640,7 @@ test = ["pytest (>=2.7.3)", "pytest-cov", "coveralls", "futures", "pytest-benchm
 
 [[package]]
 name = "prompt-toolkit"
-version = "3.0.27"
+version = "3.0.28"
 description = "Library for building powerful interactive command lines in Python"
 category = "dev"
 optional = false
@@ -2155,7 +2153,7 @@ win32 = ["pywin32"]
 
 [[package]]
 name = "sentry-sdk"
-version = "1.5.4"
+version = "1.5.5"
 description = "Python client for Sentry (https://sentry.io)"
 category = "main"
 optional = false
@@ -2392,7 +2390,7 @@ typing-extensions = "*"
 
 [[package]]
 name = "torchmetrics"
-version = "0.7.1"
+version = "0.7.2"
 description = "PyTorch native Metrics"
 category = "main"
 optional = false
@@ -2405,14 +2403,14 @@ pyDeprecate = ">=0.3.0,<0.4.0"
 torch = ">=1.3.1"
 
 [package.extras]
-all = ["fast-bss-eval (>=0.1.0)", "pesq (>=0.0.3)", "pystoi", "torchvision (>=0.8)", "sphinx-copybutton (>=0.3)", "pytorch-lightning (>=1.1)", "sphinx-autodoc-typehints (>=1.0)", "sphinxcontrib-mockautodoc", "pandoc (>=1.0)", "sphinx-togglebutton (>=0.2)", "myst-parser", "sphinxcontrib-fulltoc (>=1.0)", "nbsphinx (>=0.8)", "sphinx (>=4.0)", "docutils (>=0.16)", "sphinx-paramlinks (>=0.5.1)", "torchvision", "lpips", "torch-fidelity", "scipy", "pytorch-lightning (>=1.3)", "twine (>=3.2)", "codecov (>=2.1)", "mypy (>=0.790)", "bert-score (==0.3.10)", "pytorch-msssim", "jiwer (>=2.3.0)", "rouge-score (>=0.0.4)", "pypesq", "pytest (>=6.0)", "sacrebleu (>=2.0.0)", "scikit-learn (>=0.24)", "pre-commit (>=1.0)", "scikit-image (>0.17.1)", "cloudpickle (>=1.3)", "check-manifest", "mir-eval (>=0.6)", "transformers (>=4.0)", "coverage (>5.2)", "phmdoctest (>=1.1.1)", "pytest-doctestplus", "pytest-cov (>2.10)", "tqdm (>=4.41.0)", "nltk (>=3.6)", "regex (>=2021.9.24)"]
-audio = ["fast-bss-eval (>=0.1.0)", "pesq (>=0.0.3)", "pystoi"]
+all = ["sphinx (>=4.0)", "sphinxcontrib-mockautodoc", "sphinx-copybutton (>=0.3)", "nbsphinx (>=0.8)", "myst-parser", "sphinx-paramlinks (>=0.5.1)", "pandoc (>=1.0)", "lpips", "scipy", "torch-fidelity", "torchvision", "pytorch-lightning (>=1.3)", "cloudpickle (>=1.3)", "check-manifest", "pytest-cov (>2.10)", "coverage (>5.2)", "codecov (>=2.1)", "pre-commit (>=1.0)", "sacrebleu (>=2.0.0)", "mypy (>=0.790)", "scikit-image (>0.17.1)", "bert-score (==0.3.10)", "pystoi", "pesq (>=0.0.3)", "fast-bss-eval (>=0.1.0)", "torchvision (>=0.8)", "sphinx-togglebutton (>=0.2)", "sphinx-autodoc-typehints (>=1.0)", "pytorch-lightning (>=1.1)", "docutils (>=0.16)", "sphinxcontrib-fulltoc (>=1.0)", "scikit-learn (>=0.24)", "pytest (>=6.0.0,<7.0.0)", "phmdoctest (>=1.1.1)", "pytorch-msssim", "twine (>=3.2)", "pypesq", "jiwer (>=2.3.0)", "transformers (>=4.0)", "pytest-doctestplus (>=0.9.0)", "rouge-score (>=0.0.4)", "mir-eval (>=0.6)", "regex (>=2021.9.24)", "tqdm (>=4.41.0)", "nltk (>=3.6)"]
+audio = ["pystoi", "pesq (>=0.0.3)", "fast-bss-eval (>=0.1.0)"]
 detection = ["torchvision (>=0.8)"]
-docs = ["sphinx-copybutton (>=0.3)", "pytorch-lightning (>=1.1)", "sphinx-autodoc-typehints (>=1.0)", "sphinxcontrib-mockautodoc", "pandoc (>=1.0)", "sphinx-togglebutton (>=0.2)", "myst-parser", "sphinxcontrib-fulltoc (>=1.0)", "nbsphinx (>=0.8)", "sphinx (>=4.0)", "docutils (>=0.16)", "sphinx-paramlinks (>=0.5.1)"]
-image = ["torchvision", "lpips", "torch-fidelity", "scipy"]
+docs = ["sphinx-togglebutton (>=0.2)", "sphinx-autodoc-typehints (>=1.0)", "pytorch-lightning (>=1.1)", "docutils (>=0.16)", "sphinxcontrib-fulltoc (>=1.0)", "sphinx (>=4.0)", "sphinxcontrib-mockautodoc", "sphinx-copybutton (>=0.3)", "nbsphinx (>=0.8)", "myst-parser", "sphinx-paramlinks (>=0.5.1)", "pandoc (>=1.0)"]
+image = ["lpips", "scipy", "torch-fidelity", "torchvision"]
 integrate = ["pytorch-lightning (>=1.3)"]
-test = ["twine (>=3.2)", "codecov (>=2.1)", "mypy (>=0.790)", "bert-score (==0.3.10)", "pytorch-msssim", "jiwer (>=2.3.0)", "rouge-score (>=0.0.4)", "pypesq", "pytest (>=6.0)", "sacrebleu (>=2.0.0)", "scikit-learn (>=0.24)", "pre-commit (>=1.0)", "scikit-image (>0.17.1)", "cloudpickle (>=1.3)", "check-manifest", "mir-eval (>=0.6)", "transformers (>=4.0)", "coverage (>5.2)", "phmdoctest (>=1.1.1)", "pytest-doctestplus", "pytest-cov (>2.10)"]
-text = ["tqdm (>=4.41.0)", "nltk (>=3.6)", "regex (>=2021.9.24)"]
+test = ["cloudpickle (>=1.3)", "check-manifest", "pytest-cov (>2.10)", "coverage (>5.2)", "codecov (>=2.1)", "pre-commit (>=1.0)", "sacrebleu (>=2.0.0)", "mypy (>=0.790)", "scikit-image (>0.17.1)", "bert-score (==0.3.10)", "scikit-learn (>=0.24)", "pytest (>=6.0.0,<7.0.0)", "phmdoctest (>=1.1.1)", "pytorch-msssim", "twine (>=3.2)", "pypesq", "jiwer (>=2.3.0)", "transformers (>=4.0)", "pytest-doctestplus (>=0.9.0)", "rouge-score (>=0.0.4)", "mir-eval (>=0.6)"]
+text = ["regex (>=2021.9.24)", "tqdm (>=4.41.0)", "nltk (>=3.6)"]
 
 [[package]]
 name = "torchvision"
@@ -2937,12 +2935,12 @@ bleach = [
     {file = "bleach-4.1.0.tar.gz", hash = "sha256:0900d8b37eba61a802ee40ac0061f8c2b5dee29c1927dd1d233e075ebf5a71da"},
 ]
 boto3 = [
-    {file = "boto3-1.20.52-py3-none-any.whl", hash = "sha256:b734346326e3e3d40d79f0ac7d21e64f1cc50c7540fcb285bee8634ee27684d3"},
-    {file = "boto3-1.20.52.tar.gz", hash = "sha256:6dc260f2fde87ffd31f60c0c6148aa2076ff4d8235d2f59a8a9d88f0123fe450"},
+    {file = "boto3-1.20.53-py3-none-any.whl", hash = "sha256:d96c1aa3edebff6466362e574af6d8a6f2f6c9c1d902d3c7efb0835e09f34ddb"},
+    {file = "boto3-1.20.53.tar.gz", hash = "sha256:96f50e95bded5612ac8bd116d5d56a0cce4868870177805cb974d1f4f0a24b73"},
 ]
 botocore = [
-    {file = "botocore-1.23.52-py3-none-any.whl", hash = "sha256:f35918d01e422d8760f02e2f686cde625b8fdf8be82b083f5a16336a70fa4fd4"},
-    {file = "botocore-1.23.52.tar.gz", hash = "sha256:35a1a950c2bd8dd2fcc648c5f4d16814bfd7e3efd7998d3978b2f11665eb1668"},
+    {file = "botocore-1.23.53-py3-none-any.whl", hash = "sha256:a97834aee61177e11618348ed8fe1963c37f319af628e6f875f1e0fbd587a9ec"},
+    {file = "botocore-1.23.53.tar.gz", hash = "sha256:7a628bc8bb2573fbc77709c9e7a02061b750f6ebb8e961562de658eda98e140d"},
 ]
 brotli = [
     {file = "Brotli-1.0.9-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:268fe94547ba25b58ebc724680609c8ee3e5a843202e9a381f6f9c5e8bdb5c70"},
@@ -3424,8 +3422,8 @@ idna = [
     {file = "idna-3.3.tar.gz", hash = "sha256:9d643ff0a55b762d5cdb124b8eaa99c66322e2157b69160bc32796e824360e6d"},
 ]
 importlib-metadata = [
-    {file = "importlib_metadata-4.10.1-py3-none-any.whl", hash = "sha256:899e2a40a8c4a1aec681feef45733de8a6c58f3f6a0dbed2eb6574b4387a77b6"},
-    {file = "importlib_metadata-4.10.1.tar.gz", hash = "sha256:951f0d8a5b7260e9db5e41d429285b5f451e928479f19d80818878527d36e95e"},
+    {file = "importlib_metadata-4.11.0-py3-none-any.whl", hash = "sha256:6affcdb3aec542dd98df8211e730bba6c5f2bec8288d47bacacde898f548c9ad"},
+    {file = "importlib_metadata-4.11.0.tar.gz", hash = "sha256:9e5e553bbba1843cb4a00823014b907616be46ee503d2b9ba001d214a8da218f"},
 ]
 iniconfig = [
     {file = "iniconfig-1.1.1-py2.py3-none-any.whl", hash = "sha256:011e24c64b7f47f6ebd835bb12a743f2fbe9a26d4cecaa7f53bc4f35ee9da8b3"},
@@ -3864,8 +3862,8 @@ promise = [
     {file = "promise-2.3.tar.gz", hash = "sha256:dfd18337c523ba4b6a58801c164c1904a9d4d1b1747c7d5dbf45b693a49d93d0"},
 ]
 prompt-toolkit = [
-    {file = "prompt_toolkit-3.0.27-py3-none-any.whl", hash = "sha256:cb7dae7d2c59188c85a1d6c944fad19aded6a26bd9c8ae115a4e1c20eb90b713"},
-    {file = "prompt_toolkit-3.0.27.tar.gz", hash = "sha256:f2b6a8067a4fb959d3677d1ed764cc4e63e0f6f565b9a4fc7edc2b18bf80217b"},
+    {file = "prompt_toolkit-3.0.28-py3-none-any.whl", hash = "sha256:30129d870dcb0b3b6a53efdc9d0a83ea96162ffd28ffe077e94215b233dc670c"},
+    {file = "prompt_toolkit-3.0.28.tar.gz", hash = "sha256:9f1cd16b1e86c2968f2519d7fb31dd9d669916f515612c269d14e9ed52b51650"},
 ]
 protobuf = [
     {file = "protobuf-3.19.4-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:f51d5a9f137f7a2cec2d326a74b6e3fc79d635d69ffe1b036d39fc7d75430d37"},
@@ -4511,8 +4509,8 @@ send2trash = [
     {file = "Send2Trash-1.8.0.tar.gz", hash = "sha256:d2c24762fd3759860a0aff155e45871447ea58d2be6bdd39b5c8f966a0c99c2d"},
 ]
 sentry-sdk = [
-    {file = "sentry-sdk-1.5.4.tar.gz", hash = "sha256:f7e54567937ebcbe938c4df1075ec891587faeb7c74184b88cf2894e47c86116"},
-    {file = "sentry_sdk-1.5.4-py2.py3-none-any.whl", hash = "sha256:4fc7960a82c95d906a0514cf4d9aacba1743eb9863a5b7c2a01c525a7d9b21e6"},
+    {file = "sentry-sdk-1.5.5.tar.gz", hash = "sha256:98fd155fa5d5fec1dbabed32a1a4ae2705f1edaa5dae4e7f7b62a384ba30e759"},
+    {file = "sentry_sdk-1.5.5-py2.py3-none-any.whl", hash = "sha256:3817274fba2498c8ebf6b896ee98ac916c5598706340573268c07bf2bb30d831"},
 ]
 shortuuid = [
     {file = "shortuuid-1.0.8-py3-none-any.whl", hash = "sha256:44a7a86bcf24dbaba2e626cf80c779926b7c3a0d31a3a013e0d3cd1077707d23"},
@@ -4637,8 +4635,8 @@ torch = [
     {file = "torch-1.10.2-cp39-none-macosx_11_0_arm64.whl", hash = "sha256:b07ef01e36b716d0d65ca60c4db0ac9d094a0e797d9b55290da4dcda91463b6c"},
 ]
 torchmetrics = [
-    {file = "torchmetrics-0.7.1-py3-none-any.whl", hash = "sha256:5daf0e6ee120d46edf218f31d3b189014570d5cdb7b6539a8fd5eba04ceb391c"},
-    {file = "torchmetrics-0.7.1.tar.gz", hash = "sha256:f876b44f91e426e13fe1f8df239edb472e7c17714264d7e00b1600b8510d9454"},
+    {file = "torchmetrics-0.7.2-py3-none-any.whl", hash = "sha256:d0fbf8440912ef93f22e21bae43fda8fa26a651313acc3ea93beafe3c86dd474"},
+    {file = "torchmetrics-0.7.2.tar.gz", hash = "sha256:af03334c4a33fc32a9a40b037b1ce3ff6273ea9a0050c11ddde29bf1335da95e"},
 ]
 torchvision = [
     {file = "torchvision-0.11.3-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:8bc8a7db80c97ca254be362ba883a202192e361ba2f6dff7ff5bb010d4bfc23a"},

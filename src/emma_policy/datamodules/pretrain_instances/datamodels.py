@@ -1,6 +1,7 @@
+import string
 from enum import Enum
 from types import MappingProxyType
-from typing import Mapping, Optional
+from typing import Iterator, Mapping, Optional
 
 from emma_datasets.datamodels import Instance, Region
 
@@ -21,21 +22,46 @@ class Task(Enum):
     vtm = "Video-Text Matching"
 
 
-TASK_PREFIX_MAP: Mapping[Task, list[str]] = MappingProxyType(
+TASK_TEMPLATES_MAP: Mapping[Task, list[str]] = MappingProxyType(
     {
-        Task.mlm: ["denoise"],
-        Task.itm: ["evaluate statement"],
-        Task.visual_grounding: ["select reference"],
-        Task.dense_captioning: ["describe region"],
-        Task.captioning: ["describe scene"],
-        Task.vqa: ["answer question"],
+        Task.mlm: [
+            "denoise: {caption}",
+            "reconstruct the text: {caption}",
+            "replace masked tokens: {caption}",
+        ],
+        Task.itm: ["evaluate statement: {statement}", "{statement}. is this statement coherent?"],
+        Task.visual_grounding: [
+            "which region can be described as {caption}",
+            "select visual reference that matches {caption}",
+        ],
+        Task.dense_captioning: ["describe region {region}"],
+        Task.captioning: ["describe the scene", "describe what you see"],
+        Task.vqa: [
+            "answer question: {question}",
+            "what is the answer to the question {question}",
+            "{question}",
+        ],
         Task.instruction_prediction: ["predict instruction"],
-        Task.action_execution: ["execute actions"],
+        Task.action_execution: [
+            "follow instruction: {instruction}",
+            "complete task: {instruction}",
+        ],
         # TODO: check whether we can put together the entire trajectory
-        # Task.goal_prediction: ["predict goal"],
-        Task.vtm: ["evaluate statement"],
+        # Task.goal_prediction: "predict goal",
+        Task.vtm: ["evaluate statement: {statement}", "{statement}. is this statement coherent?"],
     }
 )
+
+
+def extract_task_prefix_strings(templates_map: Mapping[Task, list[str]]) -> Iterator[str]:
+    """Generates the string representation associated with each task template."""
+    for templates in templates_map.values():
+        for template in templates:
+            empty_params: dict[str, str] = {
+                name: "" for _, name, _, _ in string.Formatter().parse(template)
+            }
+
+            yield template.format(**empty_params)
 
 
 class PretrainInstance(Instance):  # type: ignore[misc]

@@ -8,7 +8,10 @@ from emma_datasets.db import DatasetDb
 from transformers import AutoTokenizer
 
 from emma_policy.common import get_logger
-from emma_policy.datamodules.pretrain_instances.datamodels import TASK_PREFIX_MAP
+from emma_policy.datamodules.pretrain_instances.datamodels import (
+    TASK_TEMPLATES_MAP,
+    extract_task_prefix_strings,
+)
 
 
 logger = get_logger(__name__)
@@ -28,6 +31,9 @@ def main(args: Namespace) -> None:
     logger.info(f"Loading data from dataset {args.db_path}")
     data_iterator = create_data_iterator(args.db_path)
 
+    if args.num_test_instances is not None:
+        data_iterator = itertools.islice(data_iterator, 0, args.num_test_instances)
+
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
 
     logger.info(f"Created {type(tokenizer)} tokenizer")
@@ -35,7 +41,7 @@ def main(args: Namespace) -> None:
     object_tokens = [f"<vis_token_{i}>" for i in range(1, args.num_visual_tokens + 1)]
 
     tokenizer = tokenizer.train_new_from_iterator(
-        itertools.chain(*TASK_PREFIX_MAP.values(), data_iterator),
+        itertools.chain(extract_task_prefix_strings(TASK_TEMPLATES_MAP), data_iterator),
         vocab_size=args.vocab_size,
         min_frequency=args.min_frequency,
         new_special_tokens=object_tokens,
@@ -65,11 +71,6 @@ if __name__ == "__main__":
         default=100,
         help="Number of total visual tokens for each visual frame.",
     )
-    parser.add_argument(
-        "--lowercase",
-        action="store_true",
-        help="Whether to lowercase the tokens",
-    )
     parser.add_argument("--vocab_size", type=int, default=10000)  # noqa: WPS432
     parser.add_argument("--min_frequency", type=int, default=0)
     parser.add_argument(
@@ -77,6 +78,12 @@ if __name__ == "__main__":
         type=Path,
         help="Tokenizer output path",
         default="storage/tokenizer/emma",
+    )
+    parser.add_argument(
+        "--num_test_instances",
+        type=int,
+        default=None,
+        help="Only returns this number of test instances from the data iterator",
     )
 
     args = parser.parse_args()

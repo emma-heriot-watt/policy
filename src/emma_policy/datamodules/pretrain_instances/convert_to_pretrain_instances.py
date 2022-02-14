@@ -84,9 +84,13 @@ class PretrainInstanceCreator:
     @image_task_check
     def itm(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the ITM task."""
-        itm_candidates: list[Caption] = [self.instance.caption] + [
-            Caption(text=region.caption) for region in self.instance.regions
-        ]
+        itm_candidates: list[Caption] = []
+
+        if self.instance.caption is not None:
+            itm_candidates.append(self.instance.caption)
+
+        if self.instance.regions is not None:
+            itm_candidates.extend(Caption(text=region.caption) for region in self.instance.regions)
 
         yield from (
             PretrainInstance(caption=candidate, dataset=self.instance.dataset, task=Task.itm)
@@ -97,6 +101,9 @@ class PretrainInstanceCreator:
     @image_task_check
     def visual_grounding(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the visual grounding task."""
+        if self.instance.regions is None:
+            return []
+
         yield from (
             PretrainInstance(
                 regions=region, dataset=self.instance.dataset, task=Task.visual_grounding
@@ -108,6 +115,9 @@ class PretrainInstanceCreator:
     @image_task_check
     def dense_captioning(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the dense captioning task."""
+        if self.instance.regions is None:
+            return []
+
         yield from (
             PretrainInstance(
                 regions=region, dataset=self.instance.dataset, task=Task.dense_captioning

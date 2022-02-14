@@ -49,7 +49,7 @@ def main(args: Namespace) -> None:
                 instance_counter[instance_type] += 1
 
                 if instance_counter[instance_type] < 100:
-                    out_db[(new_data_idx, f"pretrain_{new_data_idx}")] = instance.json()
+                    out_db[(new_data_idx, f"pretrain_{new_data_idx}")] = instance
                     new_data_idx += 1
 
             progress.advance(task_id)

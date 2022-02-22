@@ -10,7 +10,7 @@ extend-ignore =
     D107,
 		# Ignore whitespace before ';'
     E203,
-		; Don't ask about line length, Black recommends using bugbear B950 instead
+		# Don't ask about line length, Black recommends using bugbear B950 instead
 		E501,
 		# Stop finding commented out code because it's mistaking shape annotations for code
 		E800,
@@ -18,12 +18,16 @@ extend-ignore =
     T499,
 		# Do not complain about line-break before binary operator (caused by Black)
 		W503,
+		# Do not warn on too many imports.
+		WPS201,
 		# Do not warn on too many module members
 		WPS202,
 		# Do not warn when too many arguments in functions
 		WPS211,
 		# Do not warn on too many methods
 		WPS214,
+		# Allow lots of importing from the same module --- it can happen and thats okay!
+		WPS235,
 		# Do not warn on complex f-string
 		WPS237,
 		# Allow relative module references
@@ -69,11 +73,11 @@ extend-select =
 max-line-length = 99
 max-complexity = 18
 max-methods = 10
-max-imports = 15
 max-line-complexity = 18
 max-local-variables = 20
 max-expressions = 20
 max-string-usages = 10
+max-annotation-complexity = 4
 format = wemake
 
 # Black enforces double quotes.
@@ -85,6 +89,10 @@ docstring-convention = google
 docstring_style = google
 strictness = long
 
+nested-classes-whitelist =
+	Meta
+	Params
+	Config
 
 allowed-domain-names =
 		data
@@ -103,4 +111,6 @@ extend-exclude=
 	.venv/,
 	*_cache/,
 	.cache/,
-	logs/
+	logs/,
+	storage/,
+	docs/

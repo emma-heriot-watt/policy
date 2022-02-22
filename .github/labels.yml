@@ -65,6 +65,9 @@
 - name: style
   description: Code style and linting
   color: FAC580
+- name: sync
+  description: Files are synced from the template
+  color: 0366d6
 - name: question
   description: Further information is requested
   color: EE328E

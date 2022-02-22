@@ -1,3 +1,6 @@
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+
 categories:
   - title: ":boom: Breaking Changes"
     label: "breaking"
@@ -24,6 +27,8 @@ categories:
       - "dependencies"
       - "build"
 template: |
-  ## Changes
 
   $CHANGES
+
+exclude-labels:
+  - "sync"

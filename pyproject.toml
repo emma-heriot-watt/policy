@@ -13,8 +13,8 @@ envfile = ".env"
 
 [tool.poe.tasks]
 format = { cmd = "pre-commit run --all-files", help = "Format using pre-commit hooks" }
-typecheck = { cmd = "mypy src/", help = "Check types with mypy" }
-lint = { cmd = "flake8 src/", help = "Lint with flake8" }
+typecheck = { cmd = "mypy .", help = "Check types with mypy" }
+lint = { cmd = "flake8 .", help = "Lint with flake8" }
 test = { cmd = "pytest --cov=src -m 'not slow'", help = "Run fast Python tests" }
 cov-export = "pytest --cov=src --cov-report xml:coverage.xml"
 ## See https://github.com/python-poetry/poetry/issues/2543

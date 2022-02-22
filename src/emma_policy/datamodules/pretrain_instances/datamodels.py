@@ -1,7 +1,7 @@
 import string
 from enum import Enum
 from types import MappingProxyType
-from typing import Iterator, Mapping, Optional
+from typing import Any, Iterator, Mapping, Optional
 
 from emma_datasets.datamodels import Instance, Region
 
@@ -9,7 +9,7 @@ from emma_datasets.datamodels import Instance, Region
 class Task(Enum):
     """Task for the Pretraining instance."""
 
-    mlm = "Masked Language Model"
+    mlm = "Masked Language Modelling"
     itm = "Image-Text Matching"
     visual_grounding = "Visual Grounding"
     dense_captioning = "Dense Captioning"
@@ -57,7 +57,7 @@ def extract_task_prefix_strings(templates_map: Mapping[Task, list[str]]) -> Iter
     """Generates the string representation associated with each task template."""
     for templates in templates_map.values():
         for template in templates:
-            empty_params: dict[str, str] = {
+            empty_params: dict[Any, str] = {
                 name: "" for _, name, _, _ in string.Formatter().parse(template)
             }
 

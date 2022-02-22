@@ -2,9 +2,20 @@ import os
 from pathlib import Path
 
 import pytest
+from emma_datasets.datamodels import Instance
 from emma_datasets.db import DatasetDb
 from pytest_cases import fixture
 
+from emma_policy.datamodules.pretrain_instances.convert_to_pretrain_instances import (
+    convert_instance_to_pretrain_instances,
+)
+from emma_policy.datamodules.pretrain_instances.datamodels import PretrainInstance
+
+
+TOKENIZER_PATHS = {  # noqa: WPS407
+    "emma-small": "heriot-watt/emma-small",
+    "emma-base": "heriot-watt/emma-base",
+}
 
 if os.getenv("_PYTEST_RAISE", "0") != "0":
 
@@ -20,7 +31,7 @@ if os.getenv("_PYTEST_RAISE", "0") != "0":
 @fixture
 def tiny_instances_db_path(tmp_path: Path) -> Path:
     """Create an DatasetDb of instances with very few instances."""
-    max_num_instances = 1
+    max_num_instances = 2
 
     tiny_instances_db_path = tmp_path.joinpath("tiny_instances.db")
 
@@ -36,3 +47,34 @@ def tiny_instances_db_path(tmp_path: Path) -> Path:
                 tiny_instances_db[(data_id, example_id)] = instance_str
 
     return tiny_instances_db_path
+
+
+@fixture
+def tiny_pretrain_db_path(tmp_path: Path) -> Path:
+    """Create an DatasetDb of instances with very few instances."""
+    tiny_pretrain_db_path = tmp_path.joinpath("tiny_pretrain.db")
+
+    tiny_pretrain_db = DatasetDb(tiny_pretrain_db_path, readonly=False)
+
+    with tiny_pretrain_db:
+
+        max_num_instances = 10
+
+        with DatasetDb("storage/fixtures/instances.db") as db:
+            data_id = 0
+            for _, _, instance_str in db:
+                instance = Instance.parse_raw(instance_str)
+
+                pretrain_instances = convert_instance_to_pretrain_instances(instance)
+
+                for pretrain_instance in pretrain_instances:
+                    assert isinstance(pretrain_instance, PretrainInstance)
+
+                    if data_id > max_num_instances:
+                        break  # noqa: WPS220
+
+                    example_id = f"pretrain_{data_id}"
+                    tiny_pretrain_db[(data_id, example_id)] = pretrain_instance
+                    data_id += 1
+
+    return tiny_pretrain_db_path

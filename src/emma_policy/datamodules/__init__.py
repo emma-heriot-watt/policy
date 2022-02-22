@@ -1,2 +1,2 @@
 from emma_policy.datamodules.pretrain_datamodule import EmmaPretrainDataModule
-from emma_policy.datamodules.pretrain_dataset import EmmaDatasetOutput, EmmaPretrainDataset
+from emma_policy.datamodules.pretrain_dataset import EmmaPretrainDataset

@@ -38,7 +38,7 @@ def main(args: Namespace) -> None:
 
     logger.info(f"Created {type(tokenizer)} tokenizer")
 
-    object_tokens = [f"<vis_token_{i}>" for i in range(1, args.num_visual_tokens + 1)]
+    object_tokens = [f"<vis_token_{idx}>" for idx in range(1, args.num_visual_tokens + 1)]
 
     tokenizer = tokenizer.train_new_from_iterator(
         itertools.chain(extract_task_prefix_strings(TASK_TEMPLATES_MAP), data_iterator),

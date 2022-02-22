@@ -6,6 +6,11 @@ from emma_datasets.common import get_progress
 from emma_datasets.datamodels import Instance
 from emma_datasets.db import DatasetDb
 
+from emma_policy.datamodules.pretrain_datamodule import (
+    DEFAULT_COCO_SPLITS_PATH,
+    is_train_instance,
+    load_ref_coco_images,
+)
 from emma_policy.datamodules.pretrain_instances.datamodels import Task
 
 
@@ -29,10 +34,13 @@ def check_type(instance: Instance) -> Optional[Task]:
     return None
 
 
-def main(args: Namespace) -> None:
+def main(args: Namespace, num_train_instances: int = 100, num_valid_instances: int = 20) -> None:
     """Create the fixtures pretraining database."""
     instance_counter: dict[Task, int] = defaultdict(int)
+    valid_instance_counter: dict[Task, int] = defaultdict(int)
     new_data_idx = 0
+
+    train_valid_splits = load_ref_coco_images(DEFAULT_COCO_SPLITS_PATH)
 
     progress = get_progress()
     in_db = DatasetDb(args.input_db)
@@ -48,7 +56,14 @@ def main(args: Namespace) -> None:
             if instance_type is not None:
                 instance_counter[instance_type] += 1
 
-                if instance_counter[instance_type] < 100:
+                if instance_counter[instance_type] < num_train_instances:
+                    out_db[(new_data_idx, f"pretrain_{new_data_idx}")] = instance
+                    new_data_idx += 1
+                elif (  # noqa: WPS337
+                    not is_train_instance(train_valid_splits, instance)
+                    and valid_instance_counter[instance_type] < num_valid_instances
+                ):
+                    valid_instance_counter[instance_type] += 1
                     out_db[(new_data_idx, f"pretrain_{new_data_idx}")] = instance
                     new_data_idx += 1
 

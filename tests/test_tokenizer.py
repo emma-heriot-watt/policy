@@ -19,7 +19,7 @@ from emma_policy.commands.build_tokenizer import main as build_tokenizer_main
 @parametrize("num_test_instances", [100])
 @parametrize("vocab_size", [10000])
 @parametrize("min_frequency", [0])
-def test_build_tokenizer(
+def test_build_tokenizer(  # noqa: WPS216
     tmp_path: Path,
     instances_db_path: Path,
     tokenizer: str,

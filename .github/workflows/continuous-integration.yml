@@ -29,11 +29,15 @@ jobs:
               - 'pyproject.toml'
               - 'poetry.lock'
               - '.github/workflows/**/*.yml'
+            mypy:
+              - '.mypy.ini'
+            flake8:
+              - '.flake8'
 
   typecheck:
     name: Type check Python
     needs: [changes]
-    if: ${{needs.changes.outputs.python == 'true'}}
+    if: ${{needs.changes.outputs.python == 'true' || needs.changes.outputs.mypy == 'true'}}
     runs-on: self-hosted
     steps:
       - name: Checkout repository
@@ -81,7 +85,7 @@ jobs:
   lint:
     name: Lint Python
     needs: [changes]
-    if: ${{needs.changes.outputs.python == 'true'}}
+    if: ${{needs.changes.outputs.python == 'true' || needs.changes.outputs.flake8 == 'true'}}
     runs-on: self-hosted
     steps:
       - name: Checkout repository

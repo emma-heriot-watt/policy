@@ -44,7 +44,7 @@ extend-ignore =
     WPS412,
 		# Google Python style is not RST until after processed by Napoleon
 		# See https://github.com/peterjc/flake8-rst-docstrings/issues/17
-		RST201,RST203,RST301
+		RST201,RST203,RST301,
 extend-select =
 	# Should raise AssertionError instead of assert False
 	B011,

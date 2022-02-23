@@ -8,7 +8,6 @@ from emma_policy.models.embeddings_emma import (
     EmmaImagePositionEmbeddings,
     EmmaObjectEmbeddings,
     EmmaSceneEmbeddings,
-    EmmaTextEmbeddings,
 )
 from emma_policy.models.encoder_decoder_emma import (
     EmmaDecoder,
@@ -44,7 +43,6 @@ class EmmaModel(EmmaPreTrainedModel):
         word_embeddings = Embedding(
             config.vocab_size, config.d_model, padding_idx=config.pad_token_id
         )
-        self.text_embeddings = EmmaTextEmbeddings(config=config, word_embeddings=word_embeddings)
         self.image_position_embeddings = EmmaImagePositionEmbeddings(config=config)
         self.scene_embeddings = EmmaSceneEmbeddings(
             config=config,
@@ -61,13 +59,12 @@ class EmmaModel(EmmaPreTrainedModel):
 
     def get_input_embeddings(self) -> Embedding:  # noqa: WPS615
         """Get word embeddings."""
-        return self.text_embeddings.word_embeddings
+        return self.encoder.embed_tokens
 
     def set_input_embeddings(self, value: Embedding) -> None:  # noqa: WPS110, WPS615
         """Set word embeddings."""
-        self.text_embeddings.word_embeddings = value
-        self.encoder.embed_tokens = self.text_embeddings.word_embeddings
-        self.decoder.embed_tokens = self.text_embeddings.word_embeddings
+        self.encoder.embed_tokens = value
+        self.decoder.embed_tokens = value
 
     def forward(  # noqa: WPS231
         self,
@@ -109,7 +106,7 @@ class EmmaModel(EmmaPreTrainedModel):
             frame_ids=object_frame_ids,
         )
 
-        language_embeddings = self.text_embeddings(language_token_ids)
+        language_embeddings = self.encoder.text_embeddings(language_token_ids)
         inputs_embeds = torch.cat(
             [scene_embeddings, object_embeddings, language_embeddings], dim=1
         )

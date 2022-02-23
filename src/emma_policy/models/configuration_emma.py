@@ -30,6 +30,7 @@ class EmmaConfig(PretrainedConfig):  # type: ignore[misc] # noqa: WPS230
         vocab_size: int = 50265,
         max_encoder_position_embeddings: int = 16384,
         max_decoder_position_embeddings: int = 1024,
+        max_frame_embeddings: int = 512,
         encoder_layers: int = 12,
         encoder_ffn_dim: int = 4096,
         encoder_attention_heads: int = 16,
@@ -60,6 +61,7 @@ class EmmaConfig(PretrainedConfig):  # type: ignore[misc] # noqa: WPS230
         self.vocab_size = vocab_size
         self.max_encoder_position_embeddings = max_encoder_position_embeddings
         self.max_decoder_position_embeddings = max_decoder_position_embeddings
+        self.max_frame_embeddings = max_frame_embeddings
         self.d_model = d_model
         self.encoder_ffn_dim = encoder_ffn_dim
         self.encoder_layers = encoder_layers

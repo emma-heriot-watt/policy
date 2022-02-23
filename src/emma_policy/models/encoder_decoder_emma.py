@@ -67,7 +67,6 @@ class EmmaEncoder(LEDEncoder):  # type: ignore[misc] # noqa: WPS230
 
         embed_dim = config.d_model
         self.padding_idx = config.pad_token_id
-        self.max_source_positions = config.max_encoder_position_embeddings
 
         if isinstance(config.attention_window, int):
             if config.attention_window % 2 != 0:
@@ -90,7 +89,7 @@ class EmmaEncoder(LEDEncoder):  # type: ignore[misc] # noqa: WPS230
             self.embed_tokens = Embedding(config.vocab_size, embed_dim, self.padding_idx)
 
         self.embed_positions = LEDLearnedPositionalEmbedding(
-            self.max_source_positions,
+            config.max_encoder_position_embeddings,
             embed_dim,
         )
         self.layers = ModuleList(
@@ -101,6 +100,28 @@ class EmmaEncoder(LEDEncoder):  # type: ignore[misc] # noqa: WPS230
         self.gradient_checkpointing = False
         # Initialize weights and apply final processing
         self.post_init()
+
+    def text_embeddings(
+        self, token_ids: torch.Tensor, past_key_values_length: int = 0
+    ) -> torch.Tensor:
+        """Returns textual embeddings for the given token ids."""
+        bsz, seq_len = token_ids.shape[:2]
+        positions = torch.arange(
+            past_key_values_length,
+            past_key_values_length + seq_len,
+            dtype=torch.long,
+            device=self.embed_positions.weight.device,
+        )
+        embed_pos = self.embed_positions(positions)
+
+        inputs_embeds = self.embed_tokens(token_ids)
+        hidden_states = inputs_embeds + embed_pos
+        hidden_states = self.layernorm_embedding(hidden_states)
+        hidden_states = torch.nn.functional.dropout(
+            hidden_states, p=self.dropout, training=self.training
+        )
+
+        return hidden_states
 
 
 class EmmaDecoder(LEDDecoder):  # type: ignore[misc]

@@ -10,9 +10,9 @@ class EmmaImagePositionEmbeddings(Module):
     def __init__(self, config: EmmaConfig) -> None:
         super().__init__()
 
-        self.position_embeddings = Embedding(config.max_position_embeddings, config.d_model)
+        self.position_embeddings = Embedding(config.max_frame_embeddings, config.d_model)
         self.register_buffer(
-            "position_ids", torch.arange(config.max_position_embeddings).expand((1, -1))
+            "position_ids", torch.arange(config.max_frame_embeddings).expand((1, -1))
         )
 
         self.projection = Linear(config.image_coordinates_dim, config.d_model)
@@ -29,44 +29,6 @@ class EmmaImagePositionEmbeddings(Module):
         """
         projected_coordinates = self.projection(image_coordinates)
         return self.position_embeddings(frame_idx) + projected_coordinates
-
-
-class EmmaTextEmbeddings(Module):
-    """Embed a sequence of tokens."""
-
-    def __init__(self, config: EmmaConfig, word_embeddings: Embedding) -> None:
-        super().__init__()
-
-        self.position_embeddings = Embedding(config.max_position_embeddings, config.d_model)
-        self.word_embeddings = word_embeddings
-        self.layer_norm = LayerNorm(config.d_model)
-        self.dropout = Dropout(config.hidden_dropout_prob)
-
-    def forward(self, token_ids: torch.Tensor, past_key_values_length: int = 0) -> torch.Tensor:
-        """Embed text tokens and add positional information.
-
-        Args:
-            token_ids (torch.Tensor): Text tokens of shape `(batch_size, sequence_length)`.
-            past_key_values_length (int): Start of the positional tokens. Defaults to 0.
-
-        Returns:
-            torch.Tensor: Output embedding.
-        """
-        bsz, seq_len = token_ids.shape[:2]
-        positions = torch.arange(
-            past_key_values_length,
-            past_key_values_length + seq_len,
-            dtype=torch.long,
-            device=self.position_embeddings.weight.device,
-        )
-        position_embeddings = self.position_embeddings(positions)
-
-        embeddings = self.word_embeddings(token_ids)
-        embeddings += position_embeddings
-
-        embeddings = self.layer_norm(embeddings)
-        embeddings = self.dropout(embeddings)
-        return embeddings
 
 
 class EmmaSceneEmbeddings(Module):

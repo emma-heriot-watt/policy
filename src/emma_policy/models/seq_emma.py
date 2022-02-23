@@ -24,7 +24,7 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
         super().__init__(config=config)
 
         self.emma = EmmaModel(config)
-        num_embeddings = self.emma.text_embeddings.word_embeddings.num_embeddings
+        num_embeddings = self.emma.encoder.embed_tokens.num_embeddings
         self.register_buffer("final_logits_bias", torch.zeros((1, num_embeddings)))
         self.lm_head = Linear(config.d_model, num_embeddings, bias=False)
 

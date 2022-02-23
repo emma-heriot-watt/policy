@@ -1,6 +1,6 @@
 import random
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional
 
 import torch
 from emma_datasets.db import DatasetDb
@@ -172,10 +172,74 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             visual_token_ids=visual_features.visual_token_ids,
         )
 
+    def itm_negative_candidate(self, index: int, image_names: set) -> Optional[str]:
+        """Check if the candidate is valid and return the input text.
+
+        Args:
+            index (int): Index for candidate negative sample
+            image_names (set): Name of image in all datasets
+
+        Returns:
+            str: None if invalid candidate, else input text
+        """
+        with self.db:
+            instance_str = self.db[index]
+            other_instance = PretrainInstance.parse_raw(instance_str)
+
+        other_image_names = set(other_instance.dataset.values())
+        if not image_names.isdisjoint(other_image_names):
+            return None
+
+        if other_instance.caption is not None:
+            input_text_candidates = other_instance.caption.text
+        elif other_instance.regions is not None:
+            input_text_candidates = other_instance.regions.caption
+        else:
+            input_text_candidates = None
+
+        return input_text_candidates
+
     def itm(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the ITM task."""
-        # raise NotImplementedError
-        return self.mlm(instance)
+        input_text = instance.caption.text
+        target_text = "true"
+        if random.random() < 0.5:  # noqa: S311, WPS459
+            target_text = "false"
+            img_names = set(instance.dataset.values())
+
+            n_samples = len(self.db)
+            rand_idx = random.randint(0, n_samples - 1)  # noqa: S311
+            input_text = self.itm_negative_candidate(rand_idx, img_names)
+            while input_text is None:
+                rand_idx = random.randint(0, n_samples - 1)  # noqa: S311
+                input_text = self.itm_negative_candidate(rand_idx, img_names)
+
+        # formats the masked caption using the corresponding task template
+        input_text = random.choice(TASK_TEMPLATES_MAP[Task.itm]).format(  # noqa: S311
+            statement=input_text
+        )
+
+        input_encoding = self.tokenizer.encode_plus(input_text, return_tensors="pt")
+        target_encoding = self.tokenizer.encode_plus(target_text, return_tensors="pt")
+
+        visual_features = self.load_visual_features(instance)
+        decoder_attention_mask = target_encoding.attention_mask
+
+        return EmmaDatasetItem(
+            input_token_ids=input_encoding.input_ids.squeeze(0),
+            text_attention_mask=input_encoding.attention_mask.squeeze(0),
+            target_token_ids=target_encoding.input_ids.squeeze(0),
+            decoder_attention_mask=decoder_attention_mask.squeeze(0),
+            object_attention_mask=visual_features.object_attention_mask,
+            object_coordinates=visual_features.object_coordinates,
+            object_features=visual_features.object_features,
+            object_frame_ids=visual_features.object_frame_ids,
+            scene_attention_mask=visual_features.scene_attention_mask,
+            scene_coordinates=visual_features.scene_coordinates,
+            scene_features=visual_features.scene_features,
+            scene_frame_ids=visual_features.scene_frame_ids,
+            visual_token_ids=visual_features.visual_token_ids,
+        )
 
     def visual_grounding(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the Visual Grounding task."""

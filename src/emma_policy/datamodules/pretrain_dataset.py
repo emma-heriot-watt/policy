@@ -146,9 +146,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
 
         source_text, target_text = apply_token_masking(input_text, self.mlm_probability)
         # formats the masked caption using the corresponding task template
-        source_text = random.choice(TASK_TEMPLATES_MAP[Task.mlm]).format(
-            caption=source_text
-        )
+        source_text = random.choice(TASK_TEMPLATES_MAP[Task.mlm]).format(caption=source_text)
 
         input_encoding = self.tokenizer.encode_plus(source_text, return_tensors="pt")
         target_encoding = self.tokenizer.encode_plus(target_text, return_tensors="pt")
@@ -203,7 +201,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         """Process the instance for the ITM task."""
         input_text = instance.caption.text
         target_text = "true"
-        if random.random() < 0.5:  # noqa: S311, WPS459
+        if random.random() < 0.5:  # noqa: WPS459
             target_text = "false"
             img_names = set(instance.dataset.values())
 
@@ -215,9 +213,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
                 input_text = self.itm_negative_candidate(rand_idx, img_names)
 
         # formats the masked caption using the corresponding task template
-        input_text = random.choice(TASK_TEMPLATES_MAP[Task.itm]).format(
-            statement=input_text
-        )
+        input_text = random.choice(TASK_TEMPLATES_MAP[Task.itm]).format(statement=input_text)
 
         input_encoding = self.tokenizer.encode_plus(input_text, return_tensors="pt")
         target_encoding = self.tokenizer.encode_plus(target_text, return_tensors="pt")

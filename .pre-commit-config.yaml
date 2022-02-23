@@ -103,7 +103,7 @@ repos:
     hooks:
       - id: absolufy-imports
         name: Convert relative imports to absolute
-        args: ["--application-directories", "."]
+        # args: ["--application-directories", "."]
   - repo: https://github.com/timothycrosley/isort
     rev: 5.8.0
     hooks:

@@ -17,6 +17,8 @@ jobs:
     runs-on: self-hosted
     outputs:
       python: ${{steps.filter.outputs.python}}
+      mypy: ${{steps.filter.outputs.mypy}}
+      flake8: ${{steps.filter.outputs.flake8}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -43,11 +45,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Setup reviewdog
-        uses: reviewdog/action-setup@v1
-        with:
-          reviewdog_version: latest
-
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v2
         with:
@@ -65,7 +62,8 @@ jobs:
       - name: Install dependencies
         # if: steps.python-cache.outputs.cache-hit != 'true'
         run: |
-          poetry install
+          poetry export -f requirements.txt --output requirements.txt --dev --without-hashes
+          pip install -r requirements.txt --no-cache-dir
 
       # - name: Load cached Python
       #   uses: actions/cache@v2
@@ -77,10 +75,11 @@ jobs:
       #       ${{ runner.os }}-pip-
 
       - name: Run mypy
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          poetry run mypy --show-column-numbers --show-absolute-path . 2>&1 | reviewdog -efm="%f:%l:%c: %t%*[^:]: %m" -name="mypy" -reporter=github-pr-review -level=warning -fail-on-error=true
+        uses: tsuyoshicho/action-mypy@v3
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-check
+          level: warning
 
   lint:
     name: Lint Python
@@ -90,11 +89,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-
-      - name: Setup reviewdog
-        uses: reviewdog/action-setup@v1
-        with:
-          reviewdog_version: latest
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v2
@@ -120,13 +114,13 @@ jobs:
       - name: Install dependencies
         # if: steps.python-cache.outputs.cache-hit != 'true'
         run: |
-          poetry install
+          poetry export -f requirements.txt --output requirements.txt --dev --without-hashes
+          pip install -r requirements.txt --no-cache-dir
 
-      - name: Run linter
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          poetry run flake8 . --format=default | reviewdog -f=flake8 -reporter=github-pr-review -level=error -fail-on-error=true
+      - name: Run flake8
+        uses: reviewdog/action-flake8@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   format:
     name: Format

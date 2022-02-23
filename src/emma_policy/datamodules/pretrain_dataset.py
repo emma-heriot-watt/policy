@@ -146,7 +146,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
 
         source_text, target_text = apply_token_masking(input_text, self.mlm_probability)
         # formats the masked caption using the corresponding task template
-        source_text = random.choice(TASK_TEMPLATES_MAP[Task.mlm]).format(  # noqa: S311
+        source_text = random.choice(TASK_TEMPLATES_MAP[Task.mlm]).format(
             caption=source_text
         )
 
@@ -208,14 +208,14 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             img_names = set(instance.dataset.values())
 
             n_samples = len(self.db)
-            rand_idx = random.randint(0, n_samples - 1)  # noqa: S311
+            rand_idx = random.randint(0, n_samples - 1)
             input_text = self.itm_negative_candidate(rand_idx, img_names)
             while input_text is None:
-                rand_idx = random.randint(0, n_samples - 1)  # noqa: S311
+                rand_idx = random.randint(0, n_samples - 1)
                 input_text = self.itm_negative_candidate(rand_idx, img_names)
 
         # formats the masked caption using the corresponding task template
-        input_text = random.choice(TASK_TEMPLATES_MAP[Task.itm]).format(  # noqa: S311
+        input_text = random.choice(TASK_TEMPLATES_MAP[Task.itm]).format(
             statement=input_text
         )
 
@@ -253,7 +253,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
 
     def captioning(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the captioning task."""
-        source_text = random.choice(TASK_TEMPLATES_MAP[Task.captioning])  # noqa: S311
+        source_text = random.choice(TASK_TEMPLATES_MAP[Task.captioning])
         target_text = instance.caption.text
 
         input_encoding = self.tokenizer.encode_plus(source_text, return_tensors="pt")
@@ -284,7 +284,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         target_text = instance.qa.answer
 
         # formats the masked caption using the corresponding task template
-        source_text = random.choice(TASK_TEMPLATES_MAP[Task.vqa]).format(  # noqa: S311
+        source_text = random.choice(TASK_TEMPLATES_MAP[Task.vqa]).format(
             question=input_text,
         )
 

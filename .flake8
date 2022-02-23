@@ -14,6 +14,8 @@ extend-ignore =
 		E501,
 		# Stop finding commented out code because it's mistaking shape annotations for code
 		E800,
+		# Stop complaining about using functions from random
+		S311,
 		# Ignore errors for internal mypy traceback, stderr output, or an unmatched line.
     T499,
 		# Do not complain about line-break before binary operator (caused by Black)
@@ -78,6 +80,7 @@ max-local-variables = 20
 max-expressions = 20
 max-string-usages = 10
 max-annotation-complexity = 4
+min-name-length = 1
 format = wemake
 
 # Black enforces double quotes.

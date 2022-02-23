@@ -189,25 +189,30 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
 
     def captioning(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the captioning task."""
-        return self.mlm(instance)
+        source_text = random.choice(TASK_TEMPLATES_MAP[Task.captioning])  # noqa: S311
+        target_text = instance.caption.text
 
-        # source_text = random.choice(TASK_TEMPLATES_MAP[Task.captioning])
-        # target_text = instance.caption.text
+        input_encoding = self.tokenizer.encode_plus(source_text, return_tensors="pt")
+        target_encoding = self.tokenizer.encode_plus(target_text, return_tensors="pt")
 
-        # input_encoding = self.tokenizer.encode_plus(source_text)
-        # target_encoding = self.tokenizer.encode_plus(target_text)
+        visual_features = self.load_visual_features(instance=instance)
 
-        # visual_features = self.load_visual_features(instance=instance)
-
-        # return EmmaDatasetItem(
-        #     input_token_ids=input_encoding.input_ids,
-        #     target_token_ids=target_encoding.input_ids,
-        #     scene_features=visual_features.scene_features,
-        #     scene_coordinates=visual_features.scene_coordinates,
-        #     object_features=visual_features.object_features,
-        #     object_coordinates=visual_features.object_coordinates,
-        #     visual_token_ids=visual_features.visual_token_ids,
-        # )
+        decoder_attention_mask = target_encoding.attention_mask
+        return EmmaDatasetItem(
+            input_token_ids=input_encoding.input_ids.squeeze(0),
+            text_attention_mask=input_encoding.attention_mask.squeeze(0),
+            target_token_ids=target_encoding.input_ids.squeeze(0),
+            decoder_attention_mask=decoder_attention_mask.squeeze(0),
+            object_attention_mask=visual_features.object_attention_mask,
+            object_coordinates=visual_features.object_coordinates,
+            object_features=visual_features.object_features,
+            object_frame_ids=visual_features.object_frame_ids,
+            scene_attention_mask=visual_features.scene_attention_mask,
+            scene_coordinates=visual_features.scene_coordinates,
+            scene_features=visual_features.scene_features,
+            scene_frame_ids=visual_features.scene_frame_ids,
+            visual_token_ids=visual_features.visual_token_ids,
+        )
 
     def vqa(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the VQA task."""

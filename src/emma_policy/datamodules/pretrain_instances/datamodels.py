@@ -49,8 +49,11 @@ TASK_TEMPLATES_MAP: Mapping[Task, list[str]] = MappingProxyType(
         Task.captioning: ["describe the scene", "describe what you see"],
         Task.vqa: [
             "answer question: {question}",
+            "answer the following {question}",
             "what is the answer to the question {question}",
+            "what is the answer to the following {question}",
             "{question}",
+            "how would you answer the following question {question}",
         ],
         Task.instruction_prediction: ["predict instruction"],
         Task.action_execution: [

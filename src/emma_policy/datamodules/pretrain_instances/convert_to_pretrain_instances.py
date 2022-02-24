@@ -106,7 +106,9 @@ class PretrainInstanceCreator:
 
         yield from (
             PretrainInstance(
-                regions=region, dataset=self.instance.dataset, task=Task.visual_grounding
+                regions=region,
+                dataset=self.instance.dataset,
+                task=Task.visual_grounding,
             )
             for region in self.instance.regions
         )
@@ -120,7 +122,9 @@ class PretrainInstanceCreator:
 
         yield from (
             PretrainInstance(
-                regions=region, dataset=self.instance.dataset, task=Task.dense_captioning
+                regions=region,
+                dataset=self.instance.dataset,
+                task=Task.dense_captioning,
             )
             for region in self.instance.regions
         )

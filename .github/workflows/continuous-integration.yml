@@ -123,6 +123,7 @@ jobs:
           reporter: github-pr-review
           level: info
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          fail_on_error: true
 
   format:
     name: Format

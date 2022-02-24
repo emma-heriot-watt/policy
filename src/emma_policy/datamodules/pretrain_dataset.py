@@ -11,6 +11,7 @@ from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisual
 from emma_policy.datamodules.pretrain_instances import PretrainInstance, Task
 from emma_policy.datamodules.pretrain_instances.datamodels import TASK_TEMPLATES_MAP
 from emma_policy.utils import get_logger
+from emma_policy.utils.boxes import Boxes, BoxMode, pairwise_iou
 
 
 log = get_logger(__name__)
@@ -136,6 +137,21 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
 
         return emma_visual_features
 
+    def best_match_feature(self, gt_bbox, object_coordinates: torch.Tensor, threshold=0.5):
+        gt_box = Boxes(gt_bbox.reshape(-1, 4))
+        extract_box = Boxes(object_coordinates)
+        ious = pairwise_iou(gt_box, extract_box)
+
+        matched_value = torch.max(ious, dim=1).values
+
+        # index of extracted bbox coordinates mapped to each bbox. tensor of [num_gt_bbox]. Should be used with gt_flags.
+        matched_index = torch.max(ious, dim=1).indices
+
+        # keep track whether ground truth bbox is mapped to a feature
+        gt_flag = matched_value > threshold
+
+        return matched_index, gt_flag
+
     def mlm(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the MLM task."""
         # applies the token masking on the original caption text
@@ -239,8 +255,60 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
 
     def visual_grounding(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the Visual Grounding task."""
-        # raise NotImplementedError
-        return self.mlm(instance)
+        visual_features = self.load_visual_features(instance=instance)
+        features_path = instance.features_path
+        feature_dicts = torch.load(features_path)
+
+        w, h = feature_dicts["width"], feature_dicts["height"]
+        target_region = instance.regions
+        region_coord = BoxMode.convert(
+            list(target_region.bbox), from_mode=BoxMode.XYWH_ABS, to_mode=BoxMode.XYXY_ABS
+        )
+
+        gt_bbox = torch.tensor(
+            [
+                region_coord[0] / w,
+                region_coord[1] / h,
+                region_coord[2] / w,
+                region_coord[3] / h,
+            ]
+        )
+
+        matched_index, gt_flag = self.best_match_feature(
+            gt_bbox=gt_bbox, object_coordinates=visual_features.object_coordinates, threshold=0.5
+        )
+
+        if not gt_flag[0]:  # if the region considered does not posses a extracted region
+            return None
+
+        # if the region considered posses a extracted region
+        mapped_region_index = matched_index[0]
+        source_text = target_region.caption
+        source_text = random.choice(TASK_TEMPLATES_MAP[Task.visual_grounding]).format(
+            caption=source_text
+        )
+
+        input_encoding = self.tokenizer.encode_plus(source_text, return_tensors="pt")
+        target_input_ids = visual_features.visual_token_ids.squeeze(0)[
+            mapped_region_index
+        ].reshape((1, -1))
+        decoder_attention_mask = torch.ones(target_input_ids.shape, dtype=torch.int64)
+
+        return EmmaDatasetItem(
+            input_token_ids=input_encoding.input_ids,
+            target_token_ids=target_input_ids,
+            scene_features=visual_features.scene_features,
+            scene_coordinates=visual_features.scene_coordinates,
+            object_features=visual_features.object_features,
+            object_coordinates=visual_features.object_coordinates,
+            visual_token_ids=visual_features.visual_token_ids,
+            scene_attention_mask=visual_features.scene_attention_mask,
+            object_attention_mask=visual_features.object_attention_mask,
+            text_attention_mask=input_encoding.attention_mask,
+            decoder_attention_mask=decoder_attention_mask,
+            scene_frame_ids=visual_features.scene_frame_ids,
+            object_frame_ids=visual_features.object_attention_mask,
+        )
 
     def dense_captioning(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the dense captioning task."""

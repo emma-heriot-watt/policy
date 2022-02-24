@@ -77,9 +77,9 @@ jobs:
       - name: Run mypy
         uses: tsuyoshicho/action-mypy@v3
         with:
-          github_token: ${{ secrets.github_token }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
-          level: warning
+          level: info
 
   lint:
     name: Lint Python
@@ -121,6 +121,7 @@ jobs:
         uses: reviewdog/action-flake8@v3
         with:
           reporter: github-pr-review
+          level: info
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   format:

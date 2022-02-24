@@ -81,6 +81,7 @@ max-expressions = 20
 max-string-usages = 10
 max-annotation-complexity = 4
 min-name-length = 1
+max-try-body-length = 2
 format = wemake
 
 # Black enforces double quotes.

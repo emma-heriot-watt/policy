@@ -78,7 +78,7 @@ jobs:
         uses: tsuyoshicho/action-mypy@v3
         with:
           github_token: ${{ secrets.github_token }}
-          reporter: github-pr-check
+          reporter: github-pr-review
           level: warning
 
   lint:
@@ -120,6 +120,7 @@ jobs:
       - name: Run flake8
         uses: reviewdog/action-flake8@v3
         with:
+          reporter: github-pr-review
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   format:

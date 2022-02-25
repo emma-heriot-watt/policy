@@ -5,6 +5,7 @@
 
 defaults:
   - override /trainer: debug.yaml
+  - override /callbacks: none
 
 debug_mode: True
 

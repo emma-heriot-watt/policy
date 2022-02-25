@@ -190,15 +190,18 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         """Check if the candidate is valid and return the input text.
 
         Args:
-            index (int): Index for candidate negative sample
-            image_names (set): Name of image in all datasets
+            index (int): Index for candidate negative sample.
+            image_names (set): Name of image in all datasets.
 
         Returns:
-            str: None if invalid candidate, else input text
+            None if invalid candidate, else input text
         """
         with self.db:
             instance_str = self.db[index]
             other_instance = PretrainInstance.parse_raw(instance_str)
+
+        if other_instance.modality == 4:
+            return None
 
         other_image_names = set(other_instance.dataset.values())
         if not image_names.isdisjoint(other_image_names):
@@ -229,7 +232,9 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
                 input_text = self.itm_negative_candidate(rand_idx, img_names)
 
         # formats the masked caption using the corresponding task template
-        input_text = random.choice(TASK_TEMPLATES_MAP[Task.itm]).format(statement=input_text)
+        input_text = random.choice(TASK_TEMPLATES_MAP[Task.itm]).format(
+            statement=input_text.strip(".")
+        )
 
         input_encoding = self.tokenizer.encode_plus(input_text, return_tensors="pt")
         target_encoding = self.tokenizer.encode_plus(target_text, return_tensors="pt")

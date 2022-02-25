@@ -39,7 +39,6 @@ class EmmaModel(EmmaPreTrainedModel):
 
     def __init__(self, config: EmmaConfig) -> None:
         super().__init__(config=config)
-
         word_embeddings = Embedding(
             config.vocab_size, config.d_model, padding_idx=config.pad_token_id
         )

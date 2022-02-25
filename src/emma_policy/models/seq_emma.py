@@ -20,7 +20,7 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
         r"lm_head\.weight",
     ]
 
-    def __init__(self, config: EmmaConfig) -> None:
+    def __init__(self, config: EmmaConfig, **kwargs) -> None:
         super().__init__(config=config)
 
         self.emma = EmmaModel(config)
@@ -79,7 +79,6 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
         config.vocab_size]`.
         """
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
-
         if labels is not None:
             if decoder_input_ids is None:
                 decoder_input_ids = self.prepare_decoder_input_ids_from_labels(labels)

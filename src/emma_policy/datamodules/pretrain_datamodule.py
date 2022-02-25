@@ -162,6 +162,7 @@ class EmmaPretrainDataModule(LightningDataModule):
             self._val_dataset,
             batch_size=self._batch_size,
             num_workers=self._num_workers,
+            collate_fn=collate_fn,
         )
 
     def _prepare_pretrain_instances_db(self) -> None:
@@ -183,7 +184,8 @@ class EmmaPretrainDataModule(LightningDataModule):
         create_valid_task_id = progress.add_task("Creating valid instances", total=float("inf"))
 
         with instances_db, train_instances_db, valid_instances_db, progress:  # noqa: WPS316
-            data_idx = 0
+            train_data_idx = 0
+            valid_data_idx = 0
 
             for _, _, instance_str in instances_db:
                 instance = Instance.parse_raw(instance_str)
@@ -192,21 +194,21 @@ class EmmaPretrainDataModule(LightningDataModule):
                 progress.advance(get_instance_task_id)
 
                 current_instances = convert_instance_to_pretrain_instances(instance)
-
                 for pretrain_instance in current_instances:
                     if is_train:
                         train_instances_db[  # noqa: WPS220
-                            (data_idx, f"pretrain_train_{data_idx}")
+                            (train_data_idx, f"pretrain_train_{train_data_idx}")
                         ] = pretrain_instance
 
                         progress.advance(create_train_task_id)  # noqa: WPS220
+                        train_data_idx += 1
                     else:
                         valid_instances_db[  # noqa: WPS220
-                            (data_idx, f"pretrain_valid_{data_idx}")
+                            (valid_data_idx, f"pretrain_valid_{valid_data_idx}")
                         ] = pretrain_instance
 
                         progress.advance(create_valid_task_id)  # noqa: WPS220
-                    data_idx += 1
+                        valid_data_idx += 1
 
     def _prepare_train_instances(self) -> None:
 

@@ -13,6 +13,8 @@ dotenv.load_dotenv(override=True)
 @hydra.main(config_path=f"{os.getcwd()}/configs/", config_name="config.yaml")
 def main(config: DictConfig) -> None:
     """Run the model."""
+    os.chdir(config.work_dir)
+
     train_model(config)
 
 

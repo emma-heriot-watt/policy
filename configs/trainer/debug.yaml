@@ -8,11 +8,11 @@ max_epochs: 2
 
 # prints
 progress_bar_refresh_rate: null
-weights_summary: "false"
+weights_summary: null
 profiler: null
 
 # debugs
 fast_dev_run: true
-overfit_batches: 3
+overfit_batches: 0.
 track_grad_norm: -1
 detect_anomaly: false

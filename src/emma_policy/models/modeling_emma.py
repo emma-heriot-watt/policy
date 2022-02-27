@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
 import torch
+from overrides import overrides
 from torch.nn import Embedding
 
 from emma_policy.models.configuration_emma import EmmaConfig
@@ -60,6 +61,7 @@ class EmmaModel(EmmaPreTrainedModel):
         """Get word embeddings."""
         return self.encoder.embed_tokens
 
+    @overrides(check_signature=False)
     def set_input_embeddings(self, value: Embedding) -> None:  # noqa: WPS110, WPS615
         """Set word embeddings."""
         self.encoder.embed_tokens = value

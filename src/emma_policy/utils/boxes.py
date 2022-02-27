@@ -27,8 +27,29 @@ class BoxMode(IntEnum):
     XYWH_REL = 3  # noqa: WPS115
     XYWHA_ABS = 4  # noqa: WPS115
 
-    def convert(self, box: RawBoxType, from_mode: "BoxMode", to_mode: "BoxMode") -> RawBoxType:
+    @staticmethod
+    def convert(  # noqa: WPS602
+        box: RawBoxType, from_mode: "BoxMode", to_mode: "BoxMode"
+    ) -> RawBoxType:
         """Convert box to a different mode, returning in the same type as provided.
+
+        Args:
+            box: can be a k-tuple, k-list or an Nxk array/tensor, where k = 4 or 5.
+            from_mode (BoxMode): Mode to convert from.
+            to_mode (BoxMode): Mode to convert to.
+
+        Returns:
+            The converted box of the same type.
+        """
+        box_mode_converter = BoxModeConverter()
+        return box_mode_converter(box, from_mode, to_mode)
+
+
+class BoxModeConverter:
+    """Convert a box from one mode to another."""
+
+    def __call__(self, box: RawBoxType, from_mode: BoxMode, to_mode: BoxMode) -> RawBoxType:
+        """Do the actual converting.
 
         Args:
             box: can be a k-tuple, k-list or an Nxk array/tensor, where k = 4 or 5.
@@ -60,13 +81,11 @@ class BoxMode(IntEnum):
         return converted_box
 
     @property
-    def _unsupported_modes(self) -> list["BoxMode"]:
+    def _unsupported_modes(self) -> list[BoxMode]:
         """Get a list of the unsupported modes."""
         return [BoxMode.XYXY_REL, BoxMode.XYWH_REL]
 
-    def _convert(
-        self, box: torch.Tensor, from_mode: "BoxMode", to_mode: "BoxMode"
-    ) -> torch.Tensor:
+    def _convert(self, box: torch.Tensor, from_mode: BoxMode, to_mode: BoxMode) -> torch.Tensor:
         """Convert box to the desired mode if it's supported."""
         convert_functions = {
             BoxMode.XYWHA_ABS: {

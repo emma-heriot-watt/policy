@@ -13,7 +13,7 @@ EMMA_PRETRAINED_CONFIG_ARCHIVE_MAP = {  # noqa: WPS407
 }
 
 
-class EmmaConfig(PretrainedConfig):  # type: ignore[misc] # noqa: WPS230
+class EmmaConfig(PretrainedConfig):  # noqa: WPS230
     """Emma model configuration, modified from LED."""
 
     model_type = "emma"

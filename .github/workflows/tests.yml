@@ -25,15 +25,18 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Load cached Python
+        uses: tespkg/actions-cache@v1
+        id: python-cache
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}-${{ hashFiles('pyproject.toml') }}
+          bucket: ${{ secrets.AWS_S3_BUCKET_NAME }}
+          accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
       - name: Install Poetry
         uses: Gr1N/setup-poetry@v7
-
-      # - name: Load cached Python
-      #   uses: actions/cache@v2
-      #   id: python-cache
-      #   with:
-      #     path: ~/.cache/pypoetry/virtualenvs
-      #     key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}-${{ hashFiles('pyproject.toml') }}
 
       - name: Configure GitHub to download private repos
         env:
@@ -42,7 +45,6 @@ jobs:
           git config --global url."https://${PAT}@github.com/".insteadOf "https://github.com/"
 
       - name: Install dependencies
-        # if: steps.python-cache.outputs.cache-hit != 'true'
         run: |
           poetry install
 

@@ -8,10 +8,10 @@ from emma_policy.models.configuration_emma import EmmaConfig
 from emma_policy.models.encoder_decoder_emma import EmmaDecoder, EmmaEncoder
 
 
-class EmmaPreTrainedModel(PreTrainedModel):  # type: ignore[misc]
+class EmmaPreTrainedModel(PreTrainedModel):
     """Stores the configuration of the model and handles methods common to all models."""
 
-    config_class = EmmaConfig
+    config_class = EmmaConfig  # type: ignore[assignment]
     base_model_prefix = "emma"
     supports_gradient_checkpointing = True
 

@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
 import torch
+from overrides import overrides
 from torch.nn import CrossEntropyLoss, Embedding, Linear
 
 from emma_policy.models.configuration_emma import EmmaConfig
@@ -13,14 +14,14 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
     """EmmaModel with LM head."""
 
     base_model_prefix = "emma"
-    _keys_to_ignore_on_load_missing = [
+    _keys_to_ignore_on_load_missing = [  # type: ignore[assignment]
         "final_logits_bias",
         r"encoder\.version",
         r"decoder\.version",
         r"lm_head\.weight",
     ]
 
-    def __init__(self, config: EmmaConfig, **kwargs) -> None:
+    def __init__(self, config: EmmaConfig, **kwargs: dict[str, Any]) -> None:
         super().__init__(config=config)
 
         self.emma = EmmaModel(config)
@@ -28,9 +29,12 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
         self.register_buffer("final_logits_bias", torch.zeros((1, num_embeddings)))
         self.lm_head = Linear(config.d_model, num_embeddings, bias=False)
 
+        self.final_logits_bias: "torch.Tensor"
+
         # Initialize weights and apply final processing
         self.post_init()
 
+    @overrides(check_signature=False)
     def resize_token_embeddings(self, new_num_tokens: int) -> Embedding:
         """Resize the embedding layer."""
         new_embeddings = super().resize_token_embeddings(new_num_tokens)
@@ -143,7 +147,7 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
         reordered_past = ()
         for layer_past in past:  # noqa: WPS519
             # cached cross_attention states don't have to be reordered -> they are always the same
-            reordered_past += (
+            reordered_past += (  # type: ignore[assignment]
                 tuple(past_state.index_select(0, beam_idx) for past_state in layer_past[:2])
                 + layer_past[2:],
             )

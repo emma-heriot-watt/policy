@@ -1,6 +1,7 @@
 name: Continuous Integration
 
 on:
+  workflow_dispatch:
   pull_request:
     branches:
       - main
@@ -50,36 +51,58 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install Poetry
-        uses: Gr1N/setup-poetry@v7
-
       - name: Configure GitHub to download private repos
         env:
           PAT: ${{ secrets.PAT }}
         run: |
           git config --global url."https://${PAT}@github.com/".insteadOf "https://github.com/"
 
-      - name: Install dependencies
-        # if: steps.python-cache.outputs.cache-hit != 'true'
-        run: |
-          poetry export -f requirements.txt --output requirements.txt --dev --without-hashes
-          pip install -r requirements.txt --no-cache-dir
+      - name: Install Poetry
+        uses: Gr1N/setup-poetry@v7
 
-      # - name: Load cached Python
-      #   uses: actions/cache@v2
-      #   id: python-cache
-      #   with:
-      #     path: ~/.cache/pip
-      #     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-pip-
+      - name: Set Poetry config
+        run: |
+          poetry config virtualenvs.create false
+
+      - name: Load cached Python
+        uses: tespkg/actions-cache@v1
+        id: python-cache
+        with:
+          path: |
+            ~/.cache/
+            ${{ env.pythonLocation }}
+          key: ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-${{ hashFiles('poetry.lock') }}-${{hashFiles('pyproject.toml') }}-mypy
+          restore-keys: |
+            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-${{ hashFiles('poetry.lock') }}-${{ hashFiles('pyproject.toml') }}-
+            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-
+          bucket: ${{ secrets.AWS_S3_BUCKET_NAME }}
+          accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Install dependencies
+        run: |
+          poetry install
+
+      - name: Load mypy cache
+        uses: tespkg/actions-cache@v1
+        id: mypy-cache
+        with:
+          path: .mypy_cache
+          key: ${{ runner.os }}-mypy-cache-${{ hashFiles('poetry.lock') }}-${{hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-mypy-cache-
+          bucket: ${{ secrets.AWS_S3_BUCKET_NAME }}
+          accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Run mypy
         uses: tsuyoshicho/action-mypy@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
-          level: info
+          level: error
+          fail_on_error: true
+          mypy_flags: "--no-error-summary"
 
   lint:
     name: Lint Python
@@ -90,6 +113,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Configure GitHub to download private repos
+        env:
+          PAT: ${{ secrets.PAT }}
+        run: |
+          git config --global url."https://${PAT}@github.com/".insteadOf "https://github.com/"
+
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v2
         with:
@@ -98,32 +127,39 @@ jobs:
       - name: Install Poetry
         uses: Gr1N/setup-poetry@v7
 
-      - name: Configure GitHub to download private repos
-        env:
-          PAT: ${{ secrets.PAT }}
+      - name: Set Poetry config
         run: |
-          git config --global url."https://${PAT}@github.com/".insteadOf "https://github.com/"
+          poetry config virtualenvs.create false
 
-      # - name: Load cached Python
-      #   uses: actions/cache@v2
-      #   id: python-cache
-      #   with:
-      #     path: ~/.cache/pypoetry/virtualenvs
-      #     key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}-${{ hashFiles('pyproject.toml') }}
+      - name: Load cached Python
+        uses: tespkg/actions-cache@v1
+        id: python-cache
+        with:
+          path: |
+            ~/.cache/
+            ${{ env.pythonLocation }}
+          key: ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-${{ hashFiles('poetry.lock') }}-${{hashFiles('pyproject.toml') }}-flake8
+          restore-keys: |
+            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-${{ hashFiles('poetry.lock') }}-${{ hashFiles('pyproject.toml') }}-
+            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-
+          bucket: ${{ secrets.AWS_S3_BUCKET_NAME }}
+          accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Install dependencies
-        # if: steps.python-cache.outputs.cache-hit != 'true'
         run: |
-          poetry export -f requirements.txt --output requirements.txt --dev --without-hashes
-          pip install -r requirements.txt --no-cache-dir
+          poetry install
 
       - name: Run flake8
         uses: reviewdog/action-flake8@v3
         with:
-          reporter: github-pr-review
-          level: info
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
+          level: error
           fail_on_error: true
+          filter_mode: diff_context
+          reviewdog_flags: "-f pep8"
+          flake8_args: "--format=default"
 
   format:
     name: Format
@@ -137,27 +173,21 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      # - name: Load cached Python
-      #   uses: actions/cache@v2
-      #   id: python-cache
-      #   with:
-      #     path: ~/.cache/pip
-      #     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-pip-
-
       - name: Install pre-commit
         run: |
           pip install pre-commit
 
-      # - name: Load cached pre-commit environment
-      #   uses: actions/cache@v2
-      #   id: pre-commit-cache
-      #   with:
-      #     path: ~/.cache/pre-commit
-      #     key: ${{ runner.os }}-pre-commit-${{ hashFiles('**/.pre-commit-config.yaml') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-pre-commit-
+      - name: Load cached pre-commit environment
+        uses: tespkg/actions-cache@v1
+        id: pre-commit-cache
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ runner.os }}-pre-commit-${{ hashFiles('**/.pre-commit-config.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pre-commit-
+          bucket: ${{ secrets.AWS_S3_BUCKET_NAME }}
+          accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Run pre-commit hook
         id: run-pre-commit-hooks

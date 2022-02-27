@@ -9,7 +9,9 @@ from emma_policy.models.tokenizer_emma_fast import EmmaTokenizerFast
 
 AutoConfig.register("emma", EmmaConfig)
 AutoTokenizer.register(
-    EmmaConfig, slow_tokenizer_class=EmmaTokenizer, fast_tokenizer_class=EmmaTokenizerFast
+    EmmaConfig,  # type: ignore[arg-type]
+    slow_tokenizer_class=EmmaTokenizer,
+    fast_tokenizer_class=EmmaTokenizerFast,
 )
 AutoModel.register(EmmaConfig, EmmaModel)
 AutoModelForCausalLM.register(EmmaConfig, EmmaForConditionalGeneration)

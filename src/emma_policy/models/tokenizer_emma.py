@@ -19,14 +19,14 @@ PRETRAINED_VOCAB_FILES_MAP = {  # noqa: WPS407
     },
 }
 
-PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES: dict[str, int] = {  # noqa: WPS407
+PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES = {  # noqa: WPS407
     "heriot-watt/emma-small": 1024,
     "heriot-watt/emma-base": 4096,
     "heriot-watt/emma-large": 16384,
 }
 
 
-class EmmaTokenizer(LEDTokenizer):  # type: ignore[misc]
+class EmmaTokenizer(LEDTokenizer):
     """Constructs an EMMA Tokenizer.
 
     [`EmmaTokenizer`] is identical to [`LEDTokenizer`] and runs end-to-end tokenization:
@@ -35,4 +35,4 @@ class EmmaTokenizer(LEDTokenizer):  # type: ignore[misc]
     """
 
     pretrained_vocab_files_map = PRETRAINED_VOCAB_FILES_MAP
-    max_model_input_sizes = PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES
+    max_model_input_sizes = PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES  # type: ignore[assignment]

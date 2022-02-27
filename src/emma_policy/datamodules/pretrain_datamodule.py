@@ -12,7 +12,7 @@ from transformers import AutoTokenizer
 
 from emma_policy.common import get_progress
 from emma_policy.datamodules.collate import collate_fn
-from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
+from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem
 from emma_policy.datamodules.pretrain_dataset import EmmaPretrainDataset
 from emma_policy.datamodules.pretrain_instances import convert_instance_to_pretrain_instances
 
@@ -147,7 +147,7 @@ class EmmaPretrainDataModule(LightningDataModule):
                 mlm_probability=self.mlm_probability,
             )
 
-    def train_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
+    def train_dataloader(self) -> DataLoader[EmmaDatasetItem]:
         """Generate train dataloader."""
         return DataLoader(
             self._train_dataset,
@@ -156,7 +156,7 @@ class EmmaPretrainDataModule(LightningDataModule):
             collate_fn=collate_fn,
         )
 
-    def val_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
+    def val_dataloader(self) -> DataLoader[EmmaDatasetItem]:
         """Generate val dataloader."""
         return DataLoader(
             self._val_dataset,

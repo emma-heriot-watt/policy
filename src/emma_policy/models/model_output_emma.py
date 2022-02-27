@@ -6,7 +6,7 @@ from transformers.file_utils import ModelOutput
 
 
 @dataclass
-class EmmaSeq2SeqModelOutput(ModelOutput):  # type: ignore[misc]
+class EmmaSeq2SeqModelOutput(ModelOutput):
     """Base class for model encoder's outputs that also contains : pre-computed hidden states that can speed up sequential decoding.
 
     Args:
@@ -64,7 +64,7 @@ class EmmaSeq2SeqModelOutput(ModelOutput):  # type: ignore[misc]
 
 
 @dataclass
-class EmmaSeq2SeqLMOutput(ModelOutput):  # type: ignore[misc]
+class EmmaSeq2SeqLMOutput(ModelOutput):
     """Base class for sequence-to-sequence language models outputs.
 
     Args:

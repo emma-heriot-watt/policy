@@ -24,7 +24,7 @@ PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES = {  # noqa: WPS407
 }
 
 
-class EmmaTokenizerFast(LEDTokenizerFast):  # type: ignore[misc]
+class EmmaTokenizerFast(LEDTokenizerFast):
     """Construct a "fast" EMMA tokenizer (backed by HuggingFace's *tokenizers* library).
 
     [`EmmaTokenizerFast`] is identical to [`LEDTokenizerFast`] and runs end-to-end tokenization:
@@ -33,5 +33,5 @@ class EmmaTokenizerFast(LEDTokenizerFast):  # type: ignore[misc]
     """
 
     pretrained_vocab_files_map = PRETRAINED_VOCAB_FILES_MAP
-    max_model_input_sizes = PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES
-    slow_tokenizer_class = EmmaTokenizer
+    max_model_input_sizes = PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES  # type: ignore[assignment]
+    slow_tokenizer_class = EmmaTokenizer  # type: ignore[assignment]

@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 import torch
+from emma_datasets.datamodels import DatasetMetadata
 from emma_datasets.db import DatasetDb
 from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizer
@@ -137,7 +138,10 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
 
         return emma_visual_features
 
-    def best_match_feature(self, gt_bbox, object_coordinates: torch.Tensor, threshold=0.5):
+    def best_match_feature(
+        self, gt_bbox: torch.Tensor, object_coordinates: torch.Tensor, threshold: float = 0.5
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Get the best match feature?"""
         gt_box = Boxes(gt_bbox.reshape(-1, 4))
         extract_box = Boxes(object_coordinates)
         ious = pairwise_iou(gt_box, extract_box)
@@ -186,7 +190,9 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             visual_token_ids=visual_features.visual_token_ids,
         )
 
-    def itm_negative_candidate(self, index: int, image_names: set) -> Optional[str]:
+    def itm_negative_candidate(
+        self, index: int, image_names: set[DatasetMetadata]
+    ) -> Optional[str]:
         """Check if the candidate is valid and return the input text.
 
         Args:
@@ -265,6 +271,12 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         feature_dicts = torch.load(features_path)
 
         w, h = feature_dicts["width"], feature_dicts["height"]
+
+        if instance.regions is None:
+            raise AssertionError(
+                "Regions for this instance should exist? Make sure this instance is connected to the right task."
+            )
+
         target_region = instance.regions
         region_coord = BoxMode.convert(
             list(target_region.bbox), from_mode=BoxMode.XYWH_ABS, to_mode=BoxMode.XYXY_ABS
@@ -284,7 +296,9 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         )
 
         if not gt_flag[0]:  # if the region considered does not posses a extracted region
-            return None
+            raise AssertionError(
+                "The region is not considered to be an extracted region? The pretrain instance parser cannot return nothing so consider removing this instance from the set."
+            )
 
         # if the region considered posses a extracted region
         mapped_region_index = matched_index[0]

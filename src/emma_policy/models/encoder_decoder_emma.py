@@ -15,9 +15,11 @@ from emma_policy.models.configuration_emma import EmmaConfig
 
 
 @dataclass
-# Copied from transformers.models.longformer.modeling_longformer.LongformerBaseModelOutput with Longformer->LEDEncoder
-class EmmaEncoderBaseModelOutput(ModelOutput):  # type: ignore[misc]
+class EmmaEncoderBaseModelOutput(ModelOutput):
     """Base class for outputs, with potential hidden states, local and global attentions.
+
+    Copied from transformers.models.longformer.modeling_longformer.LongformerBaseModelOutput
+    with Longformer->LEDEncoder
 
     Args:
         last_hidden_state (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
@@ -54,13 +56,15 @@ class EmmaEncoderBaseModelOutput(ModelOutput):  # type: ignore[misc]
     global_attentions: Optional[tuple[torch.FloatTensor, ...]] = None
 
 
-class EmmaEncoder(LEDEncoder):  # type: ignore[misc] # noqa: WPS230
+class EmmaEncoder(LEDEncoder):  # noqa: WPS230
     """[`EmmaEncoder`] is identical to [`LEDEncoder`]."""
 
     def __init__(  # noqa: WPS231
-        self, config: EmmaConfig, embed_tokens: Optional[Embedding] = None
+        self,
+        config: EmmaConfig,
+        embed_tokens: Optional[Embedding] = None,
     ) -> None:
-        super().__init__(config=config, embed_tokens=embed_tokens)
+        super().__init__(config=config, embed_tokens=embed_tokens)  # type: ignore[arg-type]
 
         self.dropout = config.dropout
         self.layerdrop = config.encoder_layerdrop
@@ -93,7 +97,10 @@ class EmmaEncoder(LEDEncoder):  # type: ignore[misc] # noqa: WPS230
             embed_dim,
         )
         self.layers = ModuleList(
-            [LEDEncoderLayer(config, idx) for idx in range(config.encoder_layers)]
+            [
+                LEDEncoderLayer(config, idx)  # type: ignore[arg-type]
+                for idx in range(config.encoder_layers)
+            ]
         )
         self.layernorm_embedding = LayerNorm(embed_dim)
 
@@ -105,7 +112,7 @@ class EmmaEncoder(LEDEncoder):  # type: ignore[misc] # noqa: WPS230
         self, token_ids: torch.Tensor, past_key_values_length: int = 0
     ) -> torch.Tensor:
         """Returns textual embeddings for the given token ids."""
-        bsz, seq_len = token_ids.shape[:2]
+        _, seq_len = token_ids.shape[:2]
         positions = torch.arange(
             past_key_values_length,
             past_key_values_length + seq_len,
@@ -124,8 +131,8 @@ class EmmaEncoder(LEDEncoder):  # type: ignore[misc] # noqa: WPS230
         return hidden_states
 
 
-class EmmaDecoder(LEDDecoder):  # type: ignore[misc]
+class EmmaDecoder(LEDDecoder):
     """[`EmmaDecoder`] is identical to [`LEDDecoder`]."""
 
     def __init__(self, config: EmmaConfig, embed_tokens: Optional[Embedding] = None) -> None:
-        super().__init__(config=config, embed_tokens=embed_tokens)
+        super().__init__(config=config, embed_tokens=embed_tokens)  # type: ignore[arg-type]

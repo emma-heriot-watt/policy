@@ -132,7 +132,7 @@ class TrainModel:
         }
 
         if self.trainer.logger is not None:
-            self.trainer.logger.log_hyperparams(hyperparams)
+            self.trainer.logger.log_hyperparams(hyperparams)  # type: ignore[arg-type]
 
     @classmethod
     def from_hydra_config(cls, config: DictConfig) -> "TrainModel":

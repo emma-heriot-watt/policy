@@ -95,14 +95,17 @@ jobs:
           accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Run mypy
+      - name: Run mypy for reviewdog
         uses: tsuyoshicho/action-mypy@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
           level: error
-          fail_on_error: true
           mypy_flags: "--no-error-summary"
+
+      - name: Run mypy (for the failing)
+        run: |
+          mypy .
 
   lint:
     name: Lint Python

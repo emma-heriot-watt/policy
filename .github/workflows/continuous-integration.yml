@@ -70,11 +70,9 @@ jobs:
         with:
           path: |
             ~/.cache/
-            ${{ env.pythonLocation }}
           key: ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-${{ hashFiles('poetry.lock') }}-${{hashFiles('pyproject.toml') }}-mypy
           restore-keys: |
             ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-${{ hashFiles('poetry.lock') }}-${{ hashFiles('pyproject.toml') }}-
-            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-
           bucket: ${{ secrets.AWS_S3_BUCKET_NAME }}
           accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -90,7 +88,7 @@ jobs:
           path: .mypy_cache
           key: ${{ runner.os }}-mypy-cache-${{ hashFiles('poetry.lock') }}-${{hashFiles('pyproject.toml') }}
           restore-keys: |
-            ${{ runner.os }}-mypy-cache-
+            ${{ runner.os }}-mypy-cache-${{ hashFiles('poetry.lock') }}-${{hashFiles('pyproject.toml') }}
           bucket: ${{ secrets.AWS_S3_BUCKET_NAME }}
           accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -140,11 +138,9 @@ jobs:
         with:
           path: |
             ~/.cache/
-            ${{ env.pythonLocation }}
           key: ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-${{ hashFiles('poetry.lock') }}-${{hashFiles('pyproject.toml') }}-flake8
           restore-keys: |
             ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-${{ hashFiles('poetry.lock') }}-${{ hashFiles('pyproject.toml') }}-
-            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-
           bucket: ${{ secrets.AWS_S3_BUCKET_NAME }}
           accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

@@ -41,7 +41,7 @@ emma-datasets = { git = "https://github.com/emma-simbot/datasets", rev = "main" 
 [tool.poetry.dev-dependencies]
 wemake-python-styleguide = "^0.16.0"
 flake8 = "^4.0"
-mypy = "^0.931"
+mypy = {git = "https://github.com/python/mypy"}
 pytest = "^7.0.0"
 ipykernel = "^6.9.0"
 pre-commit = "^2.17.0"

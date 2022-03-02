@@ -41,10 +41,12 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
         self._resize_final_logits_bias(new_num_tokens)
         return new_embeddings
 
-    def get_output_embeddings(self) -> Linear:  # noqa: D102, WPS615
+    def get_output_embeddings(self) -> Linear:  # noqa: WPS615
+        """Get the linear layer."""
         return self.lm_head
 
-    def set_output_embeddings(self, new_embeddings: Linear) -> None:  # noqa: D102, WPS615
+    def set_output_embeddings(self, new_embeddings: Linear) -> None:  # noqa: WPS615
+        """Get the new embeddings as the linear layer."""
         self.lm_head = new_embeddings
 
     def forward(

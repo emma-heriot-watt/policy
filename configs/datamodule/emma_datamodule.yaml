@@ -8,4 +8,25 @@ force_prepare_data: True
 batch_size: 2
 load_valid_data: True
 num_workers: 6
+enabled_tasks:
+  image:
+    mlm: True
+    itm: True
+    visual_grounding: False
+    dense_captioning: False
+    captioning: True
+    vqa: True
+    instruction_prediction: False
+    action_execution: False
+    vtm: False
+  video:
+    mlm: False
+    itm: False
+    visual_grounding: False
+    dense_captioning: False
+    captioning: False
+    vqa: False
+    instruction_prediction: False
+    action_execution: False
+    vtm: False
 # pin_memory: False

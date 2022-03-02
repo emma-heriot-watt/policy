@@ -1,16 +1,21 @@
 from pathlib import Path
 
+from omegaconf import OmegaConf
+from pytest_cases import parametrize
 from transformers import AutoConfig, AutoModelForCausalLM
 
 from emma_policy.datamodules.pretrain_datamodule import EmmaPretrainDataModule
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
 
 
-def test_model_forward(tmp_path: Path) -> None:
+@parametrize("enabled_tasks_path", [Path("storage/fixtures/enabled_tasks.yaml")])
+def test_model_forward(tmp_path: Path, enabled_tasks_path: Path) -> None:
     """Make sure model forward pass works."""
     config = AutoConfig.from_pretrained("heriot-watt/emma-small")
     model = AutoModelForCausalLM.from_config(config)
     instances_db_path = "storage/fixtures/instances_tiny_batch.db"
+    enabled_tasks_dict = OmegaConf.load(enabled_tasks_path)
+    # TODO: Remove enabled_tasks arguement once all pre-trained tasks are implemented
     dm = EmmaPretrainDataModule(
         tmp_path.joinpath("pretrain_train.db"),
         tmp_path.joinpath("pretrain_valid.db"),
@@ -19,6 +24,7 @@ def test_model_forward(tmp_path: Path) -> None:
         force_prepare_data=True,
         batch_size=2,
         load_valid_data=False,
+        enabled_tasks=enabled_tasks_dict["enabled_tasks"],  # type: ignore[index]
     )
     dm.prepare_data()
     dm.setup()

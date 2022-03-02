@@ -1,5 +1,6 @@
 import itertools
-from typing import Callable, Iterator
+from collections import defaultdict
+from typing import Callable, Iterator, Optional
 
 from emma_datasets.datamodels import Caption, Instance, MediaType
 
@@ -41,8 +42,14 @@ class PretrainInstanceCreator:
     task. This will then be ignored when iterating over all the properties.
     """
 
-    def __init__(self, instance: Instance) -> None:
+    def __init__(
+        self, instance: Instance, enabled_tasks: Optional[defaultdict[str, bool]]
+    ) -> None:
         self.instance = instance
+        if enabled_tasks is None:
+            self.enabled_tasks = defaultdict[str, bool](lambda: True)
+        else:
+            self.enabled_tasks = enabled_tasks
 
         self.instance_task_map: dict[Task, Iterator[PretrainInstance]] = {
             Task.mlm: self.mlm,
@@ -73,7 +80,7 @@ class PretrainInstanceCreator:
     @image_task_check
     def mlm(self) -> Iterator[PretrainInstance]:
         """Get pretrain instances for the MLM task."""
-        if self.instance.caption is None:
+        if self.instance.caption is None or not self.enabled_tasks["mlm"]:
             return []
 
         yield PretrainInstance(
@@ -85,6 +92,8 @@ class PretrainInstanceCreator:
     def itm(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the ITM task."""
         itm_candidates: list[Caption] = []
+        if not self.enabled_tasks["itm"]:
+            return []
 
         if self.instance.caption is not None:
             itm_candidates.append(self.instance.caption)
@@ -101,7 +110,7 @@ class PretrainInstanceCreator:
     @image_task_check
     def visual_grounding(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the visual grounding task."""
-        if self.instance.regions is None:
+        if self.instance.regions is None or not self.enabled_tasks["visual_grounding"]:
             return []
 
         yield from (
@@ -117,7 +126,7 @@ class PretrainInstanceCreator:
     @image_task_check
     def dense_captioning(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the dense captioning task."""
-        if self.instance.regions is None:
+        if self.instance.regions is None or not self.enabled_tasks["dense_captioning"]:
             return []
 
         yield from (
@@ -133,7 +142,7 @@ class PretrainInstanceCreator:
     @image_task_check
     def captioning(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the captioning task."""
-        if self.instance.caption is None:
+        if self.instance.caption is None or not self.enabled_tasks["captioning"]:
             return []
 
         yield PretrainInstance(
@@ -144,7 +153,7 @@ class PretrainInstanceCreator:
     @image_task_check
     def vqa(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the VQA task."""
-        if self.instance.qa is None:
+        if self.instance.qa is None or not self.enabled_tasks["vqa"]:
             return []
 
         yield PretrainInstance(
@@ -157,7 +166,12 @@ class PretrainInstanceCreator:
     @video_task_check
     def instruction_prediction(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instance for the instruction prediction for a given subgoal."""
-        if self.instance.trajectory is None or self.instance.caption is None:
+        skip_instance = (
+            self.instance.trajectory is None
+            or self.instance.caption is None
+            or not self.enabled_tasks["instruction_prediction"]
+        )
+        if skip_instance:
             return []
 
         yield PretrainInstance(
@@ -171,7 +185,7 @@ class PretrainInstanceCreator:
     @video_task_check
     def action_execution(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instance for the action execution task given a subgoal instruction."""
-        if self.instance.trajectory is None:
+        if self.instance.trajectory is None or not self.enabled_tasks["action_execution"]:
             return []
 
         yield PretrainInstance(
@@ -184,7 +198,7 @@ class PretrainInstanceCreator:
     @video_task_check
     def vtm(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instance for the video-text matching task given a subgoal."""
-        if self.instance.caption is None:
+        if self.instance.caption is None or not self.enabled_tasks["vtm"]:
             return []
 
         yield PretrainInstance(
@@ -192,7 +206,10 @@ class PretrainInstanceCreator:
         )
 
 
-def convert_instance_to_pretrain_instances(instance: Instance) -> Iterator[PretrainInstance]:
+def convert_instance_to_pretrain_instances(
+    instance: Instance,
+    enabled_tasks: Optional[defaultdict[str, bool]] = None,
+) -> Iterator[PretrainInstance]:
     """Convert an instance to all possible pretrain instances."""
-    pretrain_instance_creator = PretrainInstanceCreator(instance)
+    pretrain_instance_creator = PretrainInstanceCreator(instance, enabled_tasks=enabled_tasks)
     yield from pretrain_instance_creator.get_all_pretrain_instances()

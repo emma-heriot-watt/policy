@@ -273,6 +273,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         w, h = feature_dicts["width"], feature_dicts["height"]
 
         if instance.regions is None:
+            # TODO: This should be addressed. For now the visual grounding task is skipped
             raise AssertionError(
                 "Regions for this instance should exist? Make sure this instance is connected to the right task."
             )
@@ -296,6 +297,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         )
 
         if not gt_flag[0]:  # if the region considered does not posses a extracted region
+            # TODO: This should be addressed. For now the visual grounding task is skipped
             raise AssertionError(
                 "The region is not considered to be an extracted region? The pretrain instance parser cannot return nothing so consider removing this instance from the set."
             )
@@ -331,8 +333,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
 
     def dense_captioning(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the dense captioning task."""
-        # raise NotImplementedError
-        return self.mlm(instance)
+        raise NotImplementedError
 
     def captioning(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the captioning task."""
@@ -395,15 +396,12 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
 
     def instruction_prediction(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the instruction prediction task."""
-        # raise NotImplementedError
-        return self.mlm(instance)
+        raise NotImplementedError
 
     def action_execution(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the action execution task."""
-        # raise NotImplementedError
-        return self.mlm(instance)
+        raise NotImplementedError
 
     def vtm(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the VTM task."""
-        # raise NotImplementedError
-        return self.mlm(instance)
+        raise NotImplementedError

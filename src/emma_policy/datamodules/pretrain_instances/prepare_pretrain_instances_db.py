@@ -1,5 +1,5 @@
 import math
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Iterator, NamedTuple, Optional
 
@@ -30,7 +30,12 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
     The DatasetDb is not opened until the iterator is called.
     """
 
-    def __init__(self, db_path: Path, coco_ref_images: CocoRefImages) -> None:
+    def __init__(
+        self,
+        db_path: Path,
+        coco_ref_images: CocoRefImages,
+        enabled_tasks: Optional[dict[str, defaultdict[str, bool]]] = None,
+    ) -> None:
         db = DatasetDb(db_path, readonly=True)
 
         self.db: Optional[DatasetDb] = None
@@ -40,6 +45,7 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
 
         self._coco_ref_images = coco_ref_images
         self._storage = JsonStorage()
+        self.enabled_tasks = enabled_tasks
 
     def __iter__(self) -> Iterator[DatasetDbReaderReturn]:
         """Iterate over the entire DatasetDb.
@@ -68,7 +74,11 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
             instance = Instance.parse_raw(data)
             is_train = is_train_instance(self._coco_ref_images, instance)
 
-            pretrain_instance_iterator = convert_instance_to_pretrain_instances(instance)
+            modality_str = self._modality2str(instance.modality)
+            pretrain_instance_iterator = convert_instance_to_pretrain_instances(
+                instance,
+                enabled_tasks=self.enabled_tasks[modality_str],  # type: ignore[index]
+            )
 
             yield from (
                 DatasetDbReaderReturn(
@@ -78,6 +88,9 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
                 )
                 for pretrain_instance in pretrain_instance_iterator
             )
+
+    def _modality2str(self, modality_num: int) -> str:
+        return {3: "image", 4: "video"}[modality_num]
 
 
 class PreparePretrainInstancesDb:
@@ -115,12 +128,21 @@ class PreparePretrainInstancesDb:
         loader_num_workers: int = 24,
         write_db_batch_size: int = 300000,
         example_id_prefix: str = "pretrain_",
+        enabled_tasks: Optional[dict[str, defaultdict[str, bool]]] = None,
     ) -> None:
         self._instance_counter: Counter[int] = Counter()
 
         self._example_id_prefix = example_id_prefix
 
-        self._dataset = IterableDatasetDbReader(instances_db_file_path, coco_ref_images)
+        if enabled_tasks is None:
+            enabled_tasks = {
+                "image": defaultdict(lambda: True),
+                "video": defaultdict(lambda: True),
+            }
+
+        self._dataset = IterableDatasetDbReader(
+            instances_db_file_path, coco_ref_images, enabled_tasks=enabled_tasks
+        )
         self._train_db = DatasetDb(
             train_db_file_path, readonly=False, batch_size=write_db_batch_size
         )

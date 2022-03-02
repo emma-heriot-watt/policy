@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 from typing import Optional, Union
 
@@ -34,9 +35,18 @@ class EmmaPretrainDataModule(LightningDataModule):
         coco_split_path: Union[str, Path] = DEFAULT_COCO_SPLITS_PATH,
         model_name: str = "heriot-watt/emma-base",
         mlm_probability: float = 0.3,
+        enabled_tasks: Optional[dict[str, defaultdict[str, bool]]] = None,
     ) -> None:
+
         self.model_name = model_name
         self.mlm_probability = mlm_probability
+        if enabled_tasks is None:
+            self.enabled_tasks: dict[str, defaultdict[str, bool]] = {
+                "image": defaultdict(lambda: True),
+                "video": defaultdict(lambda: True),
+            }
+        else:
+            self.enabled_tasks = enabled_tasks
 
         if isinstance(instances_db_file, str):
             instances_db_file = Path(instances_db_file)
@@ -103,22 +113,24 @@ class EmmaPretrainDataModule(LightningDataModule):
                 mlm_probability=self.mlm_probability,
             )
 
-    def train_dataloader(self) -> DataLoader[EmmaDatasetItem]:
+    def train_dataloader(self) -> DataLoader[Optional[EmmaDatasetItem]]:
         """Generate train dataloader."""
         return DataLoader(
             self._train_dataset,
             batch_size=self._batch_size,
             num_workers=self._num_workers,
             collate_fn=collate_fn,
+            shuffle=True,
         )
 
-    def val_dataloader(self) -> DataLoader[EmmaDatasetItem]:
+    def val_dataloader(self) -> DataLoader[Optional[EmmaDatasetItem]]:
         """Generate val dataloader."""
         return DataLoader(
             self._val_dataset,
             batch_size=self._batch_size,
             num_workers=self._num_workers,
             collate_fn=collate_fn,
+            shuffle=False,
         )
 
     def _prepare_pretrain_instances_db(self) -> None:
@@ -134,5 +146,6 @@ class EmmaPretrainDataModule(LightningDataModule):
             valid_db_file_path=self._pretrain_valid_db_file if self.load_valid_data else None,
             loader_batch_size=loader_batch_size,
             loader_num_workers=self._num_workers,
+            enabled_tasks=self.enabled_tasks,
         )
         preparer.run()

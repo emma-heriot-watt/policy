@@ -1,13 +1,3 @@
-_target_: emma_policy.datamodules.pretrain_datamodule.EmmaPretrainDataModule
-
-model_name: heriot-watt/emma-small
-instances_db_file: ${work_dir}/storage/fixtures/instances_tiny_batch.db
-pretrain_train_db_file: ${work_dir}/storage/fixtures/pretrain_train.db
-pretrain_valid_db_file: ${work_dir}/storage/fixtures/pretrain_valid.db
-force_prepare_data: True
-batch_size: 2
-load_valid_data: True
-num_workers: 4
 enabled_tasks:
   image:
     mlm: True
@@ -29,4 +19,3 @@ enabled_tasks:
     instruction_prediction: False
     action_execution: False
     vtm: False
-# pin_memory: False

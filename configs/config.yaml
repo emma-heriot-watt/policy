@@ -5,7 +5,7 @@ defaults:
   - _self_
   - trainer: default.yaml
   - model: emma_small_model.yaml
-  - datamodule: emma_test_datamodule.yaml
+  - datamodule: emma_datamodule.yaml
   - callbacks: wandb
   - logger: wandb
 

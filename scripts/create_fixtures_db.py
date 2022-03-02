@@ -6,12 +6,12 @@ from emma_datasets.common import get_progress
 from emma_datasets.datamodels import Instance
 from emma_datasets.db import DatasetDb
 
-from emma_policy.datamodules.pretrain_datamodule import (
+from emma_policy.datamodules.pretrain_instances import (
     DEFAULT_COCO_SPLITS_PATH,
+    Task,
     is_train_instance,
     load_ref_coco_images,
 )
-from emma_policy.datamodules.pretrain_instances.datamodels import Task
 
 
 def check_type(instance: Instance) -> Optional[Task]:

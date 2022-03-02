@@ -6,13 +6,11 @@ from emma_datasets.db import DatasetDb
 from pytest_cases import fixture_ref, parametrize
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
-from emma_policy.datamodules.pretrain_datamodule import (
-    EmmaPretrainDataModule,
-    load_ref_coco_images,
-)
+from emma_policy.datamodules.pretrain_datamodule import EmmaPretrainDataModule
 from emma_policy.datamodules.pretrain_instances import (
     PretrainInstance,
     convert_instance_to_pretrain_instances,
+    load_ref_coco_images,
 )
 
 
@@ -26,9 +24,9 @@ from emma_policy.datamodules.pretrain_instances import (
 def test_load_coco_splits_images(coco_splits_path: Path) -> None:
     train_valid = load_ref_coco_images(coco_splits_path)
 
-    assert train_valid["train"]
+    assert train_valid.train
 
-    assert train_valid["valid"]
+    assert train_valid.valid
 
 
 @parametrize(

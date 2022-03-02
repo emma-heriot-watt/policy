@@ -1,0 +1,11 @@
+_target_: emma_policy.datamodules.pretrain_datamodule.EmmaPretrainDataModule
+
+model_name: heriot-watt/emma-small
+instances_db_file: ${work_dir}/storage/db/instances.db
+pretrain_train_db_file: ${work_dir}/storage/db/pretrain_train.db
+pretrain_valid_db_file: ${work_dir}/storage/db/pretrain_valid.db
+force_prepare_data: True
+batch_size: 2
+load_valid_data: True
+num_workers: 6
+# pin_memory: False

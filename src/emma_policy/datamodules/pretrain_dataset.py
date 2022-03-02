@@ -314,8 +314,10 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         decoder_attention_mask = torch.ones(target_input_ids.shape, dtype=torch.int64)
 
         return EmmaDatasetItem(
-            input_token_ids=input_encoding.input_ids,
-            target_token_ids=target_input_ids,
+            input_token_ids=input_encoding.input_ids.squeeze(0),
+            text_attention_mask=input_encoding.attention_mask.squeeze(0),
+            target_token_ids=target_input_ids.squeeze(0),
+            decoder_attention_mask=decoder_attention_mask.squeeze(0),
             scene_features=visual_features.scene_features,
             scene_coordinates=visual_features.scene_coordinates,
             object_features=visual_features.object_features,
@@ -323,8 +325,6 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             visual_token_ids=visual_features.visual_token_ids,
             scene_attention_mask=visual_features.scene_attention_mask,
             object_attention_mask=visual_features.object_attention_mask,
-            text_attention_mask=input_encoding.attention_mask,
-            decoder_attention_mask=decoder_attention_mask,
             scene_frame_ids=visual_features.scene_frame_ids,
             object_frame_ids=visual_features.object_attention_mask,
         )

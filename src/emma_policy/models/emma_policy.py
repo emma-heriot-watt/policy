@@ -103,7 +103,7 @@ class EmmaPolicy(pl.LightningModule):
                 self.hparams.num_warmup_steps,  # type: ignore[union-attr]
             )
             scheduler = get_linear_schedule_with_warmup(
-                optimizer, num_training_steps, num_warmup_steps
+                optimizer, num_training_steps=num_training_steps, num_warmup_steps=num_warmup_steps
             )
         else:
             raise ValueError("Invalid optimizer option")

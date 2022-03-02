@@ -155,15 +155,15 @@ class BoxModeConverter:
 
     def _convert_xyxy_abs_to_xywh_abs(self, box: torch.Tensor) -> torch.Tensor:
         """Convert XYXY_ABS to XYWH_ABS."""
-        box[:, 2] += box[:, 0]
-        box[:, 3] += box[:, 1]
+        box[:, 2] -= box[:, 0]
+        box[:, 3] -= box[:, 1]
 
         return box
 
     def _convert_xywh_abs_to_xyxy_abs(self, box: torch.Tensor) -> torch.Tensor:
         """Convert XYWH_ABS to XYXY_ABS."""
-        box[:, 2] -= box[:, 0]
-        box[:, 3] -= box[:, 1]
+        box[:, 2] += box[:, 0]
+        box[:, 3] += box[:, 1]
 
         return box
 

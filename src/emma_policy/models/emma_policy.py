@@ -8,7 +8,7 @@ from torch.optim import AdamW
 from transformers import AutoConfig, get_linear_schedule_with_warmup
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
-from emma_policy.datamodules.pretrain_instances import TASK2IDX
+from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
 from emma_policy.models.seq_emma import EmmaForConditionalGeneration
 
@@ -163,7 +163,7 @@ class EmmaPolicy(pl.LightningModule):
         loss_tasks = self.loss_fn(logits.view(-1, logits.shape[-1]), targets)
         loss_tasks = loss_tasks.view(logits.shape[0], -1)
 
-        for task, task_idx in TASK2IDX.items():
+        for task_idx, task in enumerate(Task):
             data_indices = (batch.task == task_idx).view(-1)
             if torch.any(data_indices):
                 task_losses = loss_tasks[data_indices]

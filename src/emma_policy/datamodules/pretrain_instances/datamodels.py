@@ -21,8 +21,11 @@ class Task(Enum):
     # goal_prediction = "Goal prediction for an action trajectory"
     vtm = "Video-Text Matching"
 
+    @classmethod
+    def get_index(cls, task: Any) -> int:
+        """Get task index."""
+        return list(cls).index(task)
 
-TASK2IDX = {task: idx for idx, task in enumerate(Task)}
 
 TASK_TEMPLATES_MAP: Mapping[Task, list[str]] = MappingProxyType(
     {

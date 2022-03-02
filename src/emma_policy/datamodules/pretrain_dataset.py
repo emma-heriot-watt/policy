@@ -10,7 +10,7 @@ from transformers import PreTrainedTokenizer
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
 from emma_policy.datamodules.pretrain_instances import PretrainInstance, Task
-from emma_policy.datamodules.pretrain_instances.datamodels import TASK2IDX, TASK_TEMPLATES_MAP
+from emma_policy.datamodules.pretrain_instances.datamodels import TASK_TEMPLATES_MAP
 from emma_policy.utils import get_logger
 from emma_policy.utils.boxes import Boxes, BoxMode, pairwise_iou
 
@@ -174,7 +174,8 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         visual_features = self.load_visual_features(instance)
 
         decoder_attention_mask = target_encoding.attention_mask
-        task = torch.tensor([TASK2IDX[Task.mlm]])
+        task = torch.tensor([Task.get_index(Task.mlm)])
+
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
@@ -249,7 +250,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
 
         visual_features = self.load_visual_features(instance)
         decoder_attention_mask = target_encoding.attention_mask
-        task = torch.tensor([TASK2IDX[Task.itm]])
+        task = torch.tensor([Task.get_index(Task.itm)])
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
@@ -318,7 +319,8 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             mapped_region_index
         ].reshape((1, -1))
         decoder_attention_mask = torch.ones(target_input_ids.shape, dtype=torch.int64)
-        task = torch.tensor([TASK2IDX[Task.visual_grounding]]).repeat(target_input_ids.shape[0])
+        task = torch.tensor([Task.get_index(Task.visual_grounding)])
+
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
@@ -351,7 +353,8 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         visual_features = self.load_visual_features(instance=instance)
 
         decoder_attention_mask = target_encoding.attention_mask
-        task = torch.tensor([TASK2IDX[Task.captioning]])
+        task = torch.tensor([Task.get_index(Task.captioning)])
+
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
@@ -385,7 +388,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         visual_features = self.load_visual_features(instance)
 
         decoder_attention_mask = target_encoding.attention_mask
-        task = torch.tensor([TASK2IDX[Task.vqa]])
+        task = torch.tensor([Task.get_index(Task.vqa)])
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),

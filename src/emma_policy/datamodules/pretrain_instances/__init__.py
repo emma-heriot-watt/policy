@@ -2,7 +2,6 @@ from emma_policy.datamodules.pretrain_instances.convert_to_pretrain_instances im
     convert_instance_to_pretrain_instances,
 )
 from emma_policy.datamodules.pretrain_instances.datamodels import (
-    TASK2IDX,
     TASK_TEMPLATES_MAP,
     PretrainInstance,
     Task,

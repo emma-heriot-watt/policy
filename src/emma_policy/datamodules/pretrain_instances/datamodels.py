@@ -22,6 +22,8 @@ class Task(Enum):
     vtm = "Video-Text Matching"
 
 
+TASK2IDX = {task: idx for idx, task in enumerate(Task)}
+
 TASK_TEMPLATES_MAP: Mapping[Task, list[str]] = MappingProxyType(
     {
         Task.mlm: [

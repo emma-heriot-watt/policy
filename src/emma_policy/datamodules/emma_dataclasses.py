@@ -35,6 +35,7 @@ class EmmaDatasetItem:
     scene_features: torch.Tensor
     scene_frame_ids: torch.Tensor
     visual_token_ids: torch.Tensor
+    task: torch.Tensor
 
 
 @dataclass
@@ -56,24 +57,12 @@ class EmmaDatasetPadding:
     scene_features: int = 0
     scene_frame_ids: int = 0
     visual_token_ids: int = 1
+    task: int = -1
 
 
 @dataclass
-class EmmaDatasetBatch:
+class EmmaDatasetBatch(EmmaDatasetItem):
     """Output for the dataset reader."""
 
     attention_mask: torch.Tensor
     global_attention_mask: torch.Tensor
-    input_token_ids: torch.Tensor
-    text_attention_mask: torch.Tensor
-    target_token_ids: torch.Tensor
-    decoder_attention_mask: torch.Tensor
-    object_attention_mask: torch.Tensor
-    object_coordinates: torch.Tensor
-    object_features: torch.Tensor
-    object_frame_ids: torch.Tensor
-    scene_attention_mask: torch.Tensor
-    scene_coordinates: torch.Tensor
-    scene_features: torch.Tensor
-    scene_frame_ids: torch.Tensor
-    visual_token_ids: torch.Tensor

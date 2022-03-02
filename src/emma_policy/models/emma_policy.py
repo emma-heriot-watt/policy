@@ -1,11 +1,14 @@
 from typing import Any, Union
 
 import pytorch_lightning as pl
+import torch
 from overrides import overrides
+from torch.nn import CrossEntropyLoss
 from torch.optim import AdamW
 from transformers import AutoConfig, get_linear_schedule_with_warmup
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
+from emma_policy.datamodules.pretrain_instances import TASK2IDX
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
 from emma_policy.models.seq_emma import EmmaForConditionalGeneration
 
@@ -18,6 +21,7 @@ class EmmaPolicy(pl.LightningModule):
 
         config = AutoConfig.from_pretrained(model_name)
         self.emma = EmmaForConditionalGeneration(config)
+        self.loss_fn = CrossEntropyLoss(reduction="none")
 
         self.save_hyperparameters()
 
@@ -154,5 +158,16 @@ class EmmaPolicy(pl.LightningModule):
         )
 
         self.log("valid_loss", output.loss)
+        logits = output.logits
+        targets = batch.target_token_ids.view(-1)  # noqa: WPS204
+        loss_tasks = self.loss_fn(logits.view(-1, logits.shape[-1]), targets)
+        loss_tasks = loss_tasks.view(logits.shape[0], -1)
 
+        for task, task_idx in TASK2IDX.items():
+            data_indices = (batch.task == task_idx).view(-1)
+            if torch.any(data_indices):
+                task_losses = loss_tasks[data_indices]
+                nsum = torch.sum(batch.target_token_ids[data_indices] > -1)
+                avg_task_loss = task_losses.sum() / nsum
+                self.log(f"valid_{task}_loss", avg_task_loss)
         return output

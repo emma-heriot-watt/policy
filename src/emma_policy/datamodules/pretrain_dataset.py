@@ -10,7 +10,7 @@ from transformers import PreTrainedTokenizer
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
 from emma_policy.datamodules.pretrain_instances import PretrainInstance, Task
-from emma_policy.datamodules.pretrain_instances.datamodels import TASK_TEMPLATES_MAP
+from emma_policy.datamodules.pretrain_instances.datamodels import TASK2IDX, TASK_TEMPLATES_MAP
 from emma_policy.utils import get_logger
 from emma_policy.utils.boxes import Boxes, BoxMode, pairwise_iou
 
@@ -174,6 +174,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         visual_features = self.load_visual_features(instance)
 
         decoder_attention_mask = target_encoding.attention_mask
+        task = torch.tensor([TASK2IDX[Task.mlm]])
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
@@ -188,6 +189,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             scene_features=visual_features.scene_features,
             scene_frame_ids=visual_features.scene_frame_ids,
             visual_token_ids=visual_features.visual_token_ids,
+            task=task,
         )
 
     def itm_negative_candidate(
@@ -247,6 +249,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
 
         visual_features = self.load_visual_features(instance)
         decoder_attention_mask = target_encoding.attention_mask
+        task = torch.tensor([TASK2IDX[Task.itm]])
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
@@ -262,6 +265,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             scene_features=visual_features.scene_features,
             scene_frame_ids=visual_features.scene_frame_ids,
             visual_token_ids=visual_features.visual_token_ids,
+            task=task,
         )
 
     def visual_grounding(self, instance: PretrainInstance) -> EmmaDatasetItem:
@@ -314,7 +318,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             mapped_region_index
         ].reshape((1, -1))
         decoder_attention_mask = torch.ones(target_input_ids.shape, dtype=torch.int64)
-
+        task = torch.tensor([TASK2IDX[Task.visual_grounding]]).repeat(target_input_ids.shape[0])
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
@@ -329,6 +333,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             object_attention_mask=visual_features.object_attention_mask,
             scene_frame_ids=visual_features.scene_frame_ids,
             object_frame_ids=visual_features.object_attention_mask,
+            task=task,
         )
 
     def dense_captioning(self, instance: PretrainInstance) -> EmmaDatasetItem:
@@ -346,6 +351,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         visual_features = self.load_visual_features(instance=instance)
 
         decoder_attention_mask = target_encoding.attention_mask
+        task = torch.tensor([TASK2IDX[Task.captioning]])
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
@@ -360,6 +366,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             scene_features=visual_features.scene_features,
             scene_frame_ids=visual_features.scene_frame_ids,
             visual_token_ids=visual_features.visual_token_ids,
+            task=task,
         )
 
     def vqa(self, instance: PretrainInstance) -> EmmaDatasetItem:
@@ -378,6 +385,8 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         visual_features = self.load_visual_features(instance)
 
         decoder_attention_mask = target_encoding.attention_mask
+        task = torch.tensor([TASK2IDX[Task.vqa]])
+
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
@@ -392,6 +401,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             scene_features=visual_features.scene_features,
             scene_frame_ids=visual_features.scene_frame_ids,
             visual_token_ids=visual_features.visual_token_ids,
+            task=task,
         )
 
     def instruction_prediction(self, instance: PretrainInstance) -> EmmaDatasetItem:

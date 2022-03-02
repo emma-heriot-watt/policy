@@ -34,7 +34,7 @@ def apply_token_masking(input_text: str, mlm_probability: float = 0.3) -> tuple[
     return " ".join(tokens), input_text
 
 
-class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
+class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
     """Pretrain dataset reader for the EMMA model.
 
     Each task in the `self.task_process_map` corresponds to a method which will take the instance
@@ -53,7 +53,9 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         self.mlm_probability = mlm_probability
         self.max_frames = max_frames
 
-        self.task_process_map: dict[Task, Callable[[PretrainInstance], EmmaDatasetItem]] = {
+        self.task_process_map: dict[
+            Task, Callable[[PretrainInstance], Optional[EmmaDatasetItem]]
+        ] = {
             Task.mlm: self.mlm,
             Task.itm: self.itm,
             Task.visual_grounding: self.visual_grounding,
@@ -69,7 +71,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         """Return the total number of instances within the database."""
         return len(self.db)
 
-    def __getitem__(self, index: int) -> EmmaDatasetItem:
+    def __getitem__(self, index: int) -> Optional[EmmaDatasetItem]:
         """Get a single instance from the dataset."""
         with self.db:
             instance_str = self.db[index]
@@ -280,7 +282,7 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             task=task,
         )
 
-    def visual_grounding(self, instance: PretrainInstance) -> EmmaDatasetItem:
+    def visual_grounding(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
         """Process the instance for the Visual Grounding task."""
         visual_features = self.load_visual_features(instance=instance)
         features_path = instance.features_path
@@ -289,9 +291,8 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         w, h = feature_dicts["width"], feature_dicts["height"]
 
         if instance.regions is None:
-            # TODO: This should be addressed. For now the visual grounding task is skipped
             raise AssertionError(
-                "Regions for this instance should exist? Make sure this instance is connected to the right task."
+                "Regions for this instance must exist. Make sure this instance is connected to the right task!"
             )
 
         target_region = instance.regions
@@ -312,13 +313,11 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             gt_bbox=gt_bbox, object_coordinates=visual_features.object_coordinates, threshold=0.5
         )
 
-        if not gt_flag[0]:  # if the region considered does not posses a extracted region
-            # TODO: This should be addressed. For now the visual grounding task is skipped
-            raise AssertionError(
-                "The region is not considered to be an extracted region? The pretrain instance parser cannot return nothing so consider removing this instance from the set."
-            )
+        if not gt_flag[0]:
+            # if there are no predicted bounding boxes that match the gold region,
+            # we ignore this example for training.
+            return None
 
-        # if the region considered posses a extracted region
         mapped_region_index = matched_index[0]
         source_text = target_region.caption
         source_text = random.choice(TASK_TEMPLATES_MAP[Task.visual_grounding]).format(

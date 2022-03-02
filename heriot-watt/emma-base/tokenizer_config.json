@@ -163,5 +163,5 @@
 		"<vis_token_99>",
 		"<vis_token_100>"
 	],
-	"tokenizer_class": "LEDTokenizer"
+	"tokenizer_class": "EmmaTokenizer"
 }

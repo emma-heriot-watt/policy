@@ -36,3 +36,4 @@ class EmmaTokenizer(LEDTokenizer):
 
     pretrained_vocab_files_map = PRETRAINED_VOCAB_FILES_MAP
     max_model_input_sizes = PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES  # type: ignore[assignment]
+    truncation_side = "left"

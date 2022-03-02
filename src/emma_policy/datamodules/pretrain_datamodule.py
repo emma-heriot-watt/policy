@@ -35,6 +35,8 @@ class EmmaPretrainDataModule(LightningDataModule):
         coco_split_path: Union[str, Path] = DEFAULT_COCO_SPLITS_PATH,
         model_name: str = "heriot-watt/emma-base",
         mlm_probability: float = 0.3,
+        max_lang_tokens: Optional[int] = None,
+        max_frames: Optional[int] = None,
         enabled_tasks: Optional[dict[str, defaultdict[str, bool]]] = None,
     ) -> None:
 
@@ -83,6 +85,8 @@ class EmmaPretrainDataModule(LightningDataModule):
         self._num_workers = num_workers
         self._coco_ref_images = load_ref_coco_images(coco_split_path)
         self.load_valid_data = load_valid_data
+        self.max_lang_tokens = max_lang_tokens
+        self.max_frames = max_frames
 
     def prepare_data(self) -> None:
         """Prepare the DatasetDb for the pretraining.
@@ -100,10 +104,14 @@ class EmmaPretrainDataModule(LightningDataModule):
     def setup(self, stage: Optional[str] = None) -> None:
         """Setup datasets for the dataloaders."""
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        if self.max_lang_tokens:
+            self.tokenizer.model_max_length = self.max_lang_tokens
+
         self._train_dataset = EmmaPretrainDataset(
             dataset_db_path=self._pretrain_train_db_file,
             tokenizer=self.tokenizer,
             mlm_probability=self.mlm_probability,
+            max_frames=self.max_frames,
         )
 
         if self.load_valid_data:
@@ -111,6 +119,7 @@ class EmmaPretrainDataModule(LightningDataModule):
                 dataset_db_path=self._pretrain_valid_db_file,
                 tokenizer=self.tokenizer,
                 mlm_probability=self.mlm_probability,
+                max_frames=self.max_frames,
             )
 
     def train_dataloader(self) -> DataLoader[Optional[EmmaDatasetItem]]:

@@ -8,6 +8,8 @@ force_prepare_data: True
 batch_size: 2
 load_valid_data: True
 num_workers: 4
+max_lang_tokens: 256
+max_frames: 200
 enabled_tasks:
   image:
     mlm: True

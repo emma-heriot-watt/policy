@@ -63,3 +63,19 @@ def test_tokenize_input(tokenizer: EmmaTokenizer) -> None:
         .replace(tokenizer.eos_token, "")
     )
     assert phrase == conv_phrase
+
+
+@pytest.mark.parametrize("tokenizer", load_tokenizers())
+@parametrize("max_length", [5])
+def test_tokenize_and_truncate_input(tokenizer: EmmaTokenizer, max_length: int) -> None:
+    phrase = "The dog is eating an icecream."
+    tokenizer.model_max_length = max_length
+    encodings_full = tokenizer.encode_plus(
+        phrase, return_tensors="np", truncation=False
+    ).input_ids[0]
+    truncation_indices = [0] + list(range(-max_length + 1, 0))
+
+    encodings_truncated = tokenizer.encode_plus(
+        phrase, return_tensors="np", truncation=True
+    ).input_ids[0]
+    assert all(encodings_truncated == encodings_full[truncation_indices])

@@ -46,10 +46,12 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         dataset_db_path: Path,
         tokenizer: PreTrainedTokenizer,
         mlm_probability: float = 0.3,
+        max_frames: Optional[int] = None,
     ) -> None:
         self.db = DatasetDb(dataset_db_path)
         self.tokenizer = tokenizer
         self.mlm_probability = mlm_probability
+        self.max_frames = max_frames
 
         self.task_process_map: dict[Task, Callable[[PretrainInstance], EmmaDatasetItem]] = {
             Task.mlm: self.mlm,
@@ -85,6 +87,9 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             ]
         elif instance.modality == 3:
             feature_dicts = [torch.load(features_path)]
+
+        if self.max_frames:
+            feature_dicts = feature_dicts[-self.max_frames :]
 
         object_features = []
         object_coordinates = []
@@ -168,8 +173,12 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         # formats the masked caption using the corresponding task template
         source_text = random.choice(TASK_TEMPLATES_MAP[Task.mlm]).format(caption=source_text)
 
-        input_encoding = self.tokenizer.encode_plus(source_text, return_tensors="pt")
-        target_encoding = self.tokenizer.encode_plus(target_text, return_tensors="pt")
+        input_encoding = self.tokenizer.encode_plus(
+            source_text, return_tensors="pt", truncation=True
+        )
+        target_encoding = self.tokenizer.encode_plus(
+            target_text, return_tensors="pt", truncation=True
+        )
 
         visual_features = self.load_visual_features(instance)
 
@@ -245,7 +254,9 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             statement=input_text.strip(".")
         )
 
-        input_encoding = self.tokenizer.encode_plus(input_text, return_tensors="pt")
+        input_encoding = self.tokenizer.encode_plus(
+            input_text, return_tensors="pt", truncation=True
+        )
         target_encoding = self.tokenizer.encode_plus(target_text, return_tensors="pt")
 
         visual_features = self.load_visual_features(instance)
@@ -314,7 +325,9 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             caption=source_text
         )
 
-        input_encoding = self.tokenizer.encode_plus(source_text, return_tensors="pt")
+        input_encoding = self.tokenizer.encode_plus(
+            source_text, return_tensors="pt", truncation=True
+        )
         target_input_ids = visual_features.visual_token_ids.squeeze(0)[
             mapped_region_index
         ].reshape((1, -1))
@@ -347,8 +360,12 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
         source_text = random.choice(TASK_TEMPLATES_MAP[Task.captioning])
         target_text = instance.caption.text
 
-        input_encoding = self.tokenizer.encode_plus(source_text, return_tensors="pt")
-        target_encoding = self.tokenizer.encode_plus(target_text, return_tensors="pt")
+        input_encoding = self.tokenizer.encode_plus(
+            source_text, return_tensors="pt", truncation=True
+        )
+        target_encoding = self.tokenizer.encode_plus(
+            target_text, return_tensors="pt", truncation=True
+        )
 
         visual_features = self.load_visual_features(instance=instance)
 
@@ -382,8 +399,12 @@ class EmmaPretrainDataset(Dataset[EmmaDatasetItem]):
             question=input_text,
         )
 
-        input_encoding = self.tokenizer.encode_plus(source_text, return_tensors="pt")
-        target_encoding = self.tokenizer.encode_plus(target_text, return_tensors="pt")
+        input_encoding = self.tokenizer.encode_plus(
+            source_text, return_tensors="pt", truncation=True
+        )
+        target_encoding = self.tokenizer.encode_plus(
+            target_text, return_tensors="pt", truncation=True
+        )
 
         visual_features = self.load_visual_features(instance)
 

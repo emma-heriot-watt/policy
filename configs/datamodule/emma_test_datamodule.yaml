@@ -16,8 +16,8 @@ enabled_tasks:
     itm: True
     visual_grounding: False
     dense_captioning: False
-    captioning: True
-    vqa: True
+    captioning: False
+    vqa: False
     instruction_prediction: False
     action_execution: False
     vtm: False

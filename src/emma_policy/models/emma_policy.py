@@ -11,6 +11,7 @@ from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
 from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
 from emma_policy.models.seq_emma import EmmaForConditionalGeneration
+from emma_policy.utils.task_loss import TaskLoss
 
 
 class EmmaPolicy(pl.LightningModule):
@@ -24,6 +25,7 @@ class EmmaPolicy(pl.LightningModule):
         self.loss_fn = CrossEntropyLoss(reduction="none")
 
         self.save_hyperparameters()
+        self.task_metrics = torch.nn.ModuleList([TaskLoss() for _ in Task])
 
         self.trainer: pl.Trainer  # type: ignore[assignment]
 
@@ -157,17 +159,30 @@ class EmmaPolicy(pl.LightningModule):
             decoder_attention_mask=batch.decoder_attention_mask,
         )
 
-        self.log("valid_loss", output.loss)
+        self.log("valid_loss", output.loss, sync_dist=True)
         logits = output.logits
         targets = batch.target_token_ids.view(-1)  # noqa: WPS204
         loss_tasks = self.loss_fn(logits.view(-1, logits.shape[-1]), targets)
-        loss_tasks = loss_tasks.view(logits.shape[0], -1)
-
-        for task_idx, task in enumerate(Task):
-            data_indices = (batch.task == task_idx).view(-1)
-            if torch.any(data_indices):
-                task_losses = loss_tasks[data_indices]
-                nsum = torch.sum(batch.target_token_ids[data_indices] > -1)
-                avg_task_loss = task_losses.sum() / nsum
-                self.log(f"valid_{task}_loss", avg_task_loss)
+        output.losses = loss_tasks.view(logits.shape[0], -1)
+        output.tasks = batch.task
+        output.targets = batch.target_token_ids
         return output
+
+    @overrides(check_signature=False)
+    def validation_step_end(
+        self,
+        output: EmmaSeq2SeqLMOutput,
+    ) -> EmmaSeq2SeqLMOutput:
+        """Update the task losses."""
+        for task_idx, _ in enumerate(Task):
+            data_indices = (output.tasks == task_idx).view(-1)  # type: ignore[union-attr]
+            self.task_metrics[task_idx](output.losses[data_indices], output.targets[data_indices])  # type: ignore[index]
+
+        return output
+
+    @overrides(check_signature=False)
+    def validation_epoch_end(self, output: EmmaSeq2SeqLMOutput) -> None:
+        """Log task metrics at the epoch end."""
+        # this will compute and reset the metric automatically at the epoch end
+        for task_idx, task in enumerate(Task):
+            self.log(f"valid_loss_{task}", self.task_metrics[task_idx])

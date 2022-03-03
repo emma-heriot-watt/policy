@@ -120,3 +120,6 @@ class EmmaSeq2SeqLMOutput(ModelOutput):
     encoder_hidden_states: Optional[tuple[torch.FloatTensor, ...]] = None
     encoder_attentions: Optional[tuple[torch.FloatTensor, ...]] = None
     encoder_global_attentions: Optional[tuple[torch.FloatTensor, ...]] = None
+    losses: Optional[torch.FloatTensor] = None
+    tasks: Optional[torch.LongTensor] = None
+    targets: Optional[torch.LongTensor] = None

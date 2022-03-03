@@ -4,10 +4,10 @@ model_name: heriot-watt/emma-small
 instances_db_file: ${work_dir}/storage/db/instances.db
 pretrain_train_db_file: ${work_dir}/storage/db/pretrain_train.db
 pretrain_valid_db_file: ${work_dir}/storage/db/pretrain_valid.db
-force_prepare_data: True
-batch_size: 2
+force_prepare_data: False
+batch_size: 64
 load_valid_data: True
-num_workers: 6
+num_workers: 12
 max_lang_tokens: 256
 max_frames: 200
 enabled_tasks:
@@ -16,8 +16,8 @@ enabled_tasks:
     itm: True
     visual_grounding: False
     dense_captioning: False
-    captioning: True
-    vqa: True
+    captioning: False
+    vqa: False
     instruction_prediction: False
     action_execution: False
     vtm: False

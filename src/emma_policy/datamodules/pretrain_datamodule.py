@@ -132,6 +132,7 @@ class EmmaPretrainDataModule(LightningDataModule):
             num_workers=self._num_workers,
             collate_fn=collate_fn,
             shuffle=True,
+            pin_memory=True,
         )
 
     def val_dataloader(self) -> DataLoader[Optional[EmmaDatasetItem]]:

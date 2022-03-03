@@ -1,8 +1,10 @@
 _target_: emma_policy.models.emma_policy.EmmaPolicy
 
 model_name: heriot-watt/emma-small
-lr: 0.001
-weight_decay: 0.0005
+# default hyperparameters for VL-Bart-base COCOVG_pretrain
+lr: 0.0001
+weight_decay: 0.01
 optimizer: adamw
 lr_scheduler: linear_with_warmup
-num_warmup_steps: 0.1
+num_warmup_steps: 0.05
+precision: 16

@@ -350,9 +350,70 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
             task=task,
         )
 
-    def dense_captioning(self, instance: PretrainInstance) -> EmmaDatasetItem:
+    def dense_captioning(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
         """Process the instance for the dense captioning task."""
-        raise NotImplementedError
+        visual_features = self.load_visual_features(instance=instance)
+        features_path = instance.features_path
+        feature_dicts = torch.load(features_path)
+
+        w, h = feature_dicts["width"], feature_dicts["height"]
+
+        if instance.regions is None:
+            raise AssertionError(
+                "Regions for this instance must exist. Make sure this instance is connected to the right task!"
+            )
+
+        target_region = instance.regions
+        region_coord = BoxMode.convert(
+            list(target_region.bbox), from_mode=BoxMode.XYWH_ABS, to_mode=BoxMode.XYXY_ABS
+        )
+
+        gt_bbox = torch.tensor(
+            [
+                region_coord[0] / w,
+                region_coord[1] / h,
+                region_coord[2] / w,
+                region_coord[3] / h,
+            ]
+        )
+
+        matched_index, gt_flag = self.best_match_feature(
+            gt_bbox=gt_bbox, object_coordinates=visual_features.object_coordinates, threshold=0.5
+        )
+
+        if not gt_flag[0]:  # if the region considered does not posses a extracted region
+            return None
+
+        # if the region considered posses a extracted region
+        mapped_region_index = matched_index[0]
+        source_caption = self.tokenizer.decode(
+            visual_features.visual_token_ids.squeeze(0)[mapped_region_index]
+        )
+
+        source_text = random.choice(TASK_TEMPLATES_MAP[Task.dense_captioning]).format(
+            region=source_caption
+        )
+
+        input_encoding = self.tokenizer.encode_plus(source_text, return_tensors="pt")
+        target_text = target_region.caption
+        target_encoding = self.tokenizer.encode_plus(target_text, return_tensors="pt")
+        task = torch.tensor([Task.get_index(Task.dense_captioning)])
+        return EmmaDatasetItem(
+            input_token_ids=input_encoding.input_ids.squeeze(0),
+            target_token_ids=target_encoding.input_ids.squeeze(0),
+            scene_features=visual_features.scene_features,
+            scene_coordinates=visual_features.scene_coordinates,
+            object_features=visual_features.object_features,
+            object_coordinates=visual_features.object_coordinates,
+            visual_token_ids=visual_features.visual_token_ids,
+            scene_attention_mask=visual_features.scene_attention_mask,
+            object_attention_mask=visual_features.object_attention_mask,
+            text_attention_mask=input_encoding.attention_mask.squeeze(0),
+            decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
+            scene_frame_ids=visual_features.scene_frame_ids,
+            object_frame_ids=visual_features.object_attention_mask,
+            task=task,
+        )
 
     def captioning(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the captioning task."""

@@ -31,6 +31,7 @@ class EmmaPretrainDataModule(LightningDataModule):
         force_prepare_data: bool = False,
         load_valid_data: bool = False,
         num_workers: int = 0,
+        prepare_data_num_workers: int = 0,
         batch_size: int = 8,
         coco_split_path: Union[str, Path] = DEFAULT_COCO_SPLITS_PATH,
         model_name: str = "heriot-watt/emma-base",
@@ -80,6 +81,7 @@ class EmmaPretrainDataModule(LightningDataModule):
             )
 
         self._force_prepare_data = force_prepare_data
+        self._prepare_data_num_workers = prepare_data_num_workers
 
         self._batch_size = batch_size
         self._num_workers = num_workers
@@ -154,7 +156,7 @@ class EmmaPretrainDataModule(LightningDataModule):
             train_db_file_path=self._pretrain_train_db_file,
             valid_db_file_path=self._pretrain_valid_db_file if self.load_valid_data else None,
             loader_batch_size=loader_batch_size,
-            loader_num_workers=self._num_workers,
+            loader_num_workers=self._prepare_data_num_workers,
             enabled_tasks=self.enabled_tasks,
         )
         preparer.run()

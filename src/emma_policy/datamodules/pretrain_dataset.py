@@ -47,11 +47,13 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
         tokenizer: PreTrainedTokenizer,
         mlm_probability: float = 0.3,
         max_frames: Optional[int] = None,
+        match_threshold: float = 0.5,
     ) -> None:
         self.db = DatasetDb(dataset_db_path)
         self.tokenizer = tokenizer
         self.mlm_probability = mlm_probability
         self.max_frames = max_frames
+        self.match_threshold = match_threshold
 
         self.task_process_map: dict[
             Task, Callable[[PretrainInstance], Optional[EmmaDatasetItem]]
@@ -115,7 +117,8 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
             curr_vis_tokens = torch.tensor(
                 self.tokenizer.convert_tokens_to_ids(
                     [f"<vis_token_{idx+1}>" for idx in range(feature_count)]
-                )
+                ),
+                dtype=torch.long,
             )
 
             vis_tokens.append(curr_vis_tokens)
@@ -124,10 +127,10 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
                 curr_vis_tokens.new_full(curr_vis_tokens.shape, fill_value=frame_idx + 1)
             )
 
-            object_attention_mask.append(torch.ones_like(curr_vis_tokens))
+            object_attention_mask.append(torch.ones_like(curr_vis_tokens, dtype=torch.bool))
 
         num_frames = len(scene_features)
-        scene_attention_mask = torch.ones(num_frames)
+        scene_attention_mask = torch.ones(num_frames, dtype=torch.bool)
         scene_coordinates = torch.tensor([0, 0, 1.0, 1.0]).repeat(num_frames, 1)
         scene_frame_ids = torch.arange(1, num_frames + 1)
 
@@ -153,10 +156,11 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
         extract_box = Boxes(object_coordinates)
         ious = pairwise_iou(gt_box, extract_box)
 
-        matched_value = torch.max(ious, dim=1).values
+        match_result = torch.max(ious, dim=1)
 
         # index of extracted bbox coordinates mapped to each bbox. tensor of [num_gt_bbox]. Should be used with gt_flags.
-        matched_index = torch.max(ious, dim=1).indices
+        matched_value = match_result.values
+        matched_index = match_result.indices
 
         # keep track whether ground truth bbox is mapped to a feature
         gt_flag = matched_value > threshold
@@ -185,7 +189,7 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
         visual_features = self.load_visual_features(instance)
 
         decoder_attention_mask = target_encoding.attention_mask
-        task = torch.tensor([Task.get_index(Task.mlm)])
+        task = torch.tensor([Task.get_index(Task.mlm)], dtype=torch.long)
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
@@ -263,7 +267,7 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
 
         visual_features = self.load_visual_features(instance)
         decoder_attention_mask = target_encoding.attention_mask
-        task = torch.tensor([Task.get_index(Task.itm)])
+        task = torch.tensor([Task.get_index(Task.itm)], dtype=torch.long)
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
@@ -310,7 +314,9 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
         )
 
         matched_index, gt_flag = self.best_match_feature(
-            gt_bbox=gt_bbox, object_coordinates=visual_features.object_coordinates, threshold=0.5
+            gt_bbox=gt_bbox,
+            object_coordinates=visual_features.object_coordinates,
+            threshold=self.match_threshold,
         )
 
         if not gt_flag[0]:
@@ -330,8 +336,8 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
         target_input_ids = visual_features.visual_token_ids.squeeze(0)[
             mapped_region_index
         ].reshape((1, -1))
-        decoder_attention_mask = torch.ones(target_input_ids.shape, dtype=torch.int64)
-        task = torch.tensor([Task.get_index(Task.visual_grounding)])
+        decoder_attention_mask = torch.ones(target_input_ids.shape, dtype=torch.bool)
+        task = torch.tensor([Task.get_index(Task.visual_grounding)], dtype=torch.long)
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
@@ -378,7 +384,9 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
         )
 
         matched_index, gt_flag = self.best_match_feature(
-            gt_bbox=gt_bbox, object_coordinates=visual_features.object_coordinates, threshold=0.5
+            gt_bbox=gt_bbox,
+            object_coordinates=visual_features.object_coordinates,
+            threshold=self.match_threshold,
         )
 
         if not gt_flag[0]:  # if the region considered does not posses a extracted region
@@ -397,7 +405,8 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
         input_encoding = self.tokenizer.encode_plus(source_text, return_tensors="pt")
         target_text = target_region.caption
         target_encoding = self.tokenizer.encode_plus(target_text, return_tensors="pt")
-        task = torch.tensor([Task.get_index(Task.dense_captioning)])
+        task = torch.tensor([Task.get_index(Task.dense_captioning)], dtype=torch.long)
+
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             target_token_ids=target_encoding.input_ids.squeeze(0),
@@ -430,7 +439,7 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
         visual_features = self.load_visual_features(instance=instance)
 
         decoder_attention_mask = target_encoding.attention_mask
-        task = torch.tensor([Task.get_index(Task.captioning)])
+        task = torch.tensor([Task.get_index(Task.captioning)], dtype=torch.long)
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
@@ -469,7 +478,7 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
         visual_features = self.load_visual_features(instance)
 
         decoder_attention_mask = target_encoding.attention_mask
-        task = torch.tensor([Task.get_index(Task.vqa)])
+        task = torch.tensor([Task.get_index(Task.vqa)], dtype=torch.long)
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),

@@ -1,4 +1,5 @@
 from emma_policy.datamodules.pretrain_instances.convert_to_pretrain_instances import (
+    PretrainInstanceCreator,
     convert_instance_to_pretrain_instances,
 )
 from emma_policy.datamodules.pretrain_instances.datamodels import (

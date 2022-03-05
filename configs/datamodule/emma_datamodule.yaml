@@ -5,11 +5,13 @@ instances_db_file: ${work_dir}/storage/db/instances.db
 pretrain_train_db_file: ${work_dir}/storage/db/pretrain_train.db
 pretrain_valid_db_file: ${work_dir}/storage/db/pretrain_valid.db
 force_prepare_data: False
-batch_size: 64
+batch_size: 100
 load_valid_data: True
 num_workers: 12
-max_lang_tokens: 256
+prepare_data_num_workers: 48
+max_lang_tokens: 20
 max_frames: 200
+tokenizer_truncation_side: right
 enabled_tasks:
   image:
     mlm: True

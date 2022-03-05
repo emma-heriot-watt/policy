@@ -70,6 +70,7 @@ def test_tokenize_input(tokenizer: EmmaTokenizer) -> None:
 def test_tokenize_and_truncate_input(tokenizer: EmmaTokenizer, max_length: int) -> None:
     phrase = "The dog is eating an icecream."
     tokenizer.model_max_length = max_length
+    tokenizer.truncation_side = "left"
     encodings_full = tokenizer.encode_plus(
         phrase, return_tensors="np", truncation=False
     ).input_ids[0]

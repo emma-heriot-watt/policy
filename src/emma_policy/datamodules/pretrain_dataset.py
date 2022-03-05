@@ -173,7 +173,9 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
         if instance.caption is not None:
             input_text = instance.caption.text
         else:
-            input_text = "the monkey is eating a banana."
+            raise AssertionError(
+                "Captions for this instance must exist. Make sure this instance is connected to the right task!"
+            )
 
         source_text, target_text = apply_token_masking(input_text, self.mlm_probability)
         # formats the masked caption using the corresponding task template
@@ -247,12 +249,10 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
         if random.random() < 0.5:  # noqa: WPS459
             target_text = "false"
             img_names = set(instance.dataset.values())
-
-            n_samples = len(self.db)
-            rand_idx = random.randint(0, n_samples - 1)
+            rand_idx = int(len(self.db) * random.random())
             input_text = self.itm_negative_candidate(rand_idx, img_names)
             while input_text is None:
-                rand_idx = random.randint(0, n_samples - 1)
+                rand_idx = int(len(self.db) * random.random())
                 input_text = self.itm_negative_candidate(rand_idx, img_names)
 
         # formats the masked caption using the corresponding task template

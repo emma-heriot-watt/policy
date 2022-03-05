@@ -20,7 +20,7 @@ from emma_policy.datamodules.pretrain_instances import (
 DEFAULT_DATASET_DB_PATH = Settings().paths.databases.joinpath("instances.db")
 
 
-class EmmaPretrainDataModule(LightningDataModule):
+class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
     """DataModule to load data for the EMMA Pretraining Model."""
 
     def __init__(
@@ -38,6 +38,7 @@ class EmmaPretrainDataModule(LightningDataModule):
         mlm_probability: float = 0.3,
         max_lang_tokens: Optional[int] = None,
         max_frames: Optional[int] = None,
+        tokenizer_truncation_side: str = "right",
         enabled_tasks: Optional[dict[str, defaultdict[str, bool]]] = None,
     ) -> None:
 
@@ -89,6 +90,7 @@ class EmmaPretrainDataModule(LightningDataModule):
         self.load_valid_data = load_valid_data
         self.max_lang_tokens = max_lang_tokens
         self.max_frames = max_frames
+        self.tokenizer_truncation_side = tokenizer_truncation_side
 
     def prepare_data(self) -> None:
         """Prepare the DatasetDb for the pretraining.
@@ -106,6 +108,7 @@ class EmmaPretrainDataModule(LightningDataModule):
     def setup(self, stage: Optional[str] = None) -> None:
         """Setup datasets for the dataloaders."""
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self.tokenizer.truncation_side = self.tokenizer_truncation_side
         if self.max_lang_tokens:
             self.tokenizer.model_max_length = self.max_lang_tokens
 
@@ -148,7 +151,7 @@ class EmmaPretrainDataModule(LightningDataModule):
     def _prepare_pretrain_instances_db(self) -> None:
         loader_batch_size = 512
 
-        if self._num_workers > loader_batch_size:
+        if self._prepare_data_num_workers > loader_batch_size:
             raise AssertionError("Ensure the `num_workers` is less than the `loader_batch_size`")
 
         preparer = PreparePretrainInstancesDb(

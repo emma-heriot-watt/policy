@@ -66,7 +66,7 @@ class EmmaPolicy(pl.LightningModule):
         """Compute the number of total training and warmup steps."""
         if num_training_steps < 0:
             # less than 0 specifies to infer number of training steps
-            num_training_steps = self.num_training_steps  # type: ignore[assignment]
+            num_training_steps = self.num_training_steps()
         if isinstance(num_warmup_steps, float):
             # Convert float values to percentage of training steps to use as warmup
             num_warmup_steps *= num_training_steps
@@ -105,7 +105,7 @@ class EmmaPolicy(pl.LightningModule):
 
         if self.hparams.lr_scheduler == "linear_with_warmup":  # type: ignore[union-attr]
             num_training_steps, num_warmup_steps = self.compute_warmup(
-                self.num_training_steps(),
+                self.trainer.max_steps,
                 self.hparams.num_warmup_steps,  # type: ignore[union-attr]
             )
             scheduler = get_linear_schedule_with_warmup(

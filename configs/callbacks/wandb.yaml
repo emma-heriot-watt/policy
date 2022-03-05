@@ -12,5 +12,5 @@ upload_code_as_artifact:
   code_dir: ${work_dir}/src
 # upload_ckpts_as_artifact:
 #   _target_: src.callbacks.wandb.artifacts.UploadCheckpoints
-#   checkpoint_dir: "checkpoints/"
+#   checkpoint_dir: "${work_dir}/storage/model/checkpoints/"
 #   only_upload_best: True

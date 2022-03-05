@@ -10,10 +10,7 @@ from emma_datasets.db import DatasetDb, JsonStorage
 from torch.utils.data import DataLoader, IterableDataset
 
 from emma_policy.datamodules.pretrain_instances import convert_instance_to_pretrain_instances
-from emma_policy.datamodules.pretrain_instances.load_ref_coco_images import (
-    CocoRefImages,
-    is_train_instance,
-)
+from emma_policy.datamodules.pretrain_instances.load_ref_coco_images import is_train_instance
 
 
 class DatasetDbReaderReturn(NamedTuple):
@@ -33,7 +30,7 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
     def __init__(
         self,
         db_path: Path,
-        coco_ref_images: CocoRefImages,
+        coco_ref_images: set[str],
         enabled_tasks: Optional[dict[str, defaultdict[str, bool]]] = None,
     ) -> None:
         db = DatasetDb(db_path, readonly=True)
@@ -121,7 +118,7 @@ class PreparePretrainInstancesDb:
     def __init__(
         self,
         instances_db_file_path: Path,
-        coco_ref_images: CocoRefImages,
+        coco_ref_images: set[str],
         train_db_file_path: Path,
         valid_db_file_path: Optional[Path] = None,
         loader_batch_size: int = 48,

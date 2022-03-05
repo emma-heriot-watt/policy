@@ -8,7 +8,6 @@ from emma_policy.datamodules.pretrain_instances.datamodels import (
 )
 from emma_policy.datamodules.pretrain_instances.load_ref_coco_images import (
     DEFAULT_COCO_SPLITS_PATH,
-    CocoRefImages,
     is_train_instance,
     load_ref_coco_images,
 )

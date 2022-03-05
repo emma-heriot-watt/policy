@@ -15,19 +15,11 @@ from emma_policy.datamodules.pretrain_instances import (
 )
 
 
-@parametrize(
-    "coco_splits_path",
-    [
-        pytest.param(Path("storage/data/vl-t5-splits/"), id="full", marks=pytest.mark.slow),
-        pytest.param(Path("storage/fixtures/vl-t5-splits/", id="subset")),
-    ],
-)
-def test_load_coco_splits_images(coco_splits_path: Path) -> None:
-    train_valid = load_ref_coco_images(coco_splits_path)
+def test_load_coco_valid_ids() -> None:
+    coco_splits_path = Path("storage/constants/mscoco_resplit_val.json")
+    valid_ids = load_ref_coco_images(coco_splits_path)
 
-    assert train_valid.train
-
-    assert train_valid.valid
+    assert valid_ids
 
 
 @parametrize(

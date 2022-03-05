@@ -355,5 +355,6 @@ logs/
 # Ignoring storage folder
 storage/*
 !storage/fixtures/
+!storage/constants/
 
 # End of https://www.toptal.com/developers/gitignore/api/data,images,video

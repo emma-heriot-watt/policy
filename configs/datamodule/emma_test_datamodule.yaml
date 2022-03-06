@@ -7,7 +7,7 @@ pretrain_valid_db_file: ${work_dir}/storage/fixtures/pretrain_valid.db
 force_prepare_data: True
 batch_size: 2
 load_valid_data: True
-num_workers: 4
+num_workers: 0
 max_lang_tokens: 256
 max_frames: 200
 enabled_tasks:

@@ -166,23 +166,15 @@ class EmmaPolicy(pl.LightningModule):
         output.losses = loss_tasks.view(logits.shape[0], -1)
         output.tasks = batch.task
         output.targets = batch.target_token_ids
-        return output
 
-    @overrides(check_signature=False)
-    def validation_step_end(
-        self,
-        output: EmmaSeq2SeqLMOutput,
-    ) -> EmmaSeq2SeqLMOutput:
-        """Update the task losses."""
-        for task_idx, _ in enumerate(Task):
-            data_indices = (output.tasks == task_idx).view(-1)  # type: ignore[union-attr]
-            self.task_metrics[task_idx](output.losses[data_indices], output.targets[data_indices])  # type: ignore[index]
-
-        return output
-
-    @overrides(check_signature=False)
-    def validation_epoch_end(self, output: EmmaSeq2SeqLMOutput) -> None:
-        """Log task metrics at the epoch end."""
-        # this will compute and reset the metric automatically at the epoch end
+        # log task loss on epoch
         for task_idx, task in enumerate(Task):
-            self.log(f"valid_loss_{task}", self.task_metrics[task_idx])
+            data_indices = (output.tasks == task_idx).view(-1)
+            self.task_metrics[task_idx](output.losses[data_indices], output.targets[data_indices])
+            self.log(
+                f"valid_{task.name}_loss",
+                self.task_metrics[task_idx],
+                on_epoch=True,
+                on_step=False,
+            )
+        return output

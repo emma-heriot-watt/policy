@@ -94,7 +94,7 @@ class PretrainInstanceCreator:
     @image_task_check
     def itm(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the ITM task."""
-        if Task.itm not in self.enabled_tasks:
+        if self.instance.caption is None or Task.itm not in self.enabled_tasks:
             return []
 
         yield PretrainInstance(

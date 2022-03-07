@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Union
 
 import pytorch_lightning as pl
@@ -12,6 +13,9 @@ from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
 from emma_policy.models.seq_emma import EmmaForConditionalGeneration
 from emma_policy.utils.task_loss import TaskLoss
+
+
+log = logging.getLogger(__name__)
 
 
 class EmmaPolicy(pl.LightningModule):
@@ -36,29 +40,35 @@ class EmmaPolicy(pl.LightningModule):
             and self.trainer.limit_train_batches != 0
         ):
             dataset_size = self.trainer.limit_train_batches
-        elif isinstance(self.trainer.limit_train_batches, float):
-            # limit_train_batches is a percentage of batches
-            dataset_size = len(
-                self.trainer.datamodule.train_dataloader()  # type: ignore[attr-defined]
-            )
-            dataset_size = int(dataset_size * self.trainer.limit_train_batches)
+            num_devices = 1
         else:
-            dataset_size = len(  # type: ignore[unreachable]
-                self.trainer.datamodule.train_dataloader()
-            )
+            if isinstance(self.trainer.limit_train_batches, float):
+                # limit_train_batches is a percentage of batches
+                dataset_size = len(
+                    self.trainer.datamodule.train_dataloader()  # type: ignore[attr-defined]
+                )
+                dataset_size = int(dataset_size * self.trainer.limit_train_batches)
+            else:
+                dataset_size = len(  # type: ignore[unreachable]
+                    self.trainer.datamodule.train_dataloader()
+                )
+            num_devices = max(1, self.trainer.num_gpus, self.trainer.num_processes)
 
-        num_devices = max(1, self.trainer.num_gpus, self.trainer.num_processes)
+        # Check if using tpus
         if self.trainer.tpu_cores:
             num_devices = max(num_devices, self.trainer.tpu_cores)
 
         effective_batch_size = (
             self.trainer.accumulate_grad_batches * num_devices  # type: ignore[attr-defined]
         )
-        max_estimated_steps = (dataset_size // effective_batch_size) * self.trainer.max_epochs
+        num_steps = (dataset_size // effective_batch_size) * self.trainer.max_epochs
 
-        if self.trainer.max_steps and 0 < self.trainer.max_steps < max_estimated_steps:
-            return self.trainer.max_steps
-        return max_estimated_steps
+        if self.trainer.max_steps and 0 < self.trainer.max_steps < num_steps:
+            num_steps = self.trainer.max_steps
+
+        log.info(f"Total number of training steps: {num_steps}")  # noqa: WPS437
+
+        return num_steps
 
     def compute_warmup(
         self, num_training_steps: int, num_warmup_steps: Union[int, float]

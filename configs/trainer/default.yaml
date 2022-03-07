@@ -2,10 +2,9 @@ _target_: pytorch_lightning.Trainer
 
 gpus: 0
 
-min_steps: 10
-max_steps: 2e5
-val_check_interval: 2e4
 resume_from_checkpoint: null
+max_epochs: 100
+limit_train_batches: 1000
 
 # number of validation steps to execute at the beginning of the training
 num_sanity_val_steps: 0

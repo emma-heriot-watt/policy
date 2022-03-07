@@ -14,23 +14,23 @@ max_frames: 200
 tokenizer_truncation_side: right
 enabled_tasks:
   image:
-    mlm: True
-    itm: True
-    visual_grounding: False
-    dense_captioning: False
-    captioning: False
-    vqa: False
-    instruction_prediction: False
-    action_execution: False
-    vtm: False
+    - mlm
+    - itm
+    # - visual_grounding
+    # - dense_captioning
+    # - captioning
+    # - vqa
+    # - instruction_prediction
+    # - action_execution
+    # - vtm
   video:
-    mlm: False
-    itm: False
-    visual_grounding: False
-    dense_captioning: False
-    captioning: False
-    vqa: False
-    instruction_prediction: False
-    action_execution: False
-    vtm: False
+    # - mlm
+    # - itm
+    # - visual_grounding
+    # - dense_captioning
+    # - captioning
+    # - vqa
+    # - instruction_prediction
+    # - action_execution
+    # - vtm
 # pin_memory: False

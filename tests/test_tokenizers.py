@@ -3,11 +3,9 @@ from pathlib import Path
 
 import pytest
 from pytest_cases import fixture_ref, parametrize
-from transformers import AutoTokenizer
 
 from emma_policy.commands.build_tokenizer import main as build_tokenizer_main
 from emma_policy.models.tokenizer_emma import EmmaTokenizer
-from tests.conftest import TOKENIZER_PATHS
 
 
 @parametrize(
@@ -44,39 +42,30 @@ def test_build_tokenizer(  # noqa: WPS216
     build_tokenizer_main(args)
 
 
-def load_tokenizers():
-    return {
-        AutoTokenizer.from_pretrained(tokenizer_path)
-        for tokenizer_path in TOKENIZER_PATHS.values()
-    }
-
-
-@pytest.mark.parametrize("tokenizer", load_tokenizers())
-def test_tokenize_input(tokenizer: EmmaTokenizer) -> None:
+def test_tokenize_input(emma_tokenizer: EmmaTokenizer) -> None:
     phrase = "The dog is eating an icecream."
-    encodings = tokenizer.encode_plus(phrase)
+    encodings = emma_tokenizer.encode_plus(phrase)
 
-    tokens = tokenizer.convert_ids_to_tokens(encodings.input_ids)
+    tokens = emma_tokenizer.convert_ids_to_tokens(encodings.input_ids)
     conv_phrase = (
-        tokenizer.convert_tokens_to_string(tokens)
-        .replace(tokenizer.cls_token, "")
-        .replace(tokenizer.eos_token, "")
+        emma_tokenizer.convert_tokens_to_string(tokens)
+        .replace(emma_tokenizer.cls_token, "")
+        .replace(emma_tokenizer.eos_token, "")
     )
     assert phrase == conv_phrase
 
 
-@pytest.mark.parametrize("tokenizer", load_tokenizers())
 @parametrize("max_length", [5])
-def test_tokenize_and_truncate_input(tokenizer: EmmaTokenizer, max_length: int) -> None:
+def test_tokenize_and_truncate_input(emma_tokenizer: EmmaTokenizer, max_length: int) -> None:
     phrase = "The dog is eating an icecream."
-    tokenizer.model_max_length = max_length
-    tokenizer.truncation_side = "left"
-    encodings_full = tokenizer.encode_plus(
+    emma_tokenizer.model_max_length = max_length
+    emma_tokenizer.truncation_side = "left"
+    encodings_full = emma_tokenizer.encode_plus(
         phrase, return_tensors="np", truncation=False
     ).input_ids[0]
     truncation_indices = [0] + list(range(-max_length + 1, 0))
 
-    encodings_truncated = tokenizer.encode_plus(
+    encodings_truncated = emma_tokenizer.encode_plus(
         phrase, return_tensors="np", truncation=True
     ).input_ids[0]
     assert all(encodings_truncated == encodings_full[truncation_indices])

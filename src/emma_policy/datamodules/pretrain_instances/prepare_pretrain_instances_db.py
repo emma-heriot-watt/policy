@@ -1,15 +1,16 @@
 import math
-from collections import Counter, defaultdict
+from collections import Counter
 from pathlib import Path
 from typing import Iterator, NamedTuple, Optional
 
 import torch
 from emma_datasets.common import get_progress
-from emma_datasets.datamodels import Instance
+from emma_datasets.datamodels import Instance, MediaType
 from emma_datasets.db import DatasetDb, JsonStorage
 from torch.utils.data import DataLoader, IterableDataset
 
 from emma_policy.datamodules.pretrain_instances import convert_instance_to_pretrain_instances
+from emma_policy.datamodules.pretrain_instances.datamodels import EnabledTasksHandler, Task
 from emma_policy.datamodules.pretrain_instances.load_ref_coco_images import is_train_instance
 
 
@@ -31,7 +32,7 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
         self,
         db_path: Path,
         coco_ref_images: set[str],
-        enabled_tasks: Optional[dict[str, defaultdict[str, bool]]] = None,
+        enabled_tasks: dict[MediaType, set[Task]],
     ) -> None:
         db = DatasetDb(db_path, readonly=True)
 
@@ -42,7 +43,7 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
 
         self._coco_ref_images = coco_ref_images
         self._storage = JsonStorage()
-        self.enabled_tasks = enabled_tasks
+        self._enabled_tasks = enabled_tasks
 
     def __iter__(self) -> Iterator[DatasetDbReaderReturn]:
         """Iterate over the entire DatasetDb.
@@ -71,10 +72,9 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
             instance = Instance.parse_raw(data)
             is_train = is_train_instance(self._coco_ref_images, instance)
 
-            modality_str = self._modality2str(instance.modality)
             pretrain_instance_iterator = convert_instance_to_pretrain_instances(
-                instance,
-                enabled_tasks=self.enabled_tasks[modality_str],  # type: ignore[index]
+                instance=instance,
+                enabled_tasks=self._enabled_tasks[instance.modality],
             )
 
             yield from (
@@ -86,8 +86,9 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
                 for pretrain_instance in pretrain_instance_iterator
             )
 
-    def _modality2str(self, modality_num: int) -> str:
-        return {3: "image", 4: "video"}[modality_num]
+
+def _loader_collate_fn(batch: list[DatasetDbReaderReturn]) -> list[DatasetDbReaderReturn]:
+    return batch
 
 
 class PreparePretrainInstancesDb:
@@ -125,20 +126,20 @@ class PreparePretrainInstancesDb:
         loader_num_workers: int = 24,
         write_db_batch_size: int = 300000,
         example_id_prefix: str = "pretrain_",
-        enabled_tasks: Optional[dict[str, defaultdict[str, bool]]] = None,
+        enabled_tasks: Optional[dict[MediaType, set[Task]]] = None,
     ) -> None:
         self._instance_counter: Counter[int] = Counter()
 
         self._example_id_prefix = example_id_prefix
 
-        if enabled_tasks is None:
-            enabled_tasks = {
-                "image": defaultdict(lambda: True),
-                "video": defaultdict(lambda: True),
-            }
+        self._enabled_tasks = (
+            enabled_tasks
+            if enabled_tasks is not None
+            else EnabledTasksHandler.get_default_enabled_tasks_per_modality()
+        )
 
         self._dataset = IterableDatasetDbReader(
-            instances_db_file_path, coco_ref_images, enabled_tasks=enabled_tasks
+            instances_db_file_path, coco_ref_images, enabled_tasks=self._enabled_tasks
         )
         self._train_db = DatasetDb(
             train_db_file_path, readonly=False, batch_size=write_db_batch_size
@@ -152,7 +153,7 @@ class PreparePretrainInstancesDb:
 
         self._loader = DataLoader(
             self._dataset,
-            collate_fn=lambda batch: batch,
+            collate_fn=_loader_collate_fn,
             batch_size=loader_batch_size,
             shuffle=False,
             num_workers=loader_num_workers,

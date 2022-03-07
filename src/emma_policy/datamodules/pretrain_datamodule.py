@@ -1,4 +1,3 @@
-from collections import defaultdict
 from pathlib import Path
 from typing import Optional, Union
 
@@ -14,6 +13,10 @@ from emma_policy.datamodules.pretrain_instances import (
     DEFAULT_COCO_SPLITS_PATH,
     PreparePretrainInstancesDb,
     load_ref_coco_images,
+)
+from emma_policy.datamodules.pretrain_instances.datamodels import (
+    EnabledTasksHandler,
+    EnabledTasksPerModality,
 )
 
 
@@ -38,19 +41,18 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         mlm_probability: float = 0.3,
         max_lang_tokens: Optional[int] = None,
         max_frames: Optional[int] = None,
+        enabled_tasks: Optional[EnabledTasksPerModality] = None,
         tokenizer_truncation_side: str = "right",
-        enabled_tasks: Optional[dict[str, defaultdict[str, bool]]] = None,
     ) -> None:
 
         self.model_name = model_name
         self.mlm_probability = mlm_probability
-        if enabled_tasks is None:
-            self.enabled_tasks: dict[str, defaultdict[str, bool]] = {
-                "image": defaultdict(lambda: True),
-                "video": defaultdict(lambda: True),
-            }
-        else:
-            self.enabled_tasks = enabled_tasks
+
+        self._enabled_tasks = (
+            EnabledTasksHandler.get_default_enabled_tasks_per_modality()
+            if enabled_tasks is None
+            else EnabledTasksHandler.process_tasks_per_modality(enabled_tasks)
+        )
 
         if isinstance(instances_db_file, str):
             instances_db_file = Path(instances_db_file)
@@ -161,6 +163,6 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
             valid_db_file_path=self._pretrain_valid_db_file if self.load_valid_data else None,
             loader_batch_size=loader_batch_size,
             loader_num_workers=self._prepare_data_num_workers,
-            enabled_tasks=self.enabled_tasks,
+            enabled_tasks=self._enabled_tasks,
         )
         preparer.run()

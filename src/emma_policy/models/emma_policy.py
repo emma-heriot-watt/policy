@@ -17,7 +17,7 @@ from emma_policy.utils.task_loss import TaskLoss
 class EmmaPolicy(pl.LightningModule):
     """Emma Lightning Module."""
 
-    def __init__(self, model_name: str, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, model_name: str, **kwargs: Any) -> None:
         super().__init__()
 
         config = AutoConfig.from_pretrained(model_name)

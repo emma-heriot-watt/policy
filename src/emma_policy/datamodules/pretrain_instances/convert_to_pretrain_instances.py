@@ -1,7 +1,7 @@
 import itertools
 from typing import Callable, Iterator, Optional
 
-from emma_datasets.datamodels import Caption, Instance, MediaType
+from emma_datasets.datamodels import Instance, MediaType
 
 from emma_policy.datamodules.pretrain_instances.datamodels import (
     EnabledTasksHandler,
@@ -94,20 +94,11 @@ class PretrainInstanceCreator:
     @image_task_check
     def itm(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the ITM task."""
-        itm_candidates: list[Caption] = []
-
         if Task.itm not in self.enabled_tasks:
             return []
 
-        if self.instance.caption is not None:
-            itm_candidates.append(self.instance.caption)
-
-        if self.instance.regions is not None:
-            itm_candidates.extend(Caption(text=region.caption) for region in self.instance.regions)
-
-        yield from (
-            PretrainInstance(caption=candidate, dataset=self.instance.dataset, task=Task.itm)
-            for candidate in itm_candidates
+        yield PretrainInstance(
+            caption=self.instance.caption, dataset=self.instance.dataset, task=Task.itm
         )
 
     @property  # type: ignore[misc]

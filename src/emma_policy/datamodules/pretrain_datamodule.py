@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
 
 from emma_policy.datamodules.collate import collate_fn
-from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem
+from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
 from emma_policy.datamodules.pretrain_dataset import EmmaPretrainDataset
 from emma_policy.datamodules.pretrain_instances import (
     DEFAULT_COCO_SPLITS_PATH,
@@ -129,10 +129,10 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
                 max_frames=self.max_frames,
             )
 
-    def train_dataloader(self) -> DataLoader[Optional[EmmaDatasetItem]]:
+    def train_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
         """Generate train dataloader."""
         return DataLoader(
-            self._train_dataset,
+            self._train_dataset,  # type: ignore[arg-type]
             batch_size=self._batch_size,
             num_workers=self._num_workers,
             collate_fn=collate_fn,
@@ -140,10 +140,10 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
             pin_memory=True,
         )
 
-    def val_dataloader(self) -> DataLoader[Optional[EmmaDatasetItem]]:
+    def val_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
         """Generate val dataloader."""
         return DataLoader(
-            self._val_dataset,
+            self._val_dataset,  # type: ignore[arg-type]
             batch_size=self._batch_size,
             num_workers=self._num_workers,
             collate_fn=collate_fn,

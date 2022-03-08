@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Optional
 
 import torch
 from torch.nn.utils.rnn import pad_sequence
@@ -10,7 +11,7 @@ from emma_policy.datamodules.emma_dataclasses import (
 )
 
 
-def collate_fn(batch: list[EmmaDatasetItem]) -> EmmaDatasetBatch:
+def collate_fn(batch: list[Optional[EmmaDatasetItem]]) -> EmmaDatasetBatch:
     """Collate lists of samples into batches after padding."""
     fields = dataclasses.fields(EmmaDatasetItem)
     padding = EmmaDatasetPadding()

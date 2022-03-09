@@ -108,13 +108,10 @@ class PretrainInstanceCreator:
         if self.instance.regions is None or Task.visual_grounding not in self.enabled_tasks:
             return []
 
-        yield from (
-            PretrainInstance(
-                regions=region,
-                dataset=self.instance.dataset,
-                task=Task.visual_grounding,
-            )
-            for region in self.instance.regions
+        yield PretrainInstance(
+            regions=self.instance.regions,
+            dataset=self.instance.dataset,
+            task=Task.visual_grounding,
         )
 
     @property  # type: ignore[misc]
@@ -124,13 +121,10 @@ class PretrainInstanceCreator:
         if self.instance.regions is None or Task.dense_captioning not in self.enabled_tasks:
             return []
 
-        yield from (
-            PretrainInstance(
-                regions=region,
-                dataset=self.instance.dataset,
-                task=Task.dense_captioning,
-            )
-            for region in self.instance.regions
+        yield PretrainInstance(
+            regions=self.instance.regions,
+            dataset=self.instance.dataset,
+            task=Task.dense_captioning,
         )
 
     @property  # type: ignore[misc]

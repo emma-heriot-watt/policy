@@ -148,24 +148,20 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
 
         return emma_visual_features
 
-    def best_match_feature(
+    def calc_max_iou(
         self, gt_bbox: torch.Tensor, object_coordinates: torch.Tensor, threshold: float = 0.5
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Get the best match feature?"""
-        gt_box = Boxes(gt_bbox.reshape(-1, 4))
+        """Get the best match features for all bbox."""
+        gt_box = Boxes(gt_bbox)
         extract_box = Boxes(object_coordinates)
         ious = pairwise_iou(gt_box, extract_box)
-
-        match_result = torch.max(ious, dim=1)
-
-        # index of extracted bbox coordinates mapped to each bbox. tensor of [num_gt_bbox]. Should be used with gt_flags.
-        matched_value = match_result.values
-        matched_index = match_result.indices
+        # ious[ious < threshold] = 0  # ignore all the ious below threshold
+        matched_values, matched_indices = torch.max(ious, dim=1)
 
         # keep track whether ground truth bbox is mapped to a feature
-        gt_flag = matched_value > threshold
+        gt_flags = matched_values > threshold
 
-        return matched_index, gt_flag
+        return matched_indices, gt_flags
 
     def mlm(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the MLM task."""
@@ -299,33 +295,37 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
                 "Regions for this instance must exist. Make sure this instance is connected to the right task!"
             )
 
-        target_region = instance.regions
-        region_coord = BoxMode.convert(
-            list(target_region.bbox), from_mode=BoxMode.XYWH_ABS, to_mode=BoxMode.XYXY_ABS
-        )
+        gt_regions = instance.regions  # append the target region to all image regions
+        region_bbox = []
+        for region in gt_regions:
+            region_coord = BoxMode.convert(
+                list(region.bbox), from_mode=BoxMode.XYWH_ABS, to_mode=BoxMode.XYXY_ABS
+            )
+            region_bbox.append(
+                [
+                    region_coord[0] / w,
+                    region_coord[1] / h,
+                    region_coord[2] / w,
+                    region_coord[3] / h,
+                ]
+            )
 
-        gt_bbox = torch.tensor(
-            [
-                region_coord[0] / w,
-                region_coord[1] / h,
-                region_coord[2] / w,
-                region_coord[3] / h,
-            ]
-        )
+        gt_bbox = torch.tensor(region_bbox)
 
-        matched_index, gt_flag = self.best_match_feature(
+        matched_indice, gt_flags = self.calc_max_iou(
             gt_bbox=gt_bbox,
             object_coordinates=visual_features.object_coordinates,
             threshold=self.match_threshold,
         )
 
-        if not gt_flag[0]:
-            # if there are no predicted bounding boxes that match the gold region,
-            # we ignore this example for training.
+        gt_filtered = [reg for idx, reg in enumerate(gt_regions) if gt_flags[idx]]
+        if not gt_filtered:
             return None
+        rand_index = random.randint(0, len(gt_filtered) - 1)
+        selected_region = gt_filtered[rand_index]
+        mapped_region_index = matched_indice[gt_flags][rand_index]
 
-        mapped_region_index = matched_index[0]
-        source_text = target_region.caption
+        source_text = selected_region.caption
         source_text = random.choice(TASK_TEMPLATES_MAP[Task.visual_grounding]).format(
             caption=source_text
         )
@@ -352,7 +352,7 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
             scene_attention_mask=visual_features.scene_attention_mask,
             object_attention_mask=visual_features.object_attention_mask,
             scene_frame_ids=visual_features.scene_frame_ids,
-            object_frame_ids=visual_features.object_attention_mask,
+            object_frame_ids=visual_features.object_frame_ids,
             task=task,
         )
 
@@ -369,31 +369,36 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
                 "Regions for this instance must exist. Make sure this instance is connected to the right task!"
             )
 
-        target_region = instance.regions
-        region_coord = BoxMode.convert(
-            list(target_region.bbox), from_mode=BoxMode.XYWH_ABS, to_mode=BoxMode.XYXY_ABS
-        )
+        gt_regions = instance.regions  # append the target region to all image regions
+        region_bbox = []
+        for region in gt_regions:
+            region_coord = BoxMode.convert(
+                list(region.bbox), from_mode=BoxMode.XYWH_ABS, to_mode=BoxMode.XYXY_ABS
+            )
+            region_bbox.append(
+                [
+                    region_coord[0] / w,
+                    region_coord[1] / h,
+                    region_coord[2] / w,
+                    region_coord[3] / h,
+                ]
+            )
 
-        gt_bbox = torch.tensor(
-            [
-                region_coord[0] / w,
-                region_coord[1] / h,
-                region_coord[2] / w,
-                region_coord[3] / h,
-            ]
-        )
+        gt_bbox = torch.tensor(region_bbox)
 
-        matched_index, gt_flag = self.best_match_feature(
+        matched_indice, gt_flags = self.calc_max_iou(
             gt_bbox=gt_bbox,
             object_coordinates=visual_features.object_coordinates,
             threshold=self.match_threshold,
         )
 
-        if not gt_flag[0]:  # if the region considered does not posses a extracted region
+        gt_filtered = [reg for idx, reg in enumerate(gt_regions) if gt_flags[idx]]
+        if not gt_filtered:
             return None
+        rand_index = random.randint(0, len(gt_filtered) - 1)
+        selected_region = gt_filtered[rand_index]
+        mapped_region_index = matched_indice[gt_flags][rand_index]
 
-        # if the region considered posses a extracted region
-        mapped_region_index = matched_index[0]
         source_caption = self.tokenizer.decode(
             visual_features.visual_token_ids.squeeze(0)[mapped_region_index]
         )
@@ -403,7 +408,7 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
         )
 
         input_encoding = self.tokenizer.encode_plus(source_text, return_tensors="pt")
-        target_text = target_region.caption
+        target_text = selected_region.caption
         target_encoding = self.tokenizer.encode_plus(target_text, return_tensors="pt")
         task = torch.tensor([Task.get_index(Task.dense_captioning)], dtype=torch.long)
 
@@ -420,7 +425,7 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
             decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
             scene_frame_ids=visual_features.scene_frame_ids,
-            object_frame_ids=visual_features.object_attention_mask,
+            object_frame_ids=visual_features.object_frame_ids,
             task=task,
         )
 

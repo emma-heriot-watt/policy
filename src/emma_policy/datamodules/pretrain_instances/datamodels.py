@@ -1,9 +1,9 @@
 import string
 from enum import Enum
 from types import MappingProxyType
-from typing import Any, Iterator, Mapping, Optional, Union, cast
+from typing import Any, Iterator, Mapping, Union, cast
 
-from emma_datasets.datamodels import Instance, MediaType, Region
+from emma_datasets.datamodels import Instance, MediaType
 
 
 class Task(Enum):
@@ -161,4 +161,3 @@ class PretrainInstance(Instance):  # type: ignore[misc]
     """
 
     task: Task
-    regions: Optional[Region]

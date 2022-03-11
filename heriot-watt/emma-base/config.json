@@ -2,7 +2,7 @@
 	"_name_or_path": "./",
 	"activation_dropout": 0.0,
 	"activation_function": "gelu",
-	"architectures": ["EMMAForConditionalGeneration"],
+	"architectures": ["EmmaForConditionalGeneration"],
 	"attention_dropout": 0.0,
 	"attention_window": [1024, 1024, 1024, 1024, 1024, 1024],
 	"bos_token_id": 0,
@@ -39,5 +39,8 @@
 	"num_hidden_layers": 6,
 	"pad_token_id": 1,
 	"use_cache": true,
-	"vocab_size": 50265
+	"vocab_size": 10000,
+	"scene_features_dim": 1024,
+	"object_features_dim": 2048,
+	"image_coordinates_dim": 4
 }

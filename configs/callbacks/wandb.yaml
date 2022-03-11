@@ -3,14 +3,15 @@ defaults:
 
 watch_model:
   _target_: emma_policy.callbacks.wandb.WatchModel
-  log: "all"
+  log: null
   log_freq: 100
-  log_graph: false
+  log_graph: False
 
 upload_code_as_artifact:
   _target_: emma_policy.callbacks.wandb.artifacts.UploadCode
   code_dir: ${work_dir}/src
-# upload_ckpts_as_artifact:
-#   _target_: src.callbacks.wandb.artifacts.UploadCheckpoints
-#   checkpoint_dir: "${work_dir}/storage/model/checkpoints/"
-#   only_upload_best: True
+
+upload_ckpts_as_artifact:
+  _target_: emma_policy.callbacks.wandb.artifacts.UploadCheckpoints
+  checkpoint_dir: "${checkpoint_dir}"
+  only_upload_best: True

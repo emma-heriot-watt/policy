@@ -32,9 +32,11 @@ class UploadCheckpoints(WandbCallbackBase):
         checkpoint_artifact = wandb.Artifact(name="experiment-checkpoints", type="checkpoints")
 
         if self.only_upload_best and trainer.checkpoint_callback is not None:
-            checkpoint_artifact.add_file(trainer.checkpoint_callback.best_model_path)
+            checkpoint_artifact.add_file(
+                trainer.checkpoint_callback.best_model_path, name="best.ckpt"
+            )
         else:
-            for path in Path(self.checkpoint_dir).rglob("*.ckpt"):
-                checkpoint_artifact.add_file(str(path))
+            for path in Path(self.checkpoint_dir).iterdir():
+                checkpoint_artifact.add_file(str(path), name=path.name)
 
         experiment.log_artifact(checkpoint_artifact)

@@ -36,6 +36,8 @@ rich = "^11.2.0"
 overrides = "^6.1.0"
 numpy = "^1.22.2"
 emma-datasets = { git = "https://github.com/emma-simbot/datasets", rev = "main" }
+gradio = "^2.8.9"
+types-requests = "^2.27.11"
 
 
 [tool.poetry.dev-dependencies]

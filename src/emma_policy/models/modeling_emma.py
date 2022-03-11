@@ -57,6 +57,14 @@ class EmmaModel(EmmaPreTrainedModel):
         self.encoder = EmmaEncoder(config=config, embed_tokens=word_embeddings)
         self.decoder = EmmaDecoder(config=config, embed_tokens=word_embeddings)
 
+    def get_encoder(self) -> EmmaEncoder:  # noqa: WPS615
+        """Return the encoder (required for generation)."""
+        return self.encoder
+
+    def get_decoder(self) -> EmmaDecoder:  # noqa: WPS615
+        """Return the decoder."""
+        return self.decoder
+
     def get_input_embeddings(self) -> Embedding:  # noqa: WPS615
         """Get word embeddings."""
         return self.encoder.embed_tokens
@@ -66,6 +74,37 @@ class EmmaModel(EmmaPreTrainedModel):
         """Set word embeddings."""
         self.encoder.embed_tokens = value
         self.decoder.embed_tokens = value
+
+    def embed_inputs(
+        self,
+        scene_features: torch.Tensor,
+        scene_coordinates: torch.Tensor,
+        scene_frame_ids: torch.Tensor,
+        object_features: torch.Tensor,
+        object_coordinates: torch.Tensor,
+        object_frame_ids: torch.Tensor,
+        visual_token_ids: torch.Tensor,
+        language_token_ids: torch.Tensor,
+    ) -> torch.Tensor:
+        """Embed all inputs."""
+        scene_embeddings = self.scene_embeddings(
+            cnn_features=scene_features,
+            image_coordinates=scene_coordinates,
+            frame_ids=scene_frame_ids,
+        )
+
+        object_embeddings = self.object_embeddings(
+            object_features=object_features,
+            image_coordinates=object_coordinates,
+            visual_token_ids=visual_token_ids,
+            frame_ids=object_frame_ids,
+        )
+
+        language_embeddings = self.encoder.text_embeddings(language_token_ids)
+        inputs_embeds = torch.cat(
+            [scene_embeddings, object_embeddings, language_embeddings], dim=1
+        )
+        return inputs_embeds
 
     def forward(  # noqa: WPS231
         self,
@@ -94,23 +133,17 @@ class EmmaModel(EmmaPreTrainedModel):
         return_dict: Optional[bool] = None,
     ) -> Any:
         """Forward pass."""
-        scene_embeddings = self.scene_embeddings(
-            cnn_features=scene_features,
-            image_coordinates=scene_coordinates,
-            frame_ids=scene_frame_ids,
-        )
-
-        object_embeddings = self.object_embeddings(
-            object_features=object_features,
-            image_coordinates=object_coordinates,
-            visual_token_ids=visual_token_ids,
-            frame_ids=object_frame_ids,
-        )
-
-        language_embeddings = self.encoder.text_embeddings(language_token_ids)
-        inputs_embeds = torch.cat(
-            [scene_embeddings, object_embeddings, language_embeddings], dim=1
-        )
+        if encoder_outputs is None:
+            inputs_embeds = self.embed_inputs(
+                scene_features=scene_features,
+                scene_coordinates=scene_coordinates,
+                scene_frame_ids=scene_frame_ids,
+                object_features=object_features,
+                object_coordinates=object_coordinates,
+                object_frame_ids=object_frame_ids,
+                visual_token_ids=visual_token_ids,
+                language_token_ids=language_token_ids,
+            )
 
         output_attentions = (
             output_attentions if output_attentions is not None else self.config.output_attentions

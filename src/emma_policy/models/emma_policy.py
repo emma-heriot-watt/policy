@@ -7,6 +7,12 @@ from overrides import overrides
 from torch.nn import CrossEntropyLoss
 from torch.optim import AdamW
 from transformers import AutoConfig, get_linear_schedule_with_warmup
+from transformers.generation_utils import (
+    BeamSampleOutput,
+    BeamSearchOutput,
+    GreedySearchOutput,
+    SampleOutput,
+)
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
 from emma_policy.datamodules.pretrain_instances import Task
@@ -14,6 +20,10 @@ from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
 from emma_policy.models.seq_emma import EmmaForConditionalGeneration
 from emma_policy.utils.task_loss import TaskLoss
 
+
+PredictType = Union[
+    GreedySearchOutput, SampleOutput, BeamSearchOutput, BeamSampleOutput, torch.LongTensor
+]
 
 log = logging.getLogger(__name__)
 
@@ -188,3 +198,24 @@ class EmmaPolicy(pl.LightningModule):
                 on_step=False,
             )
         return output
+
+    @overrides(check_signature=False)
+    def predict_step(self, batch: EmmaDatasetBatch, batch_idx: int) -> PredictType:
+        """Inference step."""
+        inputs_embeds = self.emma.emma.embed_inputs(
+            scene_features=batch.scene_features,
+            scene_coordinates=batch.scene_coordinates,
+            scene_frame_ids=batch.scene_frame_ids,
+            object_features=batch.object_features,
+            object_coordinates=batch.object_coordinates,
+            object_frame_ids=batch.object_frame_ids,
+            visual_token_ids=batch.visual_token_ids,
+            language_token_ids=batch.input_token_ids,
+        )
+        outputs = self.emma.generate(
+            inputs_embeds=inputs_embeds,
+            attention_mask=batch.attention_mask,
+            global_attention_mask=batch.global_attention_mask,
+        )
+
+        return outputs

@@ -1,10 +1,11 @@
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import torch
 from overrides import overrides
 from torch.nn import CrossEntropyLoss, Embedding, Linear
 
 from emma_policy.models.configuration_emma import EmmaConfig
+from emma_policy.models.encoder_decoder_emma import EmmaDecoder, EmmaEncoder
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
 from emma_policy.models.modeling_emma import EmmaModel, shift_tokens_right
 from emma_policy.models.pretrained_emma import EmmaPreTrainedModel
@@ -30,7 +31,7 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
         self.lm_head = Linear(config.d_model, num_embeddings, bias=False)
 
         self.final_logits_bias: "torch.Tensor"
-
+        self.main_input_name = "input_embeds"
         # Initialize weights and apply final processing
         self.post_init()
 
@@ -48,6 +49,14 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
     def set_output_embeddings(self, new_embeddings: Linear) -> None:  # noqa: WPS615
         """Get the new embeddings as the linear layer."""
         self.lm_head = new_embeddings
+
+    def get_encoder(self) -> EmmaEncoder:  # noqa: WPS615
+        """Return the encoder."""
+        return self.emma.get_encoder()
+
+    def get_decoder(self) -> EmmaDecoder:  # noqa: WPS615
+        """Return the decoder."""
+        return self.emma.get_decoder()
 
     def forward(
         self,
@@ -143,6 +152,43 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
         return shift_tokens_right(
             labels, self.config.pad_token_id, self.config.decoder_start_token_id
         )
+
+    @overrides(check_signature=False)
+    def prepare_inputs_for_generation(
+        self,
+        decoder_input_ids: torch.Tensor,
+        past: Optional[torch.Tensor] = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        decoder_head_mask: Optional[torch.Tensor] = None,
+        cross_attn_head_mask: Optional[torch.Tensor] = None,
+        use_cache: Optional[torch.Tensor] = None,
+        encoder_outputs: Optional[torch.Tensor] = None,
+        **kwargs: Any,
+    ) -> dict[str, Union[None, torch.Tensor]]:
+        """Prepare for generation."""
+        # cut decoder_input_ids if past is used
+        if past is not None:
+            decoder_input_ids = decoder_input_ids[:, -1:]
+
+        return {
+            "scene_features": None,  # encoder_outputs is defined.
+            "scene_coordinates": None,
+            "scene_frame_ids": None,
+            "object_features": None,
+            "object_coordinates": None,
+            "object_frame_ids": None,
+            "visual_token_ids": None,
+            "language_token_ids": None,
+            "encoder_outputs": encoder_outputs,
+            "past_key_values": past,
+            "decoder_input_ids": decoder_input_ids,
+            "attention_mask": attention_mask,
+            "head_mask": head_mask,
+            "decoder_head_mask": decoder_head_mask,
+            "cross_attn_head_mask": cross_attn_head_mask,
+            "use_cache": use_cache,  # change this to avoid caching (presumably for debugging)
+        }
 
     @staticmethod
     def _reorder_cache(past: Any, beam_idx: int) -> tuple[Any, ...]:  # noqa: WPS602

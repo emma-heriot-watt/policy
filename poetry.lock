@@ -286,14 +286,14 @@ webencodings = "*"
 
 [[package]]
 name = "boto3"
-version = "1.21.16"
+version = "1.21.17"
 description = "The AWS SDK for Python"
 category = "main"
 optional = false
 python-versions = ">= 3.6"
 
 [package.dependencies]
-botocore = ">=1.24.16,<1.25.0"
+botocore = ">=1.24.17,<1.25.0"
 jmespath = ">=0.7.1,<1.0.0"
 s3transfer = ">=0.5.0,<0.6.0"
 
@@ -302,7 +302,7 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.24.16"
+version = "1.24.17"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
@@ -538,7 +538,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "emma-datasets"
-version = "0.11.1"
+version = "0.11.4"
 description = ""
 category = "main"
 optional = false
@@ -546,23 +546,23 @@ python-versions = "^3.9"
 develop = false
 
 [package.dependencies]
-boto3 = "^1.21.15"
+boto3 = "^1.21.17"
 numpy = "^1.22.3"
 orjson = "^3.6.7"
 overrides = "^6.1.0"
 Pillow = "^9.0.1"
 py7zr = "^0.18.0"
 pydantic = {version = "^1.8.2", extras = ["dotenv"]}
-rich = "^11.2.0"
+rich = "^12.0.0"
 
 [package.extras]
-torch = ["torch (>=1.10.2,<2.0.0)"]
+torch = ["torch (>=1.11.0,<2.0.0)"]
 
 [package.source]
 type = "git"
 url = "https://github.com/emma-simbot/datasets"
 reference = "main"
-resolved_reference = "4d44d0b378a6b02c04b3d28eaf0a93046452d307"
+resolved_reference = "e89360e2ae1123a39cd6dfa93fde5dcd001d6fe3"
 
 [[package]]
 name = "entrypoints"
@@ -803,7 +803,7 @@ flake8 = "*"
 
 [[package]]
 name = "fonttools"
-version = "4.29.1"
+version = "4.30.0"
 description = "Tools to manipulate font files"
 category = "main"
 optional = false
@@ -930,7 +930,7 @@ tool = ["click (>=6.0.0)"]
 
 [[package]]
 name = "gradio"
-version = "2.8.9"
+version = "2.8.10"
 description = "Python library for easily interacting with trained machine learning models"
 category = "main"
 optional = false
@@ -1513,7 +1513,7 @@ type = ["mypy", "mypy-extensions"]
 
 [[package]]
 name = "mypy"
-version = "0.950+dev.504779b8511b36880df13476b4fbb35a6625743f"
+version = "0.950+dev.7ee84c71e851ce373d1824ecc09332caa373148c"
 description = "Optional static typing for Python"
 category = "dev"
 optional = false
@@ -1534,7 +1534,7 @@ reports = ["lxml"]
 type = "git"
 url = "https://github.com/python/mypy"
 reference = "master"
-resolved_reference = "504779b8511b36880df13476b4fbb35a6625743f"
+resolved_reference = "7ee84c71e851ce373d1824ecc09332caa373148c"
 
 [[package]]
 name = "mypy-extensions"
@@ -1562,7 +1562,7 @@ test = ["pytest", "pytest-tornasync", "pytest-console-scripts"]
 
 [[package]]
 name = "nbclient"
-version = "0.5.12"
+version = "0.5.13"
 description = "A client library for executing notebooks. Formerly nbconvert's ExecutePreprocessor."
 category = "dev"
 optional = false
@@ -1580,7 +1580,7 @@ test = ["ipython (<8.0.0)", "ipykernel", "ipywidgets (<8.0.0)", "pytest (>=4.1)"
 
 [[package]]
 name = "nbconvert"
-version = "6.4.2"
+version = "6.4.3"
 description = "Converting Jupyter Notebooks"
 category = "dev"
 optional = false
@@ -1610,21 +1610,20 @@ webpdf = ["pyppeteer (>=1,<1.1)"]
 
 [[package]]
 name = "nbformat"
-version = "5.1.3"
+version = "5.2.0"
 description = "The Jupyter Notebook format"
 category = "dev"
 optional = false
-python-versions = ">=3.5"
+python-versions = ">=3.7"
 
 [package.dependencies]
-ipython-genutils = "*"
 jsonschema = ">=2.4,<2.5.0 || >2.5.0"
 jupyter-core = "*"
 traitlets = ">=4.1"
 
 [package.extras]
 fast = ["fastjsonschema"]
-test = ["check-manifest", "fastjsonschema", "testpath", "pytest", "pytest-cov"]
+test = ["check-manifest", "fastjsonschema", "testpath", "pytest"]
 
 [[package]]
 name = "nest-asyncio"
@@ -2449,14 +2448,13 @@ docutils = ">=0.11,<1.0"
 
 [[package]]
 name = "rich"
-version = "11.2.0"
+version = "12.0.0"
 description = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
 category = "main"
 optional = false
 python-versions = ">=3.6.2,<4.0.0"
 
 [package.dependencies]
-colorama = ">=0.4.0,<0.5.0"
 commonmark = ">=0.9.0,<0.10.0"
 pygments = ">=2.6.0,<3.0.0"
 
@@ -3014,7 +3012,7 @@ dev = ["black", "pytest"]
 
 [[package]]
 name = "uvicorn"
-version = "0.17.5"
+version = "0.17.6"
 description = "The lightning-fast ASGI server."
 category = "main"
 optional = false
@@ -3026,7 +3024,7 @@ click = ">=7.0"
 h11 = ">=0.8"
 
 [package.extras]
-standard = ["websockets (>=10.0)", "httptools (>=0.2.0,<0.4.0)", "watchgod (>=0.6)", "python-dotenv (>=0.13)", "PyYAML (>=5.1)", "uvloop (>=0.14.0,!=0.15.0,!=0.15.1)", "colorama (>=0.4)"]
+standard = ["websockets (>=10.0)", "httptools (>=0.4.0)", "watchgod (>=0.6)", "python-dotenv (>=0.13)", "PyYAML (>=5.1)", "uvloop (>=0.14.0,!=0.15.0,!=0.15.1)", "colorama (>=0.4)"]
 
 [[package]]
 name = "virtualenv"
@@ -3196,7 +3194,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "986b88e3953effea6751882e260589722643a92508779e3883735850c7f7c9f7"
+content-hash = "5c08285dc0096b1a77975ac3189dd1626feeeb0bc275bc805dc60b9fb8cc320c"
 
 [metadata.files]
 absl-py = [
@@ -3405,12 +3403,12 @@ bleach = [
     {file = "bleach-4.1.0.tar.gz", hash = "sha256:0900d8b37eba61a802ee40ac0061f8c2b5dee29c1927dd1d233e075ebf5a71da"},
 ]
 boto3 = [
-    {file = "boto3-1.21.16-py3-none-any.whl", hash = "sha256:15fa6d1acac422d2d34f7811e02acfc7ac222cea24db3f463d5c52f2f87baa52"},
-    {file = "boto3-1.21.16.tar.gz", hash = "sha256:c974a7fa781c500b7067441f9883ed939cf8c80bcd74c88b11965b336cabb4b6"},
+    {file = "boto3-1.21.17-py3-none-any.whl", hash = "sha256:b01d29305527fe8754a0c5847c0431ec677dca34069aaed9429ff178826ab366"},
+    {file = "boto3-1.21.17.tar.gz", hash = "sha256:a235c422239d1b468924b37faa95f5750c6abd43651fe7deb3976e10a331c991"},
 ]
 botocore = [
-    {file = "botocore-1.24.16-py3-none-any.whl", hash = "sha256:0a809efb821d81dc29f2e6c404ed123176b8d2eb43103758f31d89b291af2a8b"},
-    {file = "botocore-1.24.16.tar.gz", hash = "sha256:dcff7f9b5fea98701d0b520eba99385c538825f10e6d1cab1e7da213293d141e"},
+    {file = "botocore-1.24.17-py3-none-any.whl", hash = "sha256:e61b9e6d0d5e384f8135211f05fc05694571505390293d939a9688ac08d4f62a"},
+    {file = "botocore-1.24.17.tar.gz", hash = "sha256:29212b4be640efc047665650fee474357e884725a3e2a9bc029bca46a6ef0853"},
 ]
 brotli = [
     {file = "Brotli-1.0.9-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:268fe94547ba25b58ebc724680609c8ee3e5a843202e9a381f6f9c5e8bdb5c70"},
@@ -3790,8 +3788,8 @@ flake8-string-format = [
     {file = "flake8_string_format-0.3.0-py2.py3-none-any.whl", hash = "sha256:812ff431f10576a74c89be4e85b8e075a705be39bc40c4b4278b5b13e2afa9af"},
 ]
 fonttools = [
-    {file = "fonttools-4.29.1-py3-none-any.whl", hash = "sha256:1933415e0fbdf068815cb1baaa1f159e17830215f7e8624e5731122761627557"},
-    {file = "fonttools-4.29.1.zip", hash = "sha256:2b18a172120e32128a80efee04cff487d5d140fe7d817deb648b2eee023a40e4"},
+    {file = "fonttools-4.30.0-py3-none-any.whl", hash = "sha256:6985cc5380c06db07fdc73ade15e6adbd4ce6ff850d7561ca00f97090b4b263d"},
+    {file = "fonttools-4.30.0.zip", hash = "sha256:084dd1762f083a1bf49e41da1bfeafb475c9dce46265690a6bdd33290b9a63f4"},
 ]
 frozenlist = [
     {file = "frozenlist-1.3.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:d2257aaba9660f78c7b1d8fea963b68f3feffb1a9d5d05a18401ca9eb3e8d0a3"},
@@ -3878,8 +3876,8 @@ google-auth-oauthlib = [
     {file = "google_auth_oauthlib-0.4.6-py2.py3-none-any.whl", hash = "sha256:3f2a6e802eebbb6fb736a370fbf3b055edcb6b52878bf2f26330b5e041316c73"},
 ]
 gradio = [
-    {file = "gradio-2.8.9-py3-none-any.whl", hash = "sha256:85fd4d4fd525015468ef041b6817a969ad98a0f167bdd2223723ebfb8943e8ac"},
-    {file = "gradio-2.8.9.tar.gz", hash = "sha256:cfe69baa8bc7f593d292cfb618340b4cbdc42e53e925289aefbbeaf4de98da5d"},
+    {file = "gradio-2.8.10-py3-none-any.whl", hash = "sha256:fc40d62043b15d7ad54080e72a40b039c0947b3b4a9179093dd5e4cf1badaa09"},
+    {file = "gradio-2.8.10.tar.gz", hash = "sha256:496a8d9f23bb9d0117525f1f1bdd7af31398734fee4af353313e12cca95e1c5a"},
 ]
 grpcio = [
     {file = "grpcio-1.44.0-cp310-cp310-linux_armv7l.whl", hash = "sha256:11f811c0fffd84fca747fbc742464575e5eb130fd4fb4d6012ccc34febd001db"},
@@ -4263,16 +4261,16 @@ nbclassic = [
     {file = "nbclassic-0.3.6.tar.gz", hash = "sha256:7dbac0a6cb71bbe3afa1fe89369e6e3174d89f42aa08216a327046de45aa9a4f"},
 ]
 nbclient = [
-    {file = "nbclient-0.5.12-py3-none-any.whl", hash = "sha256:ff2d908024aaabb8864e5392c3517c76e17994b1f9330dda9b5284da9275c499"},
-    {file = "nbclient-0.5.12.tar.gz", hash = "sha256:0dd7ee6db59753563035f606421c3b558bd8c28b116d7e3ab8a0b4026cb44e38"},
+    {file = "nbclient-0.5.13-py3-none-any.whl", hash = "sha256:47ac905af59379913c1f8f541098d2550153cf8dc58553cbe18c702b181518b0"},
+    {file = "nbclient-0.5.13.tar.gz", hash = "sha256:40c52c9b5e3c31faecaee69f202b3f53e38d7c1c563de0fadde9d7eda0fdafe8"},
 ]
 nbconvert = [
-    {file = "nbconvert-6.4.2-py3-none-any.whl", hash = "sha256:7b006ae9979af56200e7fa3db39d9d12c99e811e8843b05dbe518e5b754bcb2e"},
-    {file = "nbconvert-6.4.2.tar.gz", hash = "sha256:eb2803db18f6facce6bf3b01b684fe47907994bd156d15eaccdf011e3d7f8164"},
+    {file = "nbconvert-6.4.3-py3-none-any.whl", hash = "sha256:5a8eea76af7870d5dfa0197f52d1af85da23d5ad57e5f61d0e2fd1572761ad4e"},
+    {file = "nbconvert-6.4.3.tar.gz", hash = "sha256:b7cfb62d4e9cfcb7d2485c78ca06acc5d9bbb271f2f7e968526bbc430e822e8f"},
 ]
 nbformat = [
-    {file = "nbformat-5.1.3-py3-none-any.whl", hash = "sha256:eb8447edd7127d043361bc17f2f5a807626bc8e878c7709a1c647abda28a9171"},
-    {file = "nbformat-5.1.3.tar.gz", hash = "sha256:b516788ad70771c6250977c1374fcca6edebe6126fd2adb5a69aa5c2356fd1c8"},
+    {file = "nbformat-5.2.0-py3-none-any.whl", hash = "sha256:3e30424e8291b2188347f5c3ba5273ed3766f12f8c5137c2e456a0815f36e785"},
+    {file = "nbformat-5.2.0.tar.gz", hash = "sha256:93df0b9c67221d38fb970c48f6d361819a6c388299a0ef3171bbb912edfe1324"},
 ]
 nest-asyncio = [
     {file = "nest_asyncio-1.5.4-py3-none-any.whl", hash = "sha256:3fdd0d6061a2bb16f21fe8a9c6a7945be83521d81a0d15cff52e9edee50101d6"},
@@ -5173,8 +5171,8 @@ restructuredtext-lint = [
     {file = "restructuredtext_lint-1.4.0.tar.gz", hash = "sha256:1b235c0c922341ab6c530390892eb9e92f90b9b75046063e047cacfb0f050c45"},
 ]
 rich = [
-    {file = "rich-11.2.0-py3-none-any.whl", hash = "sha256:d5f49ad91fb343efcae45a2b2df04a9755e863e50413623ab8c9e74f05aee52b"},
-    {file = "rich-11.2.0.tar.gz", hash = "sha256:1a6266a5738115017bb64a66c59c717e7aa047b3ae49a011ede4abdeffc6536e"},
+    {file = "rich-12.0.0-py3-none-any.whl", hash = "sha256:fdcd2f8d416e152bcf35c659987038d1ae5a7bd336e821ca7551858a4c7e38a9"},
+    {file = "rich-12.0.0.tar.gz", hash = "sha256:14bfd0507edc633e021b02c45cbf7ca22e33b513817627b8de3412f047a3e798"},
 ]
 rsa = [
     {file = "rsa-4.8-py3-none-any.whl", hash = "sha256:95c5d300c4e879ee69708c428ba566c59478fd653cc3a22243eeb8ed846950bb"},
@@ -5290,14 +5288,12 @@ tokenize-rt = [
 ]
 tokenizers = [
     {file = "tokenizers-0.11.6-cp310-cp310-macosx_10_11_x86_64.whl", hash = "sha256:c24f3e0e69edf015efab6bea0a24d45eb19f477106d00a739c19d2a02f6085fc"},
-    {file = "tokenizers-0.11.6-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:1c5a786fe12a4c1782337abc818fc48ca84e07f8cb0eeab263a27fcd30f7fc6f"},
     {file = "tokenizers-0.11.6-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:6f7b82aaedb24e0a4dcd8fe77a79de9a0acf43db8ae173cdb4eca1e767566b47"},
     {file = "tokenizers-0.11.6-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c7d8ea3a05b593e5744c4ad0e6e2cbba6f82588c302d663855316c1861c09557"},
     {file = "tokenizers-0.11.6-cp310-cp310-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:3fde9a1e7d18caddff3ac13baf4e31235688b0db2ba42bbc8179dc878327560a"},
     {file = "tokenizers-0.11.6-cp310-cp310-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:46a763d1f43f46448e41884356f105a2f067b6e573c7e0c67d8f93512304b22c"},
     {file = "tokenizers-0.11.6-cp310-cp310-win32.whl", hash = "sha256:6bc5cc6d5b17bf8222049a2c97bcc117974793e37fb2e42b8fb04b2ef984d165"},
     {file = "tokenizers-0.11.6-cp310-cp310-win_amd64.whl", hash = "sha256:3c1ad5d230bdd6a3f63bbffd16a9fdea6a049ceb6d225e4d70a2664853f40aaf"},
-    {file = "tokenizers-0.11.6-cp36-cp36m-macosx_12_0_arm64.whl", hash = "sha256:44697b08469dfe3265a851f87ad41c7f04efa511ada8182b6b08aa809765dcb8"},
     {file = "tokenizers-0.11.6-cp36-cp36m-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:0975b9f06f982580909f9fa769baf58b806ab2d099daccc43dc95d60bf56817a"},
     {file = "tokenizers-0.11.6-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d0deaa700f9e442ed4bb4fe2c6482979b3709772bcce2dd7b89dc586ec39ce2e"},
     {file = "tokenizers-0.11.6-cp36-cp36m-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:34ac8450ad93e4dae1c72b7ad6c6a74d2941a68beb25df25d05b2b371267daba"},
@@ -5310,7 +5306,6 @@ tokenizers = [
     {file = "tokenizers-0.11.6-cp37-cp37m-win32.whl", hash = "sha256:7ed928ac19a3397af6fe3716b313fb13dcaf54978f0fc159eeabaff8e35e5c92"},
     {file = "tokenizers-0.11.6-cp37-cp37m-win_amd64.whl", hash = "sha256:6840554a8cac1196db627d42edbf77f4b5decf6ce6fa9ca073efaaa2cff887a6"},
     {file = "tokenizers-0.11.6-cp38-cp38-macosx_10_11_x86_64.whl", hash = "sha256:216745a6e92eb52d99b56123e6fece59e0dcf7bd1444f42bee09e1f02c89bbec"},
-    {file = "tokenizers-0.11.6-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:e6d02076160d60966d6b2b320744affe6b846ee10a37d1c0222b6ca9e640bdb8"},
     {file = "tokenizers-0.11.6-cp38-cp38-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:7074162348a7784faccbea18cf814138483ce0c47eb17dc482cbc4bbbde8a00c"},
     {file = "tokenizers-0.11.6-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5c5ae264b75b7355db2bc3f34e8e3eb608fcca799ff9a109f3d61e4d9614f947"},
     {file = "tokenizers-0.11.6-cp38-cp38-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:d393eb6b79ab972e6ebede2aa330903913cf380f6fe975d64a92fca15b5d8579"},
@@ -5318,8 +5313,6 @@ tokenizers = [
     {file = "tokenizers-0.11.6-cp38-cp38-win32.whl", hash = "sha256:fd3fccc801b7621eca8dfd876494fad0b00bd43fc73afdc1c11d6be3c9136f78"},
     {file = "tokenizers-0.11.6-cp38-cp38-win_amd64.whl", hash = "sha256:3c1c6e10f655e0f57b9bb9a64ac4b7ea70d20a73f8013f8bd38d21d64d45d96a"},
     {file = "tokenizers-0.11.6-cp39-cp39-macosx_10_11_x86_64.whl", hash = "sha256:809b506a6e9f2f6cba86cfe642c1d1e82cbd758574bdc1207efe07229d6fa4d4"},
-    {file = "tokenizers-0.11.6-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:5b3829ad386747760e7d805c9ffd5cb5a9309679467029eea3162fb76c8c89dc"},
-    {file = "tokenizers-0.11.6-cp39-cp39-macosx_12_0_arm64.whl", hash = "sha256:b9a34bd33d866862f45bfc4a409563132a0b6af5951e08f3ccfde36152cd7683"},
     {file = "tokenizers-0.11.6-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:e75efa0275665ca30536c75dc5b4d33492fc40ae40c90d9085bdcdb99e060044"},
     {file = "tokenizers-0.11.6-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8afc3c76268cdef4567f84a19d9c06fdd697b22f5142d1af18254ec70703db7b"},
     {file = "tokenizers-0.11.6-cp39-cp39-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:47878a49211f8df63f7ec7de62f13b1c65e68be501f6a98b28f4bbb8d3390f25"},
@@ -5467,8 +5460,8 @@ urwid-readline = [
     {file = "urwid_readline-0.13.tar.gz", hash = "sha256:018020cbc864bb5ed87be17dc26b069eae2755cb29f3a9c569aac3bded1efaf4"},
 ]
 uvicorn = [
-    {file = "uvicorn-0.17.5-py3-none-any.whl", hash = "sha256:8adddf629b79857b48b999ae1b14d6c92c95d4d7840bd86461f09bee75f1653e"},
-    {file = "uvicorn-0.17.5.tar.gz", hash = "sha256:c04a9c069111489c324f427501b3840d306c6b91a77b00affc136a840a3f45f1"},
+    {file = "uvicorn-0.17.6-py3-none-any.whl", hash = "sha256:19e2a0e96c9ac5581c01eb1a79a7d2f72bb479691acd2b8921fce48ed5b961a6"},
+    {file = "uvicorn-0.17.6.tar.gz", hash = "sha256:5180f9d059611747d841a4a4c4ab675edf54c8489e97f96d0583ee90ac3bfc23"},
 ]
 virtualenv = [
     {file = "virtualenv-20.13.3-py2.py3-none-any.whl", hash = "sha256:dd448d1ded9f14d1a4bfa6bfc0c5b96ae3be3f2d6c6c159b23ddcfd701baa021"},

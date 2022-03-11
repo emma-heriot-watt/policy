@@ -19,22 +19,13 @@ class EmmaVisualFeatures:
 
 
 @dataclass
-class EmmaDatasetItem:
+class EmmaDatasetItem(EmmaVisualFeatures):
     """Output for the dataset reader."""
 
     input_token_ids: torch.Tensor
     text_attention_mask: torch.Tensor
     target_token_ids: torch.Tensor
     decoder_attention_mask: torch.Tensor
-    object_attention_mask: torch.Tensor
-    object_coordinates: torch.Tensor
-    object_features: torch.Tensor
-    object_frame_ids: torch.Tensor
-    scene_attention_mask: torch.Tensor
-    scene_coordinates: torch.Tensor
-    scene_features: torch.Tensor
-    scene_frame_ids: torch.Tensor
-    visual_token_ids: torch.Tensor
     task: torch.Tensor
 
 

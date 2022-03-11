@@ -4,15 +4,13 @@ from typing import Callable, Optional
 
 import torch
 from emma_datasets.datamodels import DatasetMetadata
-from emma_datasets.db import DatasetDb
-from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizer
 
-from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
+from emma_policy.datamodules.base_dataset import EmmaBaseDataset
+from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem
 from emma_policy.datamodules.pretrain_instances import PretrainInstance, Task
-from emma_policy.datamodules.pretrain_instances.datamodels import TASK_TEMPLATES_MAP
 from emma_policy.utils import get_logger
-from emma_policy.utils.boxes import Boxes, BoxMode, pairwise_iou
+from emma_policy.utils.boxes import BoxMode
 
 
 log = get_logger(__name__)
@@ -34,7 +32,7 @@ def apply_token_masking(input_text: str, mlm_probability: float = 0.3) -> tuple[
     return " ".join(tokens), input_text
 
 
-class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
+class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
     """Pretrain dataset reader for the EMMA model.
 
     Each task in the `self.task_process_map` corresponds to a method which will take the instance
@@ -49,10 +47,13 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
         max_frames: Optional[int] = None,
         match_threshold: float = 0.5,
     ) -> None:
-        self.db = DatasetDb(dataset_db_path)
-        self.tokenizer = tokenizer
+        super().__init__(
+            dataset_db_path=dataset_db_path,
+            tokenizer=tokenizer,
+            max_frames=max_frames,
+        )
+
         self.mlm_probability = mlm_probability
-        self.max_frames = max_frames
         self.match_threshold = match_threshold
 
         self.task_process_map: dict[
@@ -69,10 +70,6 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
             Task.vtm: self.vtm,
         }
 
-    def __len__(self) -> int:
-        """Return the total number of instances within the database."""
-        return len(self.db)
-
     def __getitem__(self, index: int) -> Optional[EmmaDatasetItem]:
         """Get a single instance from the dataset."""
         with self.db:
@@ -80,88 +77,6 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
             instance = PretrainInstance.parse_raw(instance_str)
 
         return self.task_process_map[instance.task](instance)
-
-    def load_visual_features(self, instance: PretrainInstance) -> EmmaVisualFeatures:
-        """Generate all the required visual features for the current instance."""
-        features_path = instance.features_path
-
-        if instance.modality == 4:
-            feature_dicts = [
-                feature_dict["features"] for feature_dict in torch.load(features_path)["frames"]
-            ]
-        elif instance.modality == 3:
-            feature_dicts = [torch.load(features_path)]
-
-        if self.max_frames:
-            feature_dicts = feature_dicts[-self.max_frames :]
-
-        object_features = []
-        object_coordinates = []
-        scene_features = []
-        vis_tokens = []
-        obj_frame_ids = []
-        object_attention_mask = []
-
-        for frame_idx, feature_dict in enumerate(feature_dicts):
-            object_features.append(feature_dict["bbox_features"])
-            image_coords = feature_dict["bbox_coords"]
-            # normalized coordinates
-            image_coords[:, (0, 2)] /= feature_dict["width"]
-            image_coords[:, (1, 3)] /= feature_dict["height"]
-            object_coordinates.append(image_coords)
-
-            scene_features.append(feature_dict["cnn_features"].unsqueeze(0))
-
-            feature_count = object_features[-1].shape[0]
-
-            curr_vis_tokens = torch.tensor(
-                self.tokenizer.convert_tokens_to_ids(
-                    [f"<vis_token_{idx+1}>" for idx in range(feature_count)]
-                ),
-                dtype=torch.long,
-            )
-
-            vis_tokens.append(curr_vis_tokens)
-
-            obj_frame_ids.append(
-                curr_vis_tokens.new_full(curr_vis_tokens.shape, fill_value=frame_idx + 1)
-            )
-
-            object_attention_mask.append(torch.ones_like(curr_vis_tokens, dtype=torch.bool))
-
-        num_frames = len(scene_features)
-        scene_attention_mask = torch.ones(num_frames, dtype=torch.bool)
-        scene_coordinates = torch.tensor([0, 0, 1.0, 1.0]).repeat(num_frames, 1)
-        scene_frame_ids = torch.arange(1, num_frames + 1)
-
-        emma_visual_features = EmmaVisualFeatures(
-            object_attention_mask=torch.cat(object_attention_mask),
-            object_coordinates=torch.cat(object_coordinates),
-            object_features=torch.cat(object_features),
-            object_frame_ids=torch.cat(obj_frame_ids),
-            scene_attention_mask=scene_attention_mask,
-            scene_coordinates=scene_coordinates,
-            scene_features=torch.cat(scene_features),
-            scene_frame_ids=scene_frame_ids,
-            visual_token_ids=torch.cat(vis_tokens),
-        )
-
-        return emma_visual_features
-
-    def calc_max_iou(
-        self, gt_bbox: torch.Tensor, object_coordinates: torch.Tensor, threshold: float = 0.5
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Get the best match features for all bbox."""
-        gt_box = Boxes(gt_bbox)
-        extract_box = Boxes(object_coordinates)
-        ious = pairwise_iou(gt_box, extract_box)
-        # ious[ious < threshold] = 0  # ignore all the ious below threshold
-        matched_values, matched_indices = torch.max(ious, dim=1)
-
-        # keep track whether ground truth bbox is mapped to a feature
-        gt_flags = matched_values > threshold
-
-        return matched_indices, gt_flags
 
     def mlm(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the MLM task."""
@@ -175,25 +90,22 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
 
         source_text, target_text = apply_token_masking(input_text, self.mlm_probability)
         # formats the masked caption using the corresponding task template
-        source_text = random.choice(TASK_TEMPLATES_MAP[Task.mlm]).format(caption=source_text)
+        source_text = self._get_random_template_for_task(Task.mlm).format(caption=source_text)
 
         input_encoding = self.tokenizer.encode_plus(
-            source_text, return_tensors="pt", truncation=True
+            source_text, return_tensors=self._return_tensor_type, truncation=True
         )
         target_encoding = self.tokenizer.encode_plus(
-            target_text, return_tensors="pt", truncation=True
+            target_text, return_tensors=self._return_tensor_type, truncation=True
         )
 
-        visual_features = self.load_visual_features(instance)
-
-        decoder_attention_mask = target_encoding.attention_mask
-        task = torch.tensor([Task.get_index(Task.mlm)], dtype=torch.long)
+        visual_features = self._load_visual_features(instance)
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
             target_token_ids=target_encoding.input_ids.squeeze(0),
-            decoder_attention_mask=decoder_attention_mask.squeeze(0),
+            decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
             object_attention_mask=visual_features.object_attention_mask,
             object_coordinates=visual_features.object_coordinates,
             object_features=visual_features.object_features,
@@ -203,7 +115,7 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
             scene_features=visual_features.scene_features,
             scene_frame_ids=visual_features.scene_frame_ids,
             visual_token_ids=visual_features.visual_token_ids,
-            task=task,
+            task=self._get_task_as_tensor(Task.mlm),
         )
 
     def itm_negative_candidate(
@@ -252,24 +164,24 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
                 input_text = self.itm_negative_candidate(rand_idx, img_names)
 
         # formats the masked caption using the corresponding task template
-        input_text = random.choice(TASK_TEMPLATES_MAP[Task.itm]).format(
+        input_text = self._get_random_template_for_task(Task.itm).format(
             statement=input_text.strip(".")
         )
 
         input_encoding = self.tokenizer.encode_plus(
-            input_text, return_tensors="pt", truncation=True
+            input_text, return_tensors=self._return_tensor_type, truncation=True
         )
-        target_encoding = self.tokenizer.encode_plus(target_text, return_tensors="pt")
+        target_encoding = self.tokenizer.encode_plus(
+            target_text, return_tensors=self._return_tensor_type
+        )
 
-        visual_features = self.load_visual_features(instance)
-        decoder_attention_mask = target_encoding.attention_mask
-        task = torch.tensor([Task.get_index(Task.itm)], dtype=torch.long)
+        visual_features = self._load_visual_features(instance)
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
             target_token_ids=target_encoding.input_ids.squeeze(0),
-            decoder_attention_mask=decoder_attention_mask.squeeze(0),
+            decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
             object_attention_mask=visual_features.object_attention_mask,
             object_coordinates=visual_features.object_coordinates,
             object_features=visual_features.object_features,
@@ -279,65 +191,61 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
             scene_features=visual_features.scene_features,
             scene_frame_ids=visual_features.scene_frame_ids,
             visual_token_ids=visual_features.visual_token_ids,
-            task=task,
+            task=self._get_task_as_tensor(Task.itm),
         )
 
     def visual_grounding(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
         """Process the instance for the Visual Grounding task."""
-        visual_features = self.load_visual_features(instance=instance)
-        features_path = instance.features_path
-        feature_dicts = torch.load(features_path)
-
-        w, h = feature_dicts["width"], feature_dicts["height"]
+        visual_features = self._load_visual_features(instance)
+        feature_dicts = torch.load(instance.features_path)
 
         if instance.regions is None:
             raise AssertionError(
                 "Regions for this instance must exist. Make sure this instance is connected to the right task!"
             )
 
-        gt_regions = instance.regions  # append the target region to all image regions
+        # append the target region to all image regions
         region_bbox = []
-        for region in gt_regions:
+        for region in instance.regions:
             region_coord = BoxMode.convert(
                 list(region.bbox), from_mode=BoxMode.XYWH_ABS, to_mode=BoxMode.XYXY_ABS
             )
             region_bbox.append(
                 [
-                    region_coord[0] / w,
-                    region_coord[1] / h,
-                    region_coord[2] / w,
-                    region_coord[3] / h,
+                    region_coord[0] / feature_dicts["width"],
+                    region_coord[1] / feature_dicts["height"],
+                    region_coord[2] / feature_dicts["width"],
+                    region_coord[3] / feature_dicts["height"],
                 ]
             )
 
-        gt_bbox = torch.tensor(region_bbox)
-
-        matched_indice, gt_flags = self.calc_max_iou(
-            gt_bbox=gt_bbox,
-            object_coordinates=visual_features.object_coordinates,
+        matched_index, gt_flags = self._best_match_features(
+            ground_truth_bbox=torch.tensor(region_bbox),
+            object_coordinates_bbox=visual_features.object_coordinates,
             threshold=self.match_threshold,
         )
 
-        gt_filtered = [reg for idx, reg in enumerate(gt_regions) if gt_flags[idx]]
+        gt_filtered = [reg for idx, reg in enumerate(instance.regions) if gt_flags[idx]]
+
         if not gt_filtered:
             return None
+
         rand_index = random.randint(0, len(gt_filtered) - 1)
         selected_region = gt_filtered[rand_index]
-        mapped_region_index = matched_indice[gt_flags][rand_index]
+        mapped_region_index = matched_index[gt_flags][rand_index]
 
-        source_text = selected_region.caption
-        source_text = random.choice(TASK_TEMPLATES_MAP[Task.visual_grounding]).format(
-            caption=source_text
+        source_text = self._get_random_template_for_task(Task.visual_grounding).format(
+            caption=selected_region.caption
         )
 
         input_encoding = self.tokenizer.encode_plus(
-            source_text, return_tensors="pt", truncation=True
+            source_text, return_tensors=self._return_tensor_type, truncation=True
         )
         target_input_ids = visual_features.visual_token_ids.squeeze(0)[
             mapped_region_index
         ].reshape((1, -1))
+
         decoder_attention_mask = torch.ones(target_input_ids.shape, dtype=torch.bool)
-        task = torch.tensor([Task.get_index(Task.visual_grounding)], dtype=torch.long)
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
@@ -353,64 +261,63 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
             object_attention_mask=visual_features.object_attention_mask,
             scene_frame_ids=visual_features.scene_frame_ids,
             object_frame_ids=visual_features.object_frame_ids,
-            task=task,
+            task=self._get_task_as_tensor(Task.visual_grounding),
         )
 
     def dense_captioning(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
         """Process the instance for the dense captioning task."""
-        visual_features = self.load_visual_features(instance=instance)
-        features_path = instance.features_path
-        feature_dicts = torch.load(features_path)
-
-        w, h = feature_dicts["width"], feature_dicts["height"]
+        visual_features = self._load_visual_features(instance)
+        feature_dicts = torch.load(instance.features_path)
 
         if instance.regions is None:
             raise AssertionError(
                 "Regions for this instance must exist. Make sure this instance is connected to the right task!"
             )
 
-        gt_regions = instance.regions  # append the target region to all image regions
+        # append the target region to all image regions
         region_bbox = []
-        for region in gt_regions:
+        for region in instance.regions:
             region_coord = BoxMode.convert(
                 list(region.bbox), from_mode=BoxMode.XYWH_ABS, to_mode=BoxMode.XYXY_ABS
             )
             region_bbox.append(
                 [
-                    region_coord[0] / w,
-                    region_coord[1] / h,
-                    region_coord[2] / w,
-                    region_coord[3] / h,
+                    region_coord[0] / feature_dicts["width"],
+                    region_coord[1] / feature_dicts["height"],
+                    region_coord[2] / feature_dicts["width"],
+                    region_coord[3] / feature_dicts["height"],
                 ]
             )
 
-        gt_bbox = torch.tensor(region_bbox)
-
-        matched_indice, gt_flags = self.calc_max_iou(
-            gt_bbox=gt_bbox,
-            object_coordinates=visual_features.object_coordinates,
+        matched_index, gt_flags = self._best_match_features(
+            ground_truth_bbox=torch.tensor(region_bbox),
+            object_coordinates_bbox=visual_features.object_coordinates,
             threshold=self.match_threshold,
         )
 
-        gt_filtered = [reg for idx, reg in enumerate(gt_regions) if gt_flags[idx]]
+        gt_filtered = [reg for idx, reg in enumerate(instance.regions) if gt_flags[idx]]
         if not gt_filtered:
             return None
+
         rand_index = random.randint(0, len(gt_filtered) - 1)
         selected_region = gt_filtered[rand_index]
-        mapped_region_index = matched_indice[gt_flags][rand_index]
+        mapped_region_index = matched_index[gt_flags][rand_index]
 
         source_caption = self.tokenizer.decode(
             visual_features.visual_token_ids.squeeze(0)[mapped_region_index]
         )
 
-        source_text = random.choice(TASK_TEMPLATES_MAP[Task.dense_captioning]).format(
+        source_text = self._get_random_template_for_task(Task.dense_captioning).format(
             region=source_caption
         )
 
-        input_encoding = self.tokenizer.encode_plus(source_text, return_tensors="pt")
+        input_encoding = self.tokenizer.encode_plus(
+            source_text, return_tensors=self._return_tensor_type
+        )
         target_text = selected_region.caption
-        target_encoding = self.tokenizer.encode_plus(target_text, return_tensors="pt")
-        task = torch.tensor([Task.get_index(Task.dense_captioning)], dtype=torch.long)
+        target_encoding = self.tokenizer.encode_plus(
+            target_text, return_tensors=self._return_tensor_type
+        )
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
@@ -426,31 +333,28 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
             decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
             scene_frame_ids=visual_features.scene_frame_ids,
             object_frame_ids=visual_features.object_frame_ids,
-            task=task,
+            task=self._get_task_as_tensor(Task.dense_captioning),
         )
 
     def captioning(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the captioning task."""
-        source_text = random.choice(TASK_TEMPLATES_MAP[Task.captioning])
+        source_text = self._get_random_template_for_task(Task.captioning)
         target_text = instance.caption.text
 
         input_encoding = self.tokenizer.encode_plus(
-            source_text, return_tensors="pt", truncation=True
+            source_text, return_tensors=self._return_tensor_type, truncation=True
         )
         target_encoding = self.tokenizer.encode_plus(
-            target_text, return_tensors="pt", truncation=True
+            target_text, return_tensors=self._return_tensor_type, truncation=True
         )
 
-        visual_features = self.load_visual_features(instance=instance)
-
-        decoder_attention_mask = target_encoding.attention_mask
-        task = torch.tensor([Task.get_index(Task.captioning)], dtype=torch.long)
+        visual_features = self._load_visual_features(instance)
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
             target_token_ids=target_encoding.input_ids.squeeze(0),
-            decoder_attention_mask=decoder_attention_mask.squeeze(0),
+            decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
             object_attention_mask=visual_features.object_attention_mask,
             object_coordinates=visual_features.object_coordinates,
             object_features=visual_features.object_features,
@@ -460,7 +364,7 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
             scene_features=visual_features.scene_features,
             scene_frame_ids=visual_features.scene_frame_ids,
             visual_token_ids=visual_features.visual_token_ids,
-            task=task,
+            task=self._get_task_as_tensor(Task.captioning),
         )
 
     def vqa(self, instance: PretrainInstance) -> EmmaDatasetItem:
@@ -469,21 +373,20 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
         target_text = instance.qa.answer
 
         # formats the masked caption using the corresponding task template
-        source_text = random.choice(TASK_TEMPLATES_MAP[Task.vqa]).format(
+        source_text = self._get_random_template_for_task(Task.vqa).format(
             question=input_text,
         )
 
         input_encoding = self.tokenizer.encode_plus(
-            source_text, return_tensors="pt", truncation=True
+            source_text, return_tensors=self._return_tensor_type, truncation=True
         )
         target_encoding = self.tokenizer.encode_plus(
-            target_text, return_tensors="pt", truncation=True
+            target_text, return_tensors=self._return_tensor_type, truncation=True
         )
 
-        visual_features = self.load_visual_features(instance)
+        visual_features = self._load_visual_features(instance)
 
         decoder_attention_mask = target_encoding.attention_mask
-        task = torch.tensor([Task.get_index(Task.vqa)], dtype=torch.long)
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
@@ -499,7 +402,7 @@ class EmmaPretrainDataset(Dataset[Optional[EmmaDatasetItem]]):
             scene_features=visual_features.scene_features,
             scene_frame_ids=visual_features.scene_frame_ids,
             visual_token_ids=visual_features.visual_token_ids,
-            task=task,
+            task=self._get_task_as_tensor(Task.vqa),
         )
 
     def instruction_prediction(self, instance: PretrainInstance) -> EmmaDatasetItem:

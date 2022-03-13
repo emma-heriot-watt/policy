@@ -18,7 +18,7 @@ def instances_tiny_batch_db_path(fixtures_root: Path) -> Path:
 @fixture
 def tiny_instances_db_path(tmp_path: Path) -> Path:
     """Create an DatasetDb of instances with very few instances."""
-    max_num_instances = 2
+    max_num_instances = 5
 
     tiny_instances_db_path = tmp_path.joinpath("tiny_instances.db")
 
@@ -26,7 +26,6 @@ def tiny_instances_db_path(tmp_path: Path) -> Path:
 
     with tiny_instances_db:
         with DatasetDb("storage/fixtures/instances.db") as instances_db:
-
             for data_id, example_id, instance_str in instances_db:
                 if data_id > max_num_instances:
                     break
@@ -42,7 +41,6 @@ def tiny_pretrain_db_path(tmp_path: Path) -> Path:
     tiny_pretrain_db_path = tmp_path.joinpath("tiny_pretrain.db")
 
     tiny_pretrain_db = DatasetDb(tiny_pretrain_db_path, readonly=False)
-
     with tiny_pretrain_db:
 
         max_num_instances = 10

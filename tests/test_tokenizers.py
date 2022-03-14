@@ -1,20 +1,12 @@
 from argparse import Namespace
 from pathlib import Path
 
-import pytest
-from pytest_cases import fixture_ref, parametrize
+from pytest_cases import parametrize
 
 from emma_policy.commands.build_tokenizer import main as build_tokenizer_main
 from emma_policy.models.tokenizer_emma import EmmaTokenizer
 
 
-@parametrize(
-    "instances_db_path",
-    [
-        pytest.param(Path("storage/fixtures/instances.db"), marks=pytest.mark.slow, id="full"),
-        pytest.param(fixture_ref("tiny_instances_db_path"), id="subset"),
-    ],
-)
 @parametrize("tokenizer", ["allenai/led-base-16384", "facebook/bart-base"])
 @parametrize("num_visual_tokens", [100])
 @parametrize("num_frame_tokens", [250])

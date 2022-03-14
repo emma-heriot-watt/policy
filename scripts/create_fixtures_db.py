@@ -186,14 +186,14 @@ if __name__ == "__main__":
         "--max_train_instances",
         type=int,
         help="Maximum number of train instances",
-        default=100,
+        default=20,  # noqa: WPS432
     )
 
     parser.add_argument(
         "--max_valid_instances",
         type=int,
         help="Maximum number of valid instances",
-        default=20,  # noqa: WPS432
+        default=5,
     )
 
     parser.add_argument(

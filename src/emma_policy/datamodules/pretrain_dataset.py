@@ -4,7 +4,7 @@ from re import finditer
 from typing import Callable, Optional
 
 import torch
-from emma_datasets.datamodels import DatasetMetadata, Region
+from emma_datasets.datamodels import DatasetMetadata, MediaType, Region
 from transformers import PreTrainedTokenizer
 
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
@@ -143,21 +143,17 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             instance_str = self.db[index]
             other_instance = PretrainInstance.parse_raw(instance_str)
 
-        if other_instance.modality == 4:
+        if other_instance.modality == MediaType.video:
             return None
 
         other_image_names = set(other_instance.dataset.values())
         if not image_names.isdisjoint(other_image_names):
             return None
 
-        if other_instance.caption is not None:
-            input_text_candidates = other_instance.caption.text
-        elif other_instance.regions is not None:
-            input_text_candidates = other_instance.regions.caption
-        else:
-            input_text_candidates = None
+        if other_instance.caption is None:
+            return None
 
-        return input_text_candidates
+        return other_instance.caption.text
 
     def itm(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the ITM task."""
@@ -202,36 +198,6 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             visual_token_ids=visual_features.visual_token_ids,
             task=self._get_task_as_tensor(Task.itm),
         )
-
-    def _region_mapping(
-        self,
-        regions: list[Region],
-        visual_features: EmmaVisualFeatures,
-        width: int,
-        height: int,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-
-        gt_bbox = []
-        for region in regions:
-            gt_bbox_coord = BoxMode.convert(
-                list(region.bbox), from_mode=BoxMode.XYWH_ABS, to_mode=BoxMode.XYXY_ABS
-            )
-
-            gt_bbox.append(
-                [
-                    gt_bbox_coord[0] / width,
-                    gt_bbox_coord[1] / height,
-                    gt_bbox_coord[2] / width,
-                    gt_bbox_coord[3] / height,
-                ]
-            )
-
-        matched_index, gt_flags = self._best_match_features(
-            ground_truth_bbox=torch.tensor(gt_bbox),
-            object_coordinates_bbox=visual_features.object_coordinates,
-            threshold=self.match_threshold,
-        )
-        return matched_index, gt_flags
 
     def visual_grounding(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
         """Process the instance for the Visual Grounding task."""
@@ -587,3 +553,32 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
     def vtm(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the VTM task."""
         raise NotImplementedError
+
+    def _region_mapping(
+        self,
+        regions: list[Region],
+        visual_features: EmmaVisualFeatures,
+        width: int,
+        height: int,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        gt_bbox = []
+        for region in regions:
+            gt_bbox_coord = BoxMode.convert(
+                list(region.bbox), from_mode=BoxMode.XYWH_ABS, to_mode=BoxMode.XYXY_ABS
+            )
+
+            gt_bbox.append(
+                [
+                    gt_bbox_coord[0] / width,
+                    gt_bbox_coord[1] / height,
+                    gt_bbox_coord[2] / width,
+                    gt_bbox_coord[3] / height,
+                ]
+            )
+
+        matched_index, gt_flags = self._best_match_features(
+            ground_truth_bbox=torch.tensor(gt_bbox),
+            object_coordinates_bbox=visual_features.object_coordinates,
+            threshold=self.match_threshold,
+        )
+        return matched_index, gt_flags

@@ -17,7 +17,7 @@ class Task(Enum):
     dense_captioning = "Dense Captioning"
     captioning = "Captioning"
     vqa = "Visual Question Answering"
-    relation_detection = "relationship detection"
+    relation_detection = "Relationship detection"
     instruction_prediction = "Instruction prediction for trajectory"
     action_execution = "Action execution in embodied environment"
     # TODO: check whether we can put together the entire trajectory

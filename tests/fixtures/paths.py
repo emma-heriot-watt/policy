@@ -14,10 +14,15 @@ def fixtures_root(project_root: Path) -> Path:
     return Path.joinpath(project_root, "storage", "fixtures")
 
 
+@fixture(scope="session")
+def instances_db_path(fixtures_root: Path) -> Path:
+    return fixtures_root.joinpath("instances.db")
+
+
 model_metadata_path = param_fixture(
     "model_metadata_path",
     [
-        pytest.param("heriot-watt/emma-small", id="emma-small"),
+        pytest.param("heriot-watt/emma-small", marks=pytest.mark.order(1), id="emma-small"),
         pytest.param("heriot-watt/emma-base", marks=pytest.mark.slow, id="emma-base"),
     ],
     scope="session",

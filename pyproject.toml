@@ -55,6 +55,7 @@ isort = "^5.10.1"
 pytest-cases = "^3.6.9"
 black = { version = "^22.1.0", extras = ["jupyter"] }
 bandit = "<1.7.3"
+pytest-order = "^1.0.1"
 
 [tool.black]
 line-length = 99

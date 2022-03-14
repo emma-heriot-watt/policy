@@ -1,6 +1,12 @@
 import pytest
 from pytest_cases import param_fixture
 
+from emma_policy.datamodules.pretrain_instances.datamodels import Task
+
+
+all_tasks_list = [
+    task.name for task in Task if task not in {Task.instruction_prediction, Task.vtm}
+]
 
 enabled_tasks_list = param_fixture(
     "enabled_tasks_list",
@@ -11,6 +17,7 @@ enabled_tasks_list = param_fixture(
         pytest.param(
             ["mlm", "mtm"], marks=pytest.mark.xfail(raises=KeyError), id="misspelled_task"
         ),
+        pytest.param(all_tasks_list, id="all_tasks"),
     ],
 )
 
@@ -23,7 +30,7 @@ enabled_tasks_per_modality = param_fixture(
             id="single_task",
         ),
         pytest.param(
-            {"image": ["mlm", "itm", "captioning"], "video": ["instruction_prediction"]},
+            {"image": ["mlm", "itm", "captioning"], "video": ["action_execution"]},
             id="multiple_tasks",
         ),
         pytest.param(
@@ -48,6 +55,10 @@ enabled_tasks_per_modality = param_fixture(
             {"image": [], "video": []},
             marks=pytest.mark.skip("no logic present to handle this case"),
             id="all_empty_modality",
+        ),
+        pytest.param(
+            {"image": all_tasks_list, "video": all_tasks_list},
+            id="all_tasks",
         ),
     ],
 )

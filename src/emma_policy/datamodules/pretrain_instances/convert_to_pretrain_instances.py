@@ -2,12 +2,14 @@ import itertools
 from typing import Callable, Iterator, Optional
 
 from emma_datasets.datamodels import Instance, MediaType
+from emma_datasets.datamodels.region import Region
 
 from emma_policy.datamodules.pretrain_instances.datamodels import (
     EnabledTasksHandler,
     PretrainInstance,
     Task,
 )
+from emma_policy.datamodules.relation import Relation
 
 
 PretrainInstanceCreatorFuncType = Callable[["PretrainInstanceCreator"], Iterator[PretrainInstance]]
@@ -61,6 +63,7 @@ class PretrainInstanceCreator:
             Task.dense_captioning: self.dense_captioning,
             Task.captioning: self.captioning,
             Task.vqa: self.vqa,
+            Task.relation_detection: self.relation_detection,
             Task.instruction_prediction: self.instruction_prediction,
             Task.action_execution: self.action_execution,
             Task.vtm: self.vtm,
@@ -125,6 +128,53 @@ class PretrainInstanceCreator:
             regions=self.instance.regions,
             dataset=self.instance.dataset,
             task=Task.dense_captioning,
+        )
+
+    @property  # type: ignore[misc]
+    @image_task_check
+    def relation_detection(self) -> Iterator[PretrainInstance]:
+        """Get the pretrain instances for the relation detection task."""
+        if self.instance.scene_graph is None or not self.instance.scene_graph.objects.keys():
+            return []
+        if Task.relation_detection not in self.enabled_tasks:
+            return []
+
+        flatten_relations = []
+        for _id, gqa_obj in self.instance.scene_graph.objects.items():
+            for gqa_rel in gqa_obj.relations:
+                subject = Region(
+                    caption=gqa_obj.name,
+                    bbox=[
+                        gqa_obj.x,
+                        gqa_obj.y,
+                        gqa_obj.w,
+                        gqa_obj.h,
+                    ],
+                )
+                rel_object = self.instance.scene_graph.objects[gqa_rel.object]
+                object_ = Region(
+                    caption=rel_object.name,
+                    bbox=[
+                        rel_object.x,
+                        rel_object.y,
+                        rel_object.w,
+                        rel_object.h,
+                    ],
+                )
+                flatten_relations.append(
+                    Relation(
+                        subject_attr=gqa_obj.attributes,
+                        subject=subject,
+                        predicate=gqa_rel.name,
+                        object=object_,
+                        object_attr=rel_object.attributes,
+                    )
+                )
+
+        yield PretrainInstance(
+            relations=flatten_relations,
+            dataset=self.instance.dataset,
+            task=Task.relation_detection,
         )
 
     @property  # type: ignore[misc]

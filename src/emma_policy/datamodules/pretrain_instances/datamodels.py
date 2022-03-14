@@ -1,9 +1,11 @@
 import string
 from enum import Enum
 from types import MappingProxyType
-from typing import Any, Iterator, Mapping, Union, cast
+from typing import Any, Iterator, Mapping, Optional, Union, cast
 
 from emma_datasets.datamodels import Instance, MediaType
+
+from emma_policy.datamodules.relation import Relation
 
 
 class Task(Enum):
@@ -15,6 +17,7 @@ class Task(Enum):
     dense_captioning = "Dense Captioning"
     captioning = "Captioning"
     vqa = "Visual Question Answering"
+    relation_detection = "relationship detection"
     instruction_prediction = "Instruction prediction for trajectory"
     action_execution = "Action execution in embodied environment"
     # TODO: check whether we can put together the entire trajectory
@@ -131,6 +134,15 @@ TASK_TEMPLATES_MAP: Mapping[Task, list[str]] = MappingProxyType(
         Task.instruction_prediction: [
             "Predict instruction",
         ],
+        Task.relation_detection: [
+            "Explain the relationship between: {subject} and {object}",
+            "What is the relationship between {subject} and {object}",
+            "How does {subject} relate to {object}?",
+            "Explain how {subject} relates to {object}?",
+            "Describe the relationship between {subject} and {object}",
+            "What's happening between {subject} and {object}?",
+        ],
+        Task.instruction_prediction: ["predict instruction"],
         Task.action_execution: [
             "Follow the instruction: {instruction}",
             "Execute the instruction: {instruction}",
@@ -252,3 +264,4 @@ class PretrainInstance(Instance):  # type: ignore[misc]
     """
 
     task: Task
+    relations: Optional[list[Relation]]

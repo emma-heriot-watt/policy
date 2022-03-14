@@ -23,6 +23,7 @@ enabled_tasks:
     # - instruction_prediction
     # - action_execution
     # - vtm
+    #- relation_detection
   video:
     # - mlm
     # - itm

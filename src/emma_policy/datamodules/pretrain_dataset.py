@@ -4,12 +4,13 @@ from re import finditer
 from typing import Callable, Optional
 
 import torch
-from emma_datasets.datamodels import DatasetMetadata
+from emma_datasets.datamodels import DatasetMetadata, Region
 from transformers import PreTrainedTokenizer
 
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
 from emma_policy.datamodules.pretrain_instances import PretrainInstance, Task
+from emma_policy.datamodules.relation import Relation
 from emma_policy.utils import get_logger
 from emma_policy.utils.boxes import BoxMode
 
@@ -70,6 +71,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             Task.itm: self.itm,
             Task.visual_grounding: self.visual_grounding,
             Task.dense_captioning: self.dense_captioning,
+            Task.relation_detection: self.relation_detection,
             Task.captioning: self.captioning,
             Task.vqa: self.vqa,
             Task.instruction_prediction: self.instruction_prediction,
@@ -201,42 +203,52 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             task=self._get_task_as_tensor(Task.itm),
         )
 
-    def visual_grounding(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
-        """Process the instance for the Visual Grounding task."""
-        visual_features = self._load_visual_features(instance)
-        feature_dicts = torch.load(instance.features_path)
+    def _region_mapping(
+        self,
+        regions: list[Region],
+        visual_features: EmmaVisualFeatures,
+        width: int,
+        height: int,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
 
-        if instance.regions is None:
-            raise AssertionError(
-                "Regions for this instance must exist. Make sure this instance is connected to the right task!"
-            )
-
-        # append the target region to all image regions
-        region_bbox = []
-        for region in instance.regions:
-            region_coord = BoxMode.convert(
+        gt_bbox = []
+        for region in regions:
+            gt_bbox_coord = BoxMode.convert(
                 list(region.bbox), from_mode=BoxMode.XYWH_ABS, to_mode=BoxMode.XYXY_ABS
             )
-            region_bbox.append(
+
+            gt_bbox.append(
                 [
-                    region_coord[0] / feature_dicts["width"],
-                    region_coord[1] / feature_dicts["height"],
-                    region_coord[2] / feature_dicts["width"],
-                    region_coord[3] / feature_dicts["height"],
+                    gt_bbox_coord[0] / width,
+                    gt_bbox_coord[1] / height,
+                    gt_bbox_coord[2] / width,
+                    gt_bbox_coord[3] / height,
                 ]
             )
 
         matched_index, gt_flags = self._best_match_features(
-            ground_truth_bbox=torch.tensor(region_bbox),
+            ground_truth_bbox=torch.tensor(gt_bbox),
             object_coordinates_bbox=visual_features.object_coordinates,
             threshold=self.match_threshold,
         )
+        return matched_index, gt_flags
+
+    def visual_grounding(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
+        """Process the instance for the Visual Grounding task."""
+        visual_features = self._load_visual_features(instance=instance)
+        feature_dict = torch.load(instance.features_path)
+        if instance.regions is None:
+            raise AssertionError(
+                "Regions for this instance must exist. Make sure this instance is connected to the right task!"
+            )
+        width, height = feature_dict["width"], feature_dict["height"]
+        matched_index, gt_flags = self._region_mapping(
+            regions=instance.regions, visual_features=visual_features, width=width, height=height
+        )
 
         gt_filtered = [reg for idx, reg in enumerate(instance.regions) if gt_flags[idx]]
-
         if not gt_filtered:
             return None
-
         rand_index = random.randint(0, len(gt_filtered) - 1)
         selected_region = gt_filtered[rand_index]
         mapped_region_index = matched_index[gt_flags][rand_index]
@@ -251,7 +263,6 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         target_input_ids = visual_features.visual_token_ids.squeeze(0)[
             mapped_region_index
         ].reshape((1, -1))
-
         decoder_attention_mask = torch.ones(target_input_ids.shape, dtype=torch.bool)
 
         return EmmaDatasetItem(
@@ -273,39 +284,19 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
     def dense_captioning(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
         """Process the instance for the dense captioning task."""
-        visual_features = self._load_visual_features(instance)
-        feature_dicts = torch.load(instance.features_path)
-
+        visual_features = self._load_visual_features(instance=instance)
+        feature_dict = torch.load(instance.features_path)
         if instance.regions is None:
             raise AssertionError(
                 "Regions for this instance must exist. Make sure this instance is connected to the right task!"
             )
-
-        # append the target region to all image regions
-        region_bbox = []
-        for region in instance.regions:
-            region_coord = BoxMode.convert(
-                list(region.bbox), from_mode=BoxMode.XYWH_ABS, to_mode=BoxMode.XYXY_ABS
-            )
-            region_bbox.append(
-                [
-                    region_coord[0] / feature_dicts["width"],
-                    region_coord[1] / feature_dicts["height"],
-                    region_coord[2] / feature_dicts["width"],
-                    region_coord[3] / feature_dicts["height"],
-                ]
-            )
-
-        matched_index, gt_flags = self._best_match_features(
-            ground_truth_bbox=torch.tensor(region_bbox),
-            object_coordinates_bbox=visual_features.object_coordinates,
-            threshold=self.match_threshold,
+        width, height = feature_dict["width"], feature_dict["height"]
+        matched_index, gt_flags = self._region_mapping(
+            regions=instance.regions, visual_features=visual_features, width=width, height=height
         )
-
         gt_filtered = [reg for idx, reg in enumerate(instance.regions) if gt_flags[idx]]
         if not gt_filtered:
             return None
-
         rand_index = random.randint(0, len(gt_filtered) - 1)
         selected_region = gt_filtered[rand_index]
         mapped_region_index = matched_index[gt_flags][rand_index]
@@ -412,6 +403,96 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             task=self._get_task_as_tensor(Task.vqa),
         )
 
+    def _relation_detection_target(self, selected_relation: Relation) -> str:
+        """Generate the target for relation detection task."""
+        subject_attr_list = selected_relation.subject_attr
+        if subject_attr_list:
+            subject_attr = " ".join(
+                random.sample(subject_attr_list, min(len(subject_attr_list), 2))
+            )
+        else:
+            subject_attr = ""
+
+        object_attr_list = selected_relation.object_attr
+
+        if object_attr_list:
+            object_attr = " ".join(random.sample(object_attr_list, min(len(object_attr_list), 2)))
+        else:
+            object_attr = ""
+
+        subject_type = selected_relation.subject.caption
+        object_type = selected_relation.object.caption
+        predicate = selected_relation.predicate
+        target_text = f"{subject_attr} {subject_type} {predicate} {object_attr} {object_type}"
+        target_text = target_text.strip().replace("  ", " ")
+        return target_text
+
+    def relation_detection(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
+        """Process the instance for the relation detection task."""
+        visual_features = self._load_visual_features(instance=instance)
+        feature_dict = torch.load(instance.features_path)
+        if instance.relations is None:
+            raise AssertionError(
+                "relation for this instance must exist. Make sure this instance is connected to the right task!"
+            )
+
+        sub_matched_index, sub_gt_flags = self._region_mapping(
+            regions=[rel.subject for rel in instance.relations],
+            visual_features=visual_features,
+            width=feature_dict["width"],
+            height=feature_dict["height"],
+        )
+        obj_matched_index, obj_gt_flags = self._region_mapping(
+            regions=[rel.object for rel in instance.relations],
+            visual_features=visual_features,
+            width=feature_dict["width"],
+            height=feature_dict["height"],
+        )
+
+        combined_flag = torch.logical_and(sub_gt_flags, obj_gt_flags)
+        gt_filtered = [rel for idx, rel in enumerate(instance.relations) if combined_flag[idx]]
+        if not gt_filtered:
+            return None
+        rand_index = random.randint(0, len(gt_filtered) - 1)
+        mapped_subj_index = sub_matched_index[combined_flag][rand_index]
+        mapped_obj_index = obj_matched_index[combined_flag][rand_index]
+
+        subject_token = self.tokenizer.decode(
+            visual_features.visual_token_ids.squeeze(0)[mapped_subj_index]
+        )
+
+        object_token = self.tokenizer.decode(
+            visual_features.visual_token_ids.squeeze(0)[mapped_obj_index]
+        )
+
+        source_text = self._get_random_template_for_task(Task.relation_detection).format(
+            subject=subject_token, object=object_token
+        )
+        input_encoding = self.tokenizer.encode_plus(
+            source_text, return_tensors=self._return_tensor_type, truncation=True
+        )
+        target_text = self._relation_detection_target(selected_relation=gt_filtered[rand_index])
+        target_encoding = self.tokenizer.encode_plus(
+            target_text, return_tensors=self._return_tensor_type, truncation=True
+        )
+
+        return EmmaDatasetItem(
+            input_token_ids=input_encoding.input_ids.squeeze(0),
+            target_token_ids=target_encoding.input_ids.squeeze(0),
+            scene_features=visual_features.scene_features,
+            scene_coordinates=visual_features.scene_coordinates,
+            object_features=visual_features.object_features,
+            object_coordinates=visual_features.object_coordinates,
+            visual_token_ids=visual_features.visual_token_ids,
+            scene_attention_mask=visual_features.scene_attention_mask,
+            object_attention_mask=visual_features.object_attention_mask,
+            text_attention_mask=input_encoding.attention_mask.squeeze(0),
+            decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
+            scene_frame_ids=visual_features.scene_frame_ids,
+            object_frame_ids=visual_features.object_frame_ids,
+            task=torch.tensor([Task.get_index(Task.relation_detection)]),
+        )
+
     def convert_trajectory_to_text(
         self, instance: PretrainInstance, visual_features: EmmaVisualFeatures
     ) -> Optional[str]:
@@ -442,9 +523,9 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                     ]
                 )
 
-                # Get the indices of the objects from the current frame. Frames start from 1.
+                # Get the index of the objects from the current frame. Frames start from 1.
                 frame_objects = visual_features.object_frame_ids == action_idx + 1
-                matched_indice, gt_flags = self._best_match_features(
+                matched_index, gt_flags = self._best_match_features(
                     ground_truth_bbox=gt_bbox.unsqueeze(0),
                     object_coordinates_bbox=visual_features.object_coordinates[frame_objects],
                     threshold=self.match_threshold,
@@ -453,7 +534,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                     return None
                 trajectory.append(
                     self.tokenizer.decode(
-                        visual_features.visual_token_ids[frame_objects][matched_indice[0]]
+                        visual_features.visual_token_ids[frame_objects][matched_index[0]]
                     )
                 )
 

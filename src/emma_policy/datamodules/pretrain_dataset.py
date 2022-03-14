@@ -260,16 +260,21 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         input_encoding = self.tokenizer.encode_plus(
             source_text, return_tensors=self._return_tensor_type, truncation=True
         )
+
         target_input_ids = visual_features.visual_token_ids.squeeze(0)[
             mapped_region_index
         ].reshape((1, -1))
-        decoder_attention_mask = torch.ones(target_input_ids.shape, dtype=torch.bool)
+
+        target_text = " ".join([self.tokenizer.decode(i) for i in target_input_ids])
+        target_encoding = self.tokenizer.encode_plus(
+            target_text, return_tensors=self._return_tensor_type, truncation=True
+        )
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
-            target_token_ids=target_input_ids.squeeze(0),
-            decoder_attention_mask=decoder_attention_mask.squeeze(0),
+            target_token_ids=target_encoding.input_ids.squeeze(0),
+            decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
             scene_features=visual_features.scene_features,
             scene_coordinates=visual_features.scene_coordinates,
             object_features=visual_features.object_features,
@@ -310,11 +315,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         )
 
         input_encoding = self.tokenizer.encode_plus(
-            source_text, return_tensors=self._return_tensor_type
+            source_text, return_tensors=self._return_tensor_type, truncation=True
         )
         target_text = selected_region.caption
         target_encoding = self.tokenizer.encode_plus(
-            target_text, return_tensors=self._return_tensor_type
+            target_text, return_tensors=self._return_tensor_type, truncation=True
         )
 
         return EmmaDatasetItem(

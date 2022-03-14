@@ -17,6 +17,7 @@ from emma_policy.models.tokenizer_emma import EmmaTokenizer
 )
 @parametrize("tokenizer", ["allenai/led-base-16384", "facebook/bart-base"])
 @parametrize("num_visual_tokens", [100])
+@parametrize("num_frame_tokens", [250])
 @parametrize("num_test_instances", [100])
 @parametrize("vocab_size", [10000])
 @parametrize("min_frequency", [0])
@@ -25,6 +26,7 @@ def test_build_tokenizer(  # noqa: WPS216
     instances_db_path: Path,
     tokenizer: str,
     num_visual_tokens: int,
+    num_frame_tokens: int,
     num_test_instances: int,
     vocab_size: int,
     min_frequency: int,
@@ -35,6 +37,7 @@ def test_build_tokenizer(  # noqa: WPS216
         tokenizer=tokenizer,
         num_test_instances=num_test_instances,
         num_visual_tokens=num_visual_tokens,
+        num_frame_tokens=num_frame_tokens,
         vocab_size=vocab_size,
         min_frequency=min_frequency,
     )

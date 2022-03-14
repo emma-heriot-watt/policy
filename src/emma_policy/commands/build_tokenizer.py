@@ -39,12 +39,14 @@ def main(args: Namespace) -> None:
     logger.info(f"Created {type(tokenizer)} tokenizer")
 
     object_tokens = [f"<vis_token_{idx}>" for idx in range(1, args.num_visual_tokens + 1)]
-
+    frame_tokens = [f"<frame_token_{idx}>" for idx in range(1, args.num_frame_tokens + 1)]
+    speaker_tokens = ["<<commander>>", "<<follower>>"]
+    new_special_tokens = object_tokens + frame_tokens + speaker_tokens
     tokenizer = tokenizer.train_new_from_iterator(
         itertools.chain(extract_task_prefix_strings(TASK_TEMPLATES_MAP), data_iterator),
         vocab_size=args.vocab_size,
         min_frequency=args.min_frequency,
-        new_special_tokens=object_tokens,
+        new_special_tokens=new_special_tokens,
     )
 
     logger.info(f"Saving tokenizer to path {args.output_path}")
@@ -71,6 +73,14 @@ if __name__ == "__main__":
         default=100,
         help="Number of total visual tokens for each visual frame.",
     )
+
+    parser.add_argument(
+        "--num_frame_tokens",
+        type=int,
+        default=250,  # noqa: WPS432
+        help="Number of total visual tokens for each visual frame.",
+    )
+
     parser.add_argument("--vocab_size", type=int, default=10000)  # noqa: WPS432
     parser.add_argument("--min_frequency", type=int, default=0)
     parser.add_argument(

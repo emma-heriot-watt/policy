@@ -1,5 +1,6 @@
 import random
 from pathlib import Path
+from re import finditer
 from typing import Callable, Optional
 
 import torch
@@ -7,7 +8,7 @@ from emma_datasets.datamodels import DatasetMetadata
 from transformers import PreTrainedTokenizer
 
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
-from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem
+from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
 from emma_policy.datamodules.pretrain_instances import PretrainInstance, Task
 from emma_policy.utils import get_logger
 from emma_policy.utils.boxes import BoxMode
@@ -30,6 +31,12 @@ def apply_token_masking(input_text: str, mlm_probability: float = 0.3) -> tuple[
             tokens[idx] = "<mask>"
 
     return " ".join(tokens), input_text
+
+
+def camel_case_split(identifier: str) -> list[str]:
+    """Split a camel case action to lower case words."""
+    matches = finditer(".+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)", identifier)
+    return [match.group(0).lower() for match in matches if match.group(0) != "Object"]
 
 
 class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
@@ -405,13 +412,91 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             task=self._get_task_as_tensor(Task.vqa),
         )
 
+    def convert_trajectory_to_text(
+        self, instance: PretrainInstance, visual_features: EmmaVisualFeatures
+    ) -> Optional[str]:
+        """Convert an Alfred trajectory to text."""
+        feature_dicts = torch.load(instance.features_path)["frames"]
+
+        trajectory = []
+        for action_idx, action in enumerate(instance.trajectory.low_level_actions):
+            if action_idx > 0:
+                trajectory.append(self.tokenizer.eos_token)
+
+            # Split a cama case action to words
+            trajectory.extend(camel_case_split(action.api_action.action))
+            # Match the object to a predicted bounding box
+            if "bbox" in action.discrete_action.args:
+
+                bbox_coord = BoxMode.convert(
+                    list(action.discrete_action.args["bbox"]),  # noqa: WPS529
+                    from_mode=BoxMode.XYWH_ABS,
+                    to_mode=BoxMode.XYXY_ABS,
+                )
+                gt_bbox = torch.tensor(
+                    [
+                        bbox_coord[0] / feature_dicts[action_idx]["features"]["width"],
+                        bbox_coord[1] / feature_dicts[action_idx]["features"]["height"],
+                        bbox_coord[2] / feature_dicts[action_idx]["features"]["width"],
+                        bbox_coord[3] / feature_dicts[action_idx]["features"]["height"],
+                    ]
+                )
+
+                # Get the indices of the objects from the current frame. Frames start from 1.
+                frame_objects = visual_features.object_frame_ids == action_idx + 1
+                matched_indice, gt_flags = self._best_match_features(
+                    ground_truth_bbox=gt_bbox.unsqueeze(0),
+                    object_coordinates_bbox=visual_features.object_coordinates[frame_objects],
+                    threshold=self.match_threshold,
+                )
+                if not gt_flags[0]:
+                    return None
+                trajectory.append(
+                    self.tokenizer.decode(
+                        visual_features.visual_token_ids[frame_objects][matched_indice[0]]
+                    )
+                )
+
+        return " ".join(trajectory)
+
     def instruction_prediction(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the instruction prediction task."""
         raise NotImplementedError
 
-    def action_execution(self, instance: PretrainInstance) -> EmmaDatasetItem:
+    def action_execution(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
         """Process the instance for the action execution task."""
-        raise NotImplementedError
+        source_text = self._get_random_template_for_task(Task.action_execution).format(
+            instruction=instance.caption.text,
+        )
+        input_encoding = self.tokenizer.encode_plus(
+            source_text, return_tensors=self._return_tensor_type, truncation=True
+        )
+
+        visual_features = self._load_visual_features(instance)
+
+        target_text = self.convert_trajectory_to_text(instance, visual_features)
+        if target_text is None:
+            return None
+        target_encoding = self.tokenizer.encode_plus(
+            target_text, return_tensors=self._return_tensor_type, truncation=True
+        )
+
+        return EmmaDatasetItem(
+            input_token_ids=input_encoding.input_ids.squeeze(0),
+            text_attention_mask=input_encoding.attention_mask.squeeze(0),
+            target_token_ids=target_encoding.input_ids.squeeze(0),
+            decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
+            object_attention_mask=visual_features.object_attention_mask,
+            object_coordinates=visual_features.object_coordinates,
+            object_features=visual_features.object_features,
+            object_frame_ids=visual_features.object_frame_ids,
+            scene_attention_mask=visual_features.scene_attention_mask,
+            scene_coordinates=visual_features.scene_coordinates,
+            scene_features=visual_features.scene_features,
+            scene_frame_ids=visual_features.scene_frame_ids,
+            visual_token_ids=visual_features.visual_token_ids,
+            task=self._get_task_as_tensor(Task.action_execution),
+        )
 
     def vtm(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the VTM task."""

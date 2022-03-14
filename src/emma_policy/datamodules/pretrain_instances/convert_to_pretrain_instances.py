@@ -174,10 +174,16 @@ class PretrainInstanceCreator:
     @video_task_check
     def action_execution(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instance for the action execution task given a subgoal instruction."""
-        if self.instance.trajectory is None or Task.action_execution not in self.enabled_tasks:
+        skip_instance = (
+            self.instance.trajectory is None
+            or self.instance.caption is None
+            or Task.action_execution not in self.enabled_tasks
+        )
+        if skip_instance:
             return []
 
         yield PretrainInstance(
+            caption=self.instance.caption,
             trajectory=self.instance.trajectory,
             dataset=self.instance.dataset,
             task=Task.action_execution,

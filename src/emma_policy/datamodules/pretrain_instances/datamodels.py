@@ -133,6 +133,7 @@ TASK_TEMPLATES_MAP: Mapping[Task, list[str]] = MappingProxyType(
         ],
         Task.action_execution: [
             "Follow the instruction: {instruction}",
+            "Execute the instruction: {instruction}",
             "Complete task: {instruction}",
             "Complete the task: {instruction}",
             "{instruction}",

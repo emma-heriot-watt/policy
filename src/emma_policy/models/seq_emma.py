@@ -50,11 +50,11 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
         """Get the new embeddings as the linear layer."""
         self.lm_head = new_embeddings
 
-    def get_encoder(self) -> EmmaEncoder:  # noqa: WPS615
+    def get_encoder(self) -> EmmaEncoder:
         """Return the encoder."""
         return self.emma.get_encoder()
 
-    def get_decoder(self) -> EmmaDecoder:  # noqa: WPS615
+    def get_decoder(self) -> EmmaDecoder:
         """Return the decoder."""
         return self.emma.get_decoder()
 

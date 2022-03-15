@@ -76,7 +76,7 @@ class EmmaPolicy(pl.LightningModule):
         if self.trainer.max_steps and 0 < self.trainer.max_steps < num_steps:
             num_steps = self.trainer.max_steps
 
-        log.info(f"Total number of training steps: {num_steps}")  # noqa: WPS437
+        log.info(f"Total number of training steps: {num_steps}")
 
         return num_steps
 

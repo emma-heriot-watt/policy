@@ -15,7 +15,7 @@ env:
 jobs:
   changes:
     name: Check for Python file changes
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     outputs:
       python: ${{steps.filter.outputs.python}}
       mypy: ${{steps.filter.outputs.mypy}}
@@ -46,6 +46,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Setup reviewdog
+        uses: reviewdog/action-setup@v1
+
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v3
         with:
@@ -58,22 +61,14 @@ jobs:
           git config --global url."https://${PAT}@github.com/".insteadOf "https://github.com/"
 
       - name: Install Poetry
-        uses: Gr1N/setup-poetry@v7
-
-      - name: Set Poetry config
-        run: |
-          poetry config virtualenvs.create false
+        uses: snok/install-poetry@v1
 
       - name: Load cached Python
         uses: tespkg/actions-cache@v1
         id: python-cache
         with:
-          path: |
-            ~/.cache/
-          key: ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-${{ hashFiles('poetry.lock') }}-${{hashFiles('pyproject.toml') }}-mypy
-          restore-keys: |
-            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-${{ hashFiles('poetry.lock') }}-${{ hashFiles('pyproject.toml') }}-
-            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-
+          path: ~/.cache/pypoetry/virtualenvs
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}-${{ hashFiles('pyproject.toml') }}
           bucket: ${{ secrets.AWS_S3_BUCKET_NAME }}
           accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -95,17 +90,24 @@ jobs:
           accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Run mypy for reviewdog
-        uses: tsuyoshicho/action-mypy@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review
-          level: error
-          mypy_flags: "--no-error-summary"
-
-      - name: Run mypy (for the failing)
+      - name: Run mypy with reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mypy .
+          exit_val="0"
+
+          poetry run mypy \
+            --show-column-numbers \
+            --show-absolute-path \
+            --no-error-summary . 2>&1 | reviewdog \
+            -efm="%f:%l:%c: %t%*[^:]: %m" \
+            -name="mypy" \
+            -fail-on-error \
+            -reporter=github-pr-review || exit_val="$?"
+
+          if [[ "${exit_val}" -ne '0' ]]; then
+            exit 1
+          fi
 
   lint:
     name: Lint Python
@@ -116,34 +118,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Configure GitHub to download private repos
-        env:
-          PAT: ${{ secrets.PAT }}
-        run: |
-          git config --global url."https://${PAT}@github.com/".insteadOf "https://github.com/"
+      - name: Setup reviewdog
+        uses: reviewdog/action-setup@v1
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v3
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install Poetry
-        uses: Gr1N/setup-poetry@v7
-
-      - name: Set Poetry config
+      - name: Configure GitHub to download private repos
+        env:
+          PAT: ${{ secrets.PAT }}
         run: |
-          poetry config virtualenvs.create false
+          git config --global url."https://${PAT}@github.com/".insteadOf "https://github.com/"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
 
       - name: Load cached Python
         uses: tespkg/actions-cache@v1
         id: python-cache
         with:
-          path: |
-            ~/.cache/
-          key: ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-${{ hashFiles('poetry.lock') }}-${{hashFiles('pyproject.toml') }}-flake8
-          restore-keys: |
-            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-${{ hashFiles('poetry.lock') }}-${{ hashFiles('pyproject.toml') }}-
-            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-poetry-pip-
+          path: ~/.cache/pypoetry/virtualenvs
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}-${{ hashFiles('pyproject.toml') }}
           bucket: ${{ secrets.AWS_S3_BUCKET_NAME }}
           accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -153,15 +150,21 @@ jobs:
           poetry install
 
       - name: Run flake8
-        uses: reviewdog/action-flake8@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review
-          level: error
-          fail_on_error: true
-          filter_mode: diff_context
-          reviewdog_flags: "-f pep8"
-          flake8_args: "--format=default"
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          exit_val="0"
+
+          poetry run flake8 \
+            --format=default . 2>&1 | reviewdog \
+            -f=pep8 \
+            -name="flake8" \
+            -fail-on-error \
+            -reporter=github-pr-review || exit_val="$?"
+
+          if [[ "${exit_val}" -ne '0' ]]; then
+            exit 1
+          fi
 
   format:
     name: Format

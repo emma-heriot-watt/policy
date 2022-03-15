@@ -75,12 +75,12 @@ repos:
     hooks:
       - id: fix-smartquotes
         name: Fix Smart Quotes
-  #   - repo: https://github.com/asottile/yesqa
-  #     rev: v1.3.0
-  #     hooks:
-  #       - id: yesqa
-  #         name: Remove unnecessary `# noqa` comments
-  #         additional_dependencies: [wemake-python-styleguide]
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.3.0
+    hooks:
+      - id: yesqa
+        name: Remove unnecessary `# noqa` comments
+        additional_dependencies: [wemake-python-styleguide]
 
   # ------------------------------ Python imports ------------------------------ #
   - repo: https://github.com/hakancelik96/unimport

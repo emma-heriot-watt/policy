@@ -37,13 +37,11 @@ overrides = "^6.1.0"
 numpy = "^1.22.2"
 emma-datasets = { git = "https://github.com/emma-simbot/datasets", rev = "main" }
 gradio = "^2.8.9"
-types-requests = "^2.27.11"
 
 
 [tool.poetry.dev-dependencies]
 wemake-python-styleguide = "^0.16.0"
 flake8 = "^4.0"
-mypy = { git = "https://github.com/python/mypy" }
 pytest = "^7.0.0"
 ipykernel = "^6.9.0"
 pre-commit = "^2.17.0"
@@ -54,8 +52,9 @@ pudb = "^2022.1"
 isort = "^5.10.1"
 pytest-cases = "^3.6.9"
 black = { version = "^22.1.0", extras = ["jupyter"] }
-bandit = "<1.7.3"
 pytest-order = "^1.0.1"
+mypy = "^0.941"
+types-requests = "^2.27.12"
 
 [tool.black]
 line-length = 99

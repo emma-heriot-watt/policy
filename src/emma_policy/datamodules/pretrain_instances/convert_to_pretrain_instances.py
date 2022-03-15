@@ -247,7 +247,10 @@ class PretrainInstanceCreator:
             return []
 
         yield PretrainInstance(
-            caption=self.instance.caption, dataset=self.instance.dataset, task=Task.vtm
+            caption=self.instance.caption,
+            trajectory=self.instance.trajectory,
+            dataset=self.instance.dataset,
+            task=Task.vtm,
         )
 
 

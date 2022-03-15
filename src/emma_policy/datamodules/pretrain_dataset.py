@@ -374,30 +374,6 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             task=self._get_task_as_tensor(Task.vqa),
         )
 
-    def _relation_detection_target(self, selected_relation: Relation) -> str:
-        """Generate the target for relation detection task."""
-        subject_attr_list = selected_relation.subject_attr
-        if subject_attr_list:
-            subject_attr = " ".join(
-                random.sample(subject_attr_list, min(len(subject_attr_list), 2))
-            )
-        else:
-            subject_attr = ""
-
-        object_attr_list = selected_relation.object_attr
-
-        if object_attr_list:
-            object_attr = " ".join(random.sample(object_attr_list, min(len(object_attr_list), 2)))
-        else:
-            object_attr = ""
-
-        subject_type = selected_relation.subject.caption
-        object_type = selected_relation.object.caption
-        predicate = selected_relation.predicate
-        target_text = f"{subject_attr} {subject_type} {predicate} {object_attr} {object_type}"
-        target_text = target_text.strip().replace("  ", " ")
-        return target_text
-
     def relation_detection(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
         """Process the instance for the relation detection task."""
         visual_features = self._load_visual_features(instance=instance)
@@ -550,9 +526,119 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             task=self._get_task_as_tensor(Task.action_execution),
         )
 
+    def vtm_negative_candidate(self, index: int, dataset_id: str) -> Optional[str]:
+        """Check if the candidate is valid and return the input text.
+
+        Args:
+            index (int): Index for candidate negative sample.
+            dataset_id (str): Dtaset id of positive sample.
+
+        Returns:
+            None if invalid candidate, else input text
+        """
+        with self.db:
+            instance_str = self.db[index]
+            other_instance = PretrainInstance.parse_raw(instance_str)
+
+        if other_instance.modality == 3:
+            return None
+
+        other_dname = list(other_instance.dataset.keys())[0]
+        other_dataset_id = other_instance.dataset[other_dname].id
+        if dataset_id == other_dataset_id:
+            return None
+
+        if other_instance.caption is not None:
+            input_text_candidates = (
+                other_instance.caption.text
+                if other_instance.caption.text[-1] == "."
+                else f"{other_instance.caption.text}."
+            )
+
+            if other_instance.trajectory is not None:
+                other_visual_features = self._load_visual_features(other_instance)
+                input_text_candidates = f"{input_text_candidates} {self.convert_trajectory_to_text(other_instance, other_visual_features)}"
+        else:
+            input_text_candidates = None
+
+        return input_text_candidates
+
     def vtm(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the VTM task."""
-        raise NotImplementedError
+        input_text = instance.caption.text
+
+        visual_features = self._load_visual_features(instance)
+        if instance.trajectory is not None:
+            input_text = "{input_text} {sep_token} {action_trajectory}".format(
+                input_text=input_text,
+                sep_token=self.tokenizer.sep_token,
+                action_trajectory=self.convert_trajectory_to_text(instance, visual_features),
+            )
+        target_text = "true"
+        if random.random() < 0.5:  # noqa: WPS459
+            target_text = "false"
+            dname = list(instance.dataset.keys())[0]
+            dataset_id = instance.dataset[dname].id
+            rand_idx = int(len(self.db) * random.random())
+            input_text = self.vtm_negative_candidate(rand_idx, dataset_id)
+            while input_text is None:
+                rand_idx = int(len(self.db) * random.random())
+                input_text = self.vtm_negative_candidate(rand_idx, dataset_id)
+
+        source_text = self._get_random_template_for_task(task=Task.vtm).format(
+            statement=input_text.strip("."),
+        )
+
+        input_encoding = self.tokenizer.encode_plus(
+            source_text, return_tensors=self._return_tensor_type, truncation=True
+        )
+
+        visual_features = self._load_visual_features(instance)
+
+        target_encoding = self.tokenizer.encode_plus(
+            target_text, return_tensors=self._return_tensor_type, truncation=True
+        )
+
+        return EmmaDatasetItem(
+            input_token_ids=input_encoding.input_ids.squeeze(0),
+            text_attention_mask=input_encoding.attention_mask.squeeze(0),
+            target_token_ids=target_encoding.input_ids.squeeze(0),
+            decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
+            object_attention_mask=visual_features.object_attention_mask,
+            object_coordinates=visual_features.object_coordinates,
+            object_features=visual_features.object_features,
+            object_frame_ids=visual_features.object_frame_ids,
+            scene_attention_mask=visual_features.scene_attention_mask,
+            scene_coordinates=visual_features.scene_coordinates,
+            scene_features=visual_features.scene_features,
+            scene_frame_ids=visual_features.scene_frame_ids,
+            visual_token_ids=visual_features.visual_token_ids,
+            task=self._get_task_as_tensor(Task.vtm),
+        )
+
+    def _relation_detection_target(self, selected_relation: Relation) -> str:
+        """Generate the target for relation detection task."""
+        subject_attr_list = selected_relation.subject_attr
+        if subject_attr_list:
+            subject_attr = " ".join(
+                random.sample(subject_attr_list, min(len(subject_attr_list), 2))
+            )
+        else:
+            subject_attr = ""
+
+        object_attr_list = selected_relation.object_attr
+
+        if object_attr_list:
+            object_attr = " ".join(random.sample(object_attr_list, min(len(object_attr_list), 2)))
+        else:
+            object_attr = ""
+
+        subject_type = selected_relation.subject.caption
+        object_type = selected_relation.object.caption
+        predicate = selected_relation.predicate
+        target_text = f"{subject_attr} {subject_type} {predicate} {object_attr} {object_type}"
+        target_text = target_text.strip().replace("  ", " ")
+        return target_text
 
     def _region_mapping(
         self,
@@ -561,6 +647,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         width: int,
         height: int,
     ) -> tuple[torch.Tensor, torch.Tensor]:
+
         gt_bbox = []
         for region in regions:
             gt_bbox_coord = BoxMode.convert(

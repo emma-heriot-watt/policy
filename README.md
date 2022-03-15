@@ -77,8 +77,6 @@ This is organised in very similarly to structure from the [Lightning-Hydra-Templ
 - `tests` — [pytest](https://docs.pytest.org/en/) scripts to verify the code
 - `src` — where the main code lives
 
-You will need Git LFS in order to get any fixtures and other files within the `storage/` folder.
-
 ### Running things
 
 Train model with default configuration

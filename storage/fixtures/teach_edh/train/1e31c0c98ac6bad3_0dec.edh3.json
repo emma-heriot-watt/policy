@@ -1,0 +1,2207 @@
+{
+	"dialog_history": [
+		["Driver", "Hello, what is my task?"],
+		["Commander", "Hi. Today you are preparing breakfast."],
+		["Driver", "Where should i start>"],
+		["Commander", "You can start by preparing coffee in a clean mug"],
+		["Driver", "done"],
+		["Driver", "next?"],
+		["Commander", "Serve a slice of apple on a plate"],
+		["Commander", "You have to clean the plate first by rinsing it with water"]
+	],
+	"driver_action_history": [
+		{
+			"action_id": 100,
+			"action_idx": 33,
+			"obj_interaction_action": 0,
+			"action_name": "Text",
+			"time_start": 15.635599136352539,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 4,
+			"action_idx": 4,
+			"obj_interaction_action": 0,
+			"action_name": "Turn Left",
+			"time_start": 48.68722724914551,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 51.59604263305664,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 52.04700040817261,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 52.75760579109192,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 53.27485203742981,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 53.6105592250824,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 54.03508925437927,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 54.62963891029358,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 100,
+			"action_idx": 33,
+			"obj_interaction_action": 0,
+			"action_name": "Text",
+			"time_start": 59.41019916534424,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 8,
+			"action_idx": 8,
+			"obj_interaction_action": 0,
+			"action_name": "Pan Left",
+			"time_start": 61.18864440917969,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 8,
+			"action_idx": 8,
+			"obj_interaction_action": 0,
+			"action_name": "Pan Left",
+			"time_start": 61.67971348762512,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 62.31478238105774,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 62.529356241226196,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 5,
+			"action_idx": 5,
+			"obj_interaction_action": 0,
+			"action_name": "Turn Right",
+			"time_start": 63.81725597381592,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 66.76349401473999,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 67.13080310821533,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 67.37503385543823,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 200,
+			"action_idx": 15,
+			"obj_interaction_action": 1,
+			"action_name": "Pickup",
+			"time_start": 70.02306294441223,
+			"oid": "Mug|-02.69|+00.91|-00.06",
+			"x": 0.4691848906560636,
+			"y": 0.6302186878727635
+		},
+		{
+			"action_id": 4,
+			"action_idx": 4,
+			"obj_interaction_action": 0,
+			"action_name": "Turn Left",
+			"time_start": 71.27880048751831,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 8,
+			"action_idx": 8,
+			"obj_interaction_action": 0,
+			"action_name": "Pan Left",
+			"time_start": 72.70098280906677,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 8,
+			"action_idx": 8,
+			"obj_interaction_action": 0,
+			"action_name": "Pan Left",
+			"time_start": 73.10686182975769,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 74.23597240447998,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 74.69360733032227,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 205,
+			"action_idx": 20,
+			"obj_interaction_action": 1,
+			"action_name": "ToggleOff",
+			"time_start": 85.6662290096283,
+			"oid": "Faucet|-01.39|+01.14|-01.40",
+			"x": 0.44930417495029823,
+			"y": 0.4850894632206759
+		},
+		{
+			"action_id": 211,
+			"action_idx": 26,
+			"obj_interaction_action": 1,
+			"action_name": "Pour",
+			"time_start": 92.19339752197266,
+			"oid": "Sink|-01.33|+00.92|-01.23|SinkBasin",
+			"x": 0.2783300198807157,
+			"y": 0.679920477137177
+		},
+		{
+			"action_id": 4,
+			"action_idx": 4,
+			"obj_interaction_action": 0,
+			"action_name": "Turn Left",
+			"time_start": 94.68301010131836,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 97.2153708934784,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 97.48779726028442,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 98.34464955329895,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 98.58811330795288,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 98.71915030479431,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 98.85261607170105,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 98.98301434516907,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 8,
+			"action_idx": 8,
+			"obj_interaction_action": 0,
+			"action_name": "Pan Left",
+			"time_start": 99.76811861991882,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 201,
+			"action_idx": 16,
+			"obj_interaction_action": 1,
+			"action_name": "Place",
+			"time_start": 102.36236047744751,
+			"oid": "CoffeeMachine|+01.12|+01.10|+00.31",
+			"x": 0.23658051689860835,
+			"y": 0.48111332007952284
+		},
+		{
+			"action_id": 205,
+			"action_idx": 20,
+			"obj_interaction_action": 1,
+			"action_name": "ToggleOff",
+			"time_start": 107.48423361778259,
+			"oid": "CoffeeMachine|+01.12|+01.10|+00.31",
+			"x": 0.24453280318091453,
+			"y": 0.30218687872763417
+		},
+		{
+			"action_id": 204,
+			"action_idx": 19,
+			"obj_interaction_action": 1,
+			"action_name": "ToggleOn",
+			"time_start": 109.91576743125916,
+			"oid": "CoffeeMachine|+01.12|+01.10|+00.31",
+			"x": 0.18886679920477137,
+			"y": 0.3399602385685885
+		},
+		{
+			"action_id": 100,
+			"action_idx": 33,
+			"obj_interaction_action": 0,
+			"action_name": "Text",
+			"time_start": 112.29106116294861,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 100,
+			"action_idx": 33,
+			"obj_interaction_action": 0,
+			"action_name": "Text",
+			"time_start": 113.52679944038391,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 4,
+			"action_idx": 4,
+			"obj_interaction_action": 0,
+			"action_name": "Turn Left",
+			"time_start": 119.94096803665161,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 4,
+			"action_idx": 4,
+			"obj_interaction_action": 0,
+			"action_name": "Turn Left",
+			"time_start": 122.13866591453552,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 200,
+			"action_idx": 15,
+			"obj_interaction_action": 1,
+			"action_name": "Pickup",
+			"time_start": 148.73790764808655,
+			"oid": "ButterKnife|-00.24|+00.91|-00.95",
+			"x": 0.07157057654075547,
+			"y": 0.6938369781312127
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 150.1198000907898,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 150.41338920593262,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 150.95613956451416,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 2,
+			"action_idx": 2,
+			"obj_interaction_action": 0,
+			"action_name": "Forward",
+			"time_start": 151.19726729393005,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 4,
+			"action_idx": 4,
+			"obj_interaction_action": 0,
+			"action_name": "Turn Left",
+			"time_start": 153.62514448165894,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 201,
+			"action_idx": 16,
+			"obj_interaction_action": 1,
+			"action_name": "Place",
+			"time_start": 157.53406167030334,
+			"oid": "CounterTop|+00.07|+00.95|-01.20",
+			"x": 0.5288270377733598,
+			"y": 0.5864811133200796
+		}
+	],
+	"driver_image_history": [
+		"driver.frame.15.635599136352539.jpeg",
+		"driver.frame.48.68722724914551.jpeg",
+		"driver.frame.51.59604263305664.jpeg",
+		"driver.frame.52.04700040817261.jpeg",
+		"driver.frame.52.75760579109192.jpeg",
+		"driver.frame.53.27485203742981.jpeg",
+		"driver.frame.53.6105592250824.jpeg",
+		"driver.frame.54.03508925437927.jpeg",
+		"driver.frame.54.62963891029358.jpeg",
+		"driver.frame.59.41019916534424.jpeg",
+		"driver.frame.61.18864440917969.jpeg",
+		"driver.frame.61.67971348762512.jpeg",
+		"driver.frame.62.31478238105774.jpeg",
+		"driver.frame.62.529356241226196.jpeg",
+		"driver.frame.63.81725597381592.jpeg",
+		"driver.frame.66.76349401473999.jpeg",
+		"driver.frame.67.13080310821533.jpeg",
+		"driver.frame.67.37503385543823.jpeg",
+		"driver.frame.70.02306294441223.jpeg",
+		"driver.frame.71.27880048751831.jpeg",
+		"driver.frame.72.70098280906677.jpeg",
+		"driver.frame.73.10686182975769.jpeg",
+		"driver.frame.74.23597240447998.jpeg",
+		"driver.frame.74.69360733032227.jpeg",
+		"driver.frame.85.6662290096283.jpeg",
+		"driver.frame.92.19339752197266.jpeg",
+		"driver.frame.94.68301010131836.jpeg",
+		"driver.frame.97.2153708934784.jpeg",
+		"driver.frame.97.48779726028442.jpeg",
+		"driver.frame.98.34464955329895.jpeg",
+		"driver.frame.98.58811330795288.jpeg",
+		"driver.frame.98.71915030479431.jpeg",
+		"driver.frame.98.85261607170105.jpeg",
+		"driver.frame.98.98301434516907.jpeg",
+		"driver.frame.99.76811861991882.jpeg",
+		"driver.frame.102.36236047744751.jpeg",
+		"driver.frame.107.48423361778259.jpeg",
+		"driver.frame.109.91576743125916.jpeg",
+		"driver.frame.112.29106116294861.jpeg",
+		"driver.frame.113.52679944038391.jpeg",
+		"driver.frame.119.94096803665161.jpeg",
+		"driver.frame.122.13866591453552.jpeg",
+		"driver.frame.148.73790764808655.jpeg",
+		"driver.frame.150.1198000907898.jpeg",
+		"driver.frame.150.41338920593262.jpeg",
+		"driver.frame.150.95613956451416.jpeg",
+		"driver.frame.151.19726729393005.jpeg",
+		"driver.frame.153.62514448165894.jpeg",
+		"driver.frame.157.53406167030334.jpeg"
+	],
+	"driver_actions_future": [
+		{
+			"action_id": 200,
+			"action_idx": 15,
+			"obj_interaction_action": 1,
+			"action_name": "Pickup",
+			"time_start": 160.13149690628052,
+			"oid": "Apple|-01.25|+00.90|-01.31",
+			"x": 0.6858846918489065,
+			"y": 0.5288270377733598
+		},
+		{
+			"action_id": 201,
+			"action_idx": 16,
+			"obj_interaction_action": 1,
+			"action_name": "Place",
+			"time_start": 162.86068058013916,
+			"oid": "CounterTop|+00.07|+00.95|-01.20",
+			"x": 0.31809145129224653,
+			"y": 0.6043737574552683
+		},
+		{
+			"action_id": 200,
+			"action_idx": 15,
+			"obj_interaction_action": 1,
+			"action_name": "Pickup",
+			"time_start": 168.49991464614868,
+			"oid": "ButterKnife|-00.24|+00.91|-00.95",
+			"x": 0.510934393638171,
+			"y": 0.6182902584493042
+		},
+		{
+			"action_id": 206,
+			"action_idx": 21,
+			"obj_interaction_action": 1,
+			"action_name": "Slice",
+			"time_start": 172.21984457969666,
+			"oid": "Apple|-01.25|+00.90|-01.31",
+			"x": 0.30218687872763417,
+			"y": 0.5785288270377733
+		},
+		{
+			"action_id": 201,
+			"action_idx": 16,
+			"obj_interaction_action": 1,
+			"action_name": "Place",
+			"time_start": 175.148823261261,
+			"oid": "CounterTop|+00.07|+00.95|-01.20",
+			"x": 0.39165009940357853,
+			"y": 0.5168986083499006
+		},
+		{
+			"action_id": 5,
+			"action_idx": 5,
+			"obj_interaction_action": 0,
+			"action_name": "Turn Right",
+			"time_start": 176.84934401512146,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 5,
+			"action_idx": 5,
+			"obj_interaction_action": 0,
+			"action_name": "Turn Right",
+			"time_start": 179.549546957016,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 5,
+			"action_idx": 5,
+			"obj_interaction_action": 0,
+			"action_name": "Turn Right",
+			"time_start": 180.98965120315552,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 4,
+			"action_idx": 4,
+			"obj_interaction_action": 0,
+			"action_name": "Turn Left",
+			"time_start": 183.22255563735962,
+			"oid": null,
+			"x": null,
+			"y": null
+		},
+		{
+			"action_id": 4,
+			"action_idx": 4,
+			"obj_interaction_action": 0,
+			"action_name": "Turn Left",
+			"time_start": 183.6148943901062,
+			"oid": null,
+			"x": null,
+			"y": null
+		}
+	],
+	"driver_images_future": [
+		"driver.frame.160.13149690628052.jpeg",
+		"driver.frame.162.86068058013916.jpeg",
+		"driver.frame.168.49991464614868.jpeg",
+		"driver.frame.172.21984457969666.jpeg",
+		"driver.frame.175.148823261261.jpeg",
+		"driver.frame.176.84934401512146.jpeg",
+		"driver.frame.179.549546957016.jpeg",
+		"driver.frame.180.98965120315552.jpeg",
+		"driver.frame.183.22255563735962.jpeg",
+		"driver.frame.183.6148943901062.jpeg"
+	],
+	"interactions": [
+		{
+			"agent_id": 0,
+			"action_id": 500,
+			"time_start": 11.905970811843872,
+			"duration": 1,
+			"success": 0,
+			"query": "",
+			"obj_interaction_action": 0,
+			"action_idx": 30
+		},
+		{
+			"agent_id": 1,
+			"action_id": 100,
+			"time_start": 15.635599136352539,
+			"duration": 1,
+			"success": 1,
+			"utterance": "Hello, what is my task?",
+			"obj_interaction_action": 0,
+			"action_idx": 33,
+			"corrected_utterance": "Hello, what is my task?",
+			"is_corrected": 0
+		},
+		{
+			"agent_id": 0,
+			"action_id": 100,
+			"time_start": 39.607349157333374,
+			"duration": 1,
+			"success": 1,
+			"utterance": "Hi. Today you are preparing breakfast.",
+			"obj_interaction_action": 0,
+			"action_idx": 33,
+			"corrected_utterance": "Hi. Today you are preparing breakfast.",
+			"is_corrected": 0
+		},
+		{
+			"agent_id": 1,
+			"action_id": 4,
+			"time_start": 48.68722724914551,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0, 0, 0, 0, 90],
+			"pose": [2.25, 1.75, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 4
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 51.59604263305664,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [2.0, 1.75, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 52.04700040817261,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [1.75, 1.75, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 52.75760579109192,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [1.5, 1.75, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 53.27485203742981,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [1.25, 1.75, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 53.6105592250824,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [1.0, 1.75, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 54.03508925437927,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [0.75, 1.75, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 54.62963891029358,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [0.5, 1.75, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 100,
+			"time_start": 59.41019916534424,
+			"duration": 1,
+			"success": 1,
+			"utterance": "Where should i start>",
+			"obj_interaction_action": 0,
+			"action_idx": 33,
+			"corrected_utterance": "Where should i start",
+			"is_corrected": 1
+		},
+		{
+			"agent_id": 1,
+			"action_id": 8,
+			"time_start": 61.18864440917969,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0.25, 0, 0, 0, 0],
+			"pose": [0.5, 1.5, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 8
+		},
+		{
+			"agent_id": 1,
+			"action_id": 8,
+			"time_start": 61.67971348762512,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0.25, 0, 0, 0, 0],
+			"pose": [0.5, 1.25, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 8
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 62.31478238105774,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [0.25, 1.25, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 62.529356241226196,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [0.0, 1.25, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 5,
+			"time_start": 63.81725597381592,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0, 0, 0, 0, -90],
+			"pose": [0.0, 1.25, 0.9009991884231567, 0, 30.00002098083496, -270.0],
+			"obj_interaction_action": 0,
+			"action_idx": 5
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 66.76349401473999,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.0, 1.5, 0.9009991884231567, 0, 30.00002098083496, -270.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 67.13080310821533,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.0, 1.75, 0.9009991884231567, 0, 30.00002098083496, -270.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 67.37503385543823,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.0, 2.0, 0.9009991884231567, 0, 30.00002098083496, -270.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 200,
+			"time_start": 70.02306294441223,
+			"duration": 1,
+			"success": 1,
+			"x": 0.4691848906560636,
+			"y": 0.6302186878727635,
+			"oid": "Mug|-02.69|+00.91|-00.06",
+			"obj_interaction_action": 1,
+			"action_idx": 15
+		},
+		{
+			"agent_id": 1,
+			"action_id": 4,
+			"time_start": 71.27880048751831,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0, 0, 0, 0, 90],
+			"pose": [-0.0, 2.0, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 4
+		},
+		{
+			"agent_id": 1,
+			"action_id": 8,
+			"time_start": 72.70098280906677,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0.25, 0, 0, 0, 0],
+			"pose": [-0.0, 1.75, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 8
+		},
+		{
+			"agent_id": 1,
+			"action_id": 8,
+			"time_start": 73.10686182975769,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0.25, 0, 0, 0, 0],
+			"pose": [-0.0, 1.5, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 8
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 74.23597240447998,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.25, 1.5, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 74.69360733032227,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.5, 1.5, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 74.92365193367004,
+			"duration": 1,
+			"success": 0,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.5, 1.5, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 211,
+			"time_start": 78.48246598243713,
+			"duration": 1,
+			"success": 0,
+			"x": 0.5904572564612326,
+			"y": 0.6381709741550696,
+			"oid": null,
+			"obj_interaction_action": 1,
+			"action_idx": 26
+		},
+		{
+			"agent_id": 0,
+			"action_id": 100,
+			"time_start": 79.71406078338623,
+			"duration": 1,
+			"success": 1,
+			"utterance": "You can start by preparing coffee in a clean mug",
+			"obj_interaction_action": 0,
+			"action_idx": 33,
+			"corrected_utterance": "You can start by preparing coffee in a clean mug",
+			"is_corrected": 0
+		},
+		{
+			"agent_id": 1,
+			"action_id": 205,
+			"time_start": 85.6662290096283,
+			"duration": 1,
+			"success": 1,
+			"x": 0.44930417495029823,
+			"y": 0.4850894632206759,
+			"oid": "Faucet|-01.39|+01.14|-01.40",
+			"obj_interaction_action": 1,
+			"action_idx": 20
+		},
+		{
+			"agent_id": 0,
+			"action_id": 501,
+			"time_start": 87.97692966461182,
+			"duration": 1,
+			"success": 1,
+			"query": "Mug|-02.69|+00.91|-00.06",
+			"obj_interaction_action": 0,
+			"action_idx": 31
+		},
+		{
+			"agent_id": 1,
+			"action_id": 211,
+			"time_start": 92.19339752197266,
+			"duration": 1,
+			"success": 1,
+			"x": 0.2783300198807157,
+			"y": 0.679920477137177,
+			"oid": "Sink|-01.33|+00.92|-01.23|SinkBasin",
+			"obj_interaction_action": 1,
+			"action_idx": 26
+		},
+		{
+			"agent_id": 1,
+			"action_id": 4,
+			"time_start": 94.68301010131836,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0, 0, 0, 0, 90],
+			"pose": [-0.5, 1.5, 0.9009991884231567, 0, 30.00002098083496, -90.0],
+			"obj_interaction_action": 0,
+			"action_idx": 4
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 97.2153708934784,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.5, 1.25, 0.9009991884231567, 0, 30.00002098083496, -90.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 97.48779726028442,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.5, 1.0, 0.9009991884231567, 0, 30.00002098083496, -90.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 98.34464955329895,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.5, 0.75, 0.9009991884231567, 0, 30.00002098083496, -90.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 98.58811330795288,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.5, 0.5, 0.9009991884231567, 0, 30.00002098083496, -90.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 98.71915030479431,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.5, 0.25, 0.9009991884231567, 0, 30.00002098083496, -90.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 98.85261607170105,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.5, -0.0, 0.9009991884231567, 0, 30.00002098083496, -90.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 98.98301434516907,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.5, -0.25, 0.9009991884231567, 0, 30.00002098083496, -90.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 8,
+			"time_start": 99.76811861991882,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0.25, 0, 0, 0, 0],
+			"pose": [-0.25, -0.25, 0.9009991884231567, 0, 30.00002098083496, -90.0],
+			"obj_interaction_action": 0,
+			"action_idx": 8
+		},
+		{
+			"agent_id": 1,
+			"action_id": 201,
+			"time_start": 102.36236047744751,
+			"duration": 1,
+			"success": 1,
+			"x": 0.23658051689860835,
+			"y": 0.48111332007952284,
+			"oid": "CoffeeMachine|+01.12|+01.10|+00.31",
+			"obj_interaction_action": 1,
+			"action_idx": 16
+		},
+		{
+			"agent_id": 0,
+			"action_id": 500,
+			"time_start": 103.00953912734985,
+			"duration": 1,
+			"success": 0,
+			"query": "",
+			"obj_interaction_action": 0,
+			"action_idx": 30
+		},
+		{
+			"agent_id": 1,
+			"action_id": 205,
+			"time_start": 107.48423361778259,
+			"duration": 1,
+			"success": 1,
+			"x": 0.24453280318091453,
+			"y": 0.30218687872763417,
+			"oid": "CoffeeMachine|+01.12|+01.10|+00.31",
+			"obj_interaction_action": 1,
+			"action_idx": 20
+		},
+		{
+			"agent_id": 1,
+			"action_id": 204,
+			"time_start": 109.91576743125916,
+			"duration": 1,
+			"success": 1,
+			"x": 0.18886679920477137,
+			"y": 0.3399602385685885,
+			"oid": "CoffeeMachine|+01.12|+01.10|+00.31",
+			"obj_interaction_action": 1,
+			"action_idx": 19
+		},
+		{
+			"agent_id": 1,
+			"action_id": 100,
+			"time_start": 112.29106116294861,
+			"duration": 1,
+			"success": 1,
+			"utterance": "done",
+			"obj_interaction_action": 0,
+			"action_idx": 33,
+			"corrected_utterance": "done",
+			"is_corrected": 0
+		},
+		{
+			"agent_id": 1,
+			"action_id": 100,
+			"time_start": 113.52679944038391,
+			"duration": 1,
+			"success": 1,
+			"utterance": "next?",
+			"obj_interaction_action": 0,
+			"action_idx": 33,
+			"corrected_utterance": "next?",
+			"is_corrected": 0
+		},
+		{
+			"agent_id": 1,
+			"action_id": 4,
+			"time_start": 119.94096803665161,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0, 0, 0, 0, 90],
+			"pose": [-0.25, -0.25, 0.9009991884231567, 0, 30.000015258789062, -0.0],
+			"obj_interaction_action": 0,
+			"action_idx": 4
+		},
+		{
+			"agent_id": 1,
+			"action_id": 4,
+			"time_start": 122.13866591453552,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0, 0, 0, 0, 90],
+			"pose": [-0.25, -0.25, 0.9009991884231567, 0, 30.00002098083496, -270.0],
+			"obj_interaction_action": 0,
+			"action_idx": 4
+		},
+		{
+			"agent_id": 0,
+			"action_id": 100,
+			"time_start": 132.95853352546692,
+			"duration": 1,
+			"success": 1,
+			"utterance": "Serve a slice of apple on a plate",
+			"obj_interaction_action": 0,
+			"action_idx": 33,
+			"corrected_utterance": "Serve a slice of apple on a plate",
+			"is_corrected": 0
+		},
+		{
+			"agent_id": 1,
+			"action_id": 200,
+			"time_start": 148.73790764808655,
+			"duration": 1,
+			"success": 1,
+			"x": 0.07157057654075547,
+			"y": 0.6938369781312127,
+			"oid": "ButterKnife|-00.24|+00.91|-00.95",
+			"obj_interaction_action": 1,
+			"action_idx": 15
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 150.1198000907898,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.25, 0.0, 0.9009991884231567, 0, 30.00002098083496, -270.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 150.41338920593262,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.25, 0.25, 0.9009991884231567, 0, 30.00002098083496, -270.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 150.95613956451416,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.25, 0.5, 0.9009991884231567, 0, 30.00002098083496, -270.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 2,
+			"time_start": 151.19726729393005,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0.25, 0, 0, 0, 0, 0],
+			"pose": [-0.25, 0.75, 0.9009991884231567, 0, 30.00002098083496, -270.0],
+			"obj_interaction_action": 0,
+			"action_idx": 2
+		},
+		{
+			"agent_id": 1,
+			"action_id": 4,
+			"time_start": 153.62514448165894,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0, 0, 0, 0, 90],
+			"pose": [-0.25, 0.75, 0.9009991884231567, 0, 30.000015258789062, -180.0],
+			"obj_interaction_action": 0,
+			"action_idx": 4
+		},
+		{
+			"agent_id": 1,
+			"action_id": 201,
+			"time_start": 157.53406167030334,
+			"duration": 1,
+			"success": 1,
+			"x": 0.5288270377733598,
+			"y": 0.5864811133200796,
+			"oid": "CounterTop|+00.07|+00.95|-01.20",
+			"obj_interaction_action": 1,
+			"action_idx": 16
+		},
+		{
+			"agent_id": 0,
+			"action_id": 100,
+			"time_start": 159.51689553260803,
+			"duration": 1,
+			"success": 1,
+			"utterance": "You have to clean the plate first by rinsing it with water",
+			"obj_interaction_action": 0,
+			"action_idx": 33,
+			"corrected_utterance": "You have to clean the plate first by rinsing it with water",
+			"is_corrected": 0
+		},
+		{
+			"agent_id": 1,
+			"action_id": 200,
+			"time_start": 160.13149690628052,
+			"duration": 1,
+			"success": 1,
+			"x": 0.6858846918489065,
+			"y": 0.5288270377733598,
+			"oid": "Apple|-01.25|+00.90|-01.31",
+			"obj_interaction_action": 1,
+			"action_idx": 15
+		},
+		{
+			"agent_id": 1,
+			"action_id": 201,
+			"time_start": 162.86068058013916,
+			"duration": 1,
+			"success": 1,
+			"x": 0.31809145129224653,
+			"y": 0.6043737574552683,
+			"oid": "CounterTop|+00.07|+00.95|-01.20",
+			"obj_interaction_action": 1,
+			"action_idx": 16
+		},
+		{
+			"agent_id": 1,
+			"action_id": 200,
+			"time_start": 168.49991464614868,
+			"duration": 1,
+			"success": 1,
+			"x": 0.510934393638171,
+			"y": 0.6182902584493042,
+			"oid": "ButterKnife|-00.24|+00.91|-00.95",
+			"obj_interaction_action": 1,
+			"action_idx": 15
+		},
+		{
+			"agent_id": 1,
+			"action_id": 206,
+			"time_start": 172.21984457969666,
+			"duration": 1,
+			"success": 1,
+			"x": 0.30218687872763417,
+			"y": 0.5785288270377733,
+			"oid": "Apple|-01.25|+00.90|-01.31",
+			"obj_interaction_action": 1,
+			"action_idx": 21
+		},
+		{
+			"agent_id": 0,
+			"action_id": 501,
+			"time_start": 173.14543342590332,
+			"duration": 1,
+			"success": 1,
+			"query": "Mug|-02.65|+00.92|-01.15",
+			"obj_interaction_action": 0,
+			"action_idx": 31
+		},
+		{
+			"agent_id": 1,
+			"action_id": 201,
+			"time_start": 175.148823261261,
+			"duration": 1,
+			"success": 1,
+			"x": 0.39165009940357853,
+			"y": 0.5168986083499006,
+			"oid": "CounterTop|+00.07|+00.95|-01.20",
+			"obj_interaction_action": 1,
+			"action_idx": 16
+		},
+		{
+			"agent_id": 1,
+			"action_id": 5,
+			"time_start": 176.84934401512146,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0, 0, 0, 0, -90],
+			"pose": [-0.25, 0.75, 0.9009991884231567, 0, 30.00002098083496, -270.0],
+			"obj_interaction_action": 0,
+			"action_idx": 5
+		},
+		{
+			"agent_id": 1,
+			"action_id": 5,
+			"time_start": 179.549546957016,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0, 0, 0, 0, -90],
+			"pose": [-0.25, 0.75, 0.9009991884231567, 0, 30.000015258789062, -0.0],
+			"obj_interaction_action": 0,
+			"action_idx": 5
+		},
+		{
+			"agent_id": 1,
+			"action_id": 5,
+			"time_start": 180.98965120315552,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0, 0, 0, 0, -90],
+			"pose": [-0.25, 0.75, 0.9009991884231567, 0, 30.00002098083496, -90.0],
+			"obj_interaction_action": 0,
+			"action_idx": 5
+		},
+		{
+			"agent_id": 1,
+			"action_id": 4,
+			"time_start": 183.22255563735962,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0, 0, 0, 0, 90],
+			"pose": [-0.25, 0.75, 0.9009991884231567, 0, 30.000015258789062, -0.0],
+			"obj_interaction_action": 0,
+			"action_idx": 4
+		},
+		{
+			"agent_id": 1,
+			"action_id": 4,
+			"time_start": 183.6148943901062,
+			"duration": 1,
+			"success": 1,
+			"pose_delta": [0, 0, 0, 0, 0, 90],
+			"pose": [-0.25, 0.75, 0.9009991884231567, 0, 30.00002098083496, -270.0],
+			"obj_interaction_action": 0,
+			"action_idx": 4
+		}
+	],
+	"game_id": "1e31c0c98ac6bad3_0dec",
+	"instance_id": "1e31c0c98ac6bad3_0dec.edh3",
+	"pred_start_idx": 58,
+	"init_state_diff": {
+		"agents": {},
+		"objects": {
+			"Mug|-02.65|+00.92|-01.15": { "distance": 2.1017 },
+			"Cup|-01.51|+00.85|-01.25": {
+				"visible": true,
+				"obstructed": false,
+				"isFilledWithLiquid": true,
+				"fillLiquid": "water",
+				"isDirty": false,
+				"distance": 1.2542
+			},
+			"Knife|-01.42|+00.87|-01.36": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.2967
+			},
+			"Pot|-02.82|+00.93|-00.40": { "distance": 2.0783 },
+			"ButterKnife|-01.82|+00.91|-00.92": { "distance": 1.2656 },
+			"Spatula|-01.33|+00.85|-01.08": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.0184
+			},
+			"Plate|-02.02|+01.66|-01.40": { "distance": 1.869 },
+			"Fork|-02.86|+00.82|+00.93": { "distance": 2.421 },
+			"Mug|-02.69|+00.91|-00.06": {
+				"position": { "x": 1.0051, "y": 1.145, "z": 0.2038 },
+				"rotation": { "x": 0.0034, "y": 227.6837, "z": -0.0004 },
+				"fillLiquid": "coffee",
+				"distance": 1.8292,
+				"parentReceptacles": [
+					"CounterTop|+00.91|+01.15|+00.79",
+					"CoffeeMachine|+01.12|+01.10|+00.31"
+				],
+				"axisAlignedBoundingBox": {
+					"cornerPoints": [
+						[1.0662, 1.2486, 0.2649],
+						[1.0662, 1.2486, 0.1423],
+						[1.0662, 1.145, 0.2649],
+						[1.0662, 1.145, 0.1423],
+						[0.944, 1.2486, 0.2649],
+						[0.944, 1.2486, 0.1423],
+						[0.944, 1.145, 0.2649],
+						[0.944, 1.145, 0.1423]
+					],
+					"center": { "x": 1.0051, "y": 1.1968, "z": 0.2036 },
+					"size": { "x": 0.1223, "y": 0.1036, "z": 0.1226 }
+				},
+				"objectOrientedBoundingBox": {
+					"cornerPoints": [
+						[0.9328, 1.145, 0.2073],
+						[1.0173, 1.145, 0.1144],
+						[1.0931, 1.145, 0.1835],
+						[1.0086, 1.145, 0.2763],
+						[0.9328, 1.2486, 0.2073],
+						[1.0173, 1.2486, 0.1144],
+						[1.0931, 1.2486, 0.1835],
+						[1.0086, 1.2486, 0.2763]
+					]
+				},
+				"simbotPickedUp": 1,
+				"simbotLastParentReceptacle": "CoffeeMachine|+01.12|+01.10|+00.31",
+				"simbotIsFilledWithCoffee": true
+			},
+			"Knife|+00.29|+01.03|-01.45": { "distance": 1.5938 },
+			"Plate|+01.01|+00.76|+01.81": { "distance": 2.7149 },
+			"ButterKnife|-00.24|+00.91|-00.95": {
+				"position": { "x": -0.7678, "y": 0.9076, "z": -1.0321 },
+				"rotation": { "x": -0.0, "y": 90.0, "z": -0.0 },
+				"visible": true,
+				"obstructed": false,
+				"distance": 0.7823,
+				"axisAlignedBoundingBox": {
+					"cornerPoints": [
+						[-0.7607, 0.913, -0.9003],
+						[-0.7607, 0.913, -1.1688],
+						[-0.7607, 0.9063, -0.9003],
+						[-0.7607, 0.9063, -1.1688],
+						[-0.7819, 0.913, -0.9003],
+						[-0.7819, 0.913, -1.1688],
+						[-0.7819, 0.9063, -0.9003],
+						[-0.7819, 0.9063, -1.1688]
+					],
+					"center": { "x": -0.7713, "y": 0.9096, "z": -1.0345 },
+					"size": { "x": 0.0212, "y": 0.0067, "z": 0.2684 }
+				},
+				"objectOrientedBoundingBox": {
+					"cornerPoints": [
+						[-0.7607, 0.9063, -1.1688],
+						[-0.7607, 0.9063, -0.9003],
+						[-0.7819, 0.9063, -0.9003],
+						[-0.7819, 0.9063, -1.1688],
+						[-0.7607, 0.913, -1.1688],
+						[-0.7607, 0.913, -0.9003],
+						[-0.7819, 0.913, -0.9003],
+						[-0.7819, 0.913, -1.1688]
+					]
+				},
+				"simbotPickedUp": 1,
+				"simbotLastParentReceptacle": "CounterTop|+00.07|+00.95|-01.20"
+			},
+			"Cabinet|-02.65|+02.08|-00.88": { "distance": 2.3172 },
+			"Cabinet|-02.65|+02.08|-00.23": { "distance": 2.2314 },
+			"Cabinet|-00.82|+00.47|-00.91": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 0.7893
+			},
+			"Cabinet|-01.77|+02.01|-01.20": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.777
+			},
+			"Cabinet|-01.84|+02.01|-01.20": { "distance": 1.8179 },
+			"Cabinet|-01.85|+00.39|-00.90": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.3757
+			},
+			"Cabinet|-01.80|+00.47|-00.91": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.3127
+			},
+			"Cabinet|+01.12|+02.01|-01.20": { "distance": 2.3677 },
+			"Cabinet|+00.24|+02.01|-01.20": { "distance": 1.7601 },
+			"Cabinet|+01.13|+00.47|-00.90": { "distance": 2.0299 },
+			"Cabinet|-02.39|+00.39|+00.38": { "distance": 1.826 },
+			"Cabinet|+00.48|+00.39|-00.90": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.4851
+			},
+			"Cabinet|-02.63|+02.01|-01.20": { "distance": 2.3756 },
+			"Cabinet|-02.65|+02.01|-00.95": { "distance": 2.3051 },
+			"Cabinet|-02.65|+02.20|+01.67": { "distance": 2.9925 },
+			"Cabinet|-02.65|+02.01|+00.36": { "distance": 2.2822 },
+			"Cabinet|+00.17|+02.01|-01.20": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.7219
+			},
+			"Cabinet|-00.77|+02.01|-01.20": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.4587
+			},
+			"Cabinet|-00.84|+02.01|-01.20": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.4611
+			},
+			"Cabinet|-02.65|+02.20|+00.43": { "distance": 2.3994 },
+			"StoveBurner|-02.62|+00.89|-00.71": { "distance": 1.9285 },
+			"CounterTop|-02.70|+00.95|+00.11": {
+				"receptacleObjectIds": ["Toaster|-02.82|+00.90|+00.25"],
+				"distance": 1.9822
+			},
+			"CounterTop|+00.91|+01.15|+00.79": {
+				"receptacleObjectIds": [
+					"Egg|+00.17|+01.12|+01.26",
+					"Cup|+00.74|+01.11|+00.98",
+					"Tomato|+00.20|+01.15|+01.06",
+					"CoffeeMachine|+01.12|+01.10|+00.31",
+					"Mug|-02.69|+00.91|-00.06"
+				],
+				"distance": 1.9729
+			},
+			"StoveBurner|-02.62|+00.89|-00.40": { "distance": 1.8783 },
+			"Drawer|-02.03|+00.78|-01.08": { "distance": 1.5284 },
+			"Sink|-01.33|+00.92|-01.23": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.1339
+			},
+			"Floor|+00.00|+00.00|+00.00": { "distance": 1.1987 },
+			"StoveBurner|-02.82|+00.89|-00.71": { "distance": 2.1237 },
+			"Drawer|-02.57|+00.78|+00.10": { "distance": 1.8597 },
+			"StoveBurner|-02.82|+00.89|-00.40": { "distance": 2.0782 },
+			"CounterTop|+00.07|+00.95|-01.20": {
+				"visible": true,
+				"obstructed": false,
+				"receptacleObjectIds": [
+					"Potato|-00.60|+00.94|-01.12",
+					"ButterKnife|-00.24|+00.91|-00.95",
+					"ButterKnife|-01.82|+00.91|-00.92",
+					"Plate|-02.84|+00.91|-01.03",
+					"Bowl|-02.05|+00.90|-01.16",
+					"Pan|-02.59|+00.90|-01.15",
+					"Mug|-02.65|+00.92|-01.15",
+					"CreditCard|+01.00|+00.90|-00.98",
+					"Spatula|+01.07|+00.91|-01.20",
+					"Microwave|+00.28|+00.90|-01.33",
+					"Fork|+00.29|+01.01|-01.41",
+					"Knife|+00.29|+01.03|-01.45"
+				],
+				"distance": 1.2557,
+				"simbotIsReceptacleOf": ["ButterKnife|-00.24|+00.91|-00.95"]
+			},
+			"Drawer|+00.26|+00.78|-01.08": { "distance": 1.3106 },
+			"Pan|-02.59|+00.90|-01.15": { "distance": 2.047 },
+			"Apple|-01.25|+00.90|-01.31": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.166
+			},
+			"LightSwitch|-01.17|+01.31|+03.00": { "distance": 3.3018 },
+			"CoffeeMachine|+01.12|+01.10|+00.31": {
+				"receptacleObjectIds": ["Mug|-02.69|+00.91|-00.06"],
+				"distance": 1.9666,
+				"simbotIsReceptacleOf": ["Mug|-02.69|+00.91|-00.06"]
+			},
+			"StoveKnob|-02.43|+00.86|-00.62": { "distance": 1.721 },
+			"StoveKnob|-02.43|+00.86|-00.48": { "distance": 1.6957 },
+			"StoveKnob|-02.43|+00.86|-00.78": { "distance": 1.7625 },
+			"StoveKnob|-02.43|+00.86|-00.32": { "distance": 1.6819 },
+			"Fork|+00.29|+01.01|-01.41": { "distance": 1.5677 },
+			"Kettle|-02.62|+00.93|-00.72": { "distance": 1.9295 },
+			"CreditCard|+01.00|+00.90|-00.98": { "distance": 1.8946 },
+			"Bread|-00.55|+01.71|-01.36": { "distance": 1.3855 },
+			"Plate|-02.84|+00.91|-01.03": { "distance": 2.2353 },
+			"SoapBottle|-01.42|+00.85|-01.08": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.0704
+			},
+			"Window|+00.32|+01.45|+03.09": { "distance": 3.5494 },
+			"Spatula|+01.07|+00.91|-01.20": { "distance": 2.0569 },
+			"Lettuce|-02.70|+00.88|+00.95": { "distance": 2.2896 },
+			"Toaster|-02.82|+00.90|+00.25": { "distance": 2.1315 },
+			"Sink|-01.33|+00.92|-01.23|SinkBasin": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.1652
+			},
+			"SaltShaker|-02.86|+00.37|+00.69": { "distance": 2.3707 },
+			"Tomato|+00.20|+01.15|+01.06": { "distance": 1.6376 },
+			"GarbageCan|-02.76|+00.00|+01.47": {
+				"visible": false,
+				"obstructed": true,
+				"distance": 2.791
+			},
+			"PepperShaker|-02.87|+00.94|-00.37": { "distance": 2.1207 },
+			"ButterKnife|+00.49|+01.66|-01.44": { "distance": 1.8741 },
+			"Pot|-02.74|+00.37|+01.01": { "distance": 2.4158 },
+			"Fridge|-02.86|+00.00|+00.85": {
+				"visible": false,
+				"obstructed": true,
+				"distance": 2.5419
+			},
+			"Potato|-00.60|+00.94|-01.12": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 0.8834
+			},
+			"Microwave|+00.28|+00.90|-01.33": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.4955
+			},
+			"DishSponge|-01.22|+00.84|-01.13": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 0.9966
+			},
+			"Egg|+00.17|+01.12|+01.26": { "distance": 1.7807 },
+			"Spoon|+01.52|+00.76|+01.31": { "distance": 2.7549 },
+			"Knife|-02.68|+00.84|+00.77": { "distance": 2.1845 },
+			"Cup|+00.74|+01.11|+00.98": { "distance": 1.9432 },
+			"Mug|-02.76|+00.03|+01.54": { "distance": 2.8244 },
+			"Stool|+01.54|+00.01|+01.33": { "distance": 2.9216 },
+			"Stool|+00.98|+00.01|+01.79": { "distance": 2.8236 },
+			"Faucet|-01.39|+01.14|-01.40": {
+				"visible": true,
+				"obstructed": false,
+				"isToggled": false,
+				"distance": 1.3374
+			},
+			"Bowl|-02.05|+00.90|-01.16": { "distance": 1.586 }
+		}
+	},
+	"final_state_diff": {
+		"agents": {},
+		"objects": {
+			"Apple|-01.25|+00.90|-01.31|AppleSliced_2": {
+				"name": "Apple_22_Sliced_3",
+				"position": { "x": -0.3739, "y": 0.9426, "z": -1.0473 },
+				"rotation": { "x": 0.0001, "y": 240.0001, "z": 0.0001 },
+				"sliceable": false,
+				"mass": 0.07,
+				"distance": 0.8826,
+				"objectType": "AppleSliced",
+				"objectId": "Apple|-01.25|+00.90|-01.31|AppleSliced_2",
+				"parentReceptacles": ["CounterTop|+00.07|+00.95|-01.20"],
+				"axisAlignedBoundingBox": {
+					"cornerPoints": [
+						[-0.3496, 0.9779, -1.0115],
+						[-0.3496, 0.9779, -1.0777],
+						[-0.3496, 0.9, -1.0115],
+						[-0.3496, 0.9, -1.0777],
+						[-0.405, 0.9779, -1.0115],
+						[-0.405, 0.9779, -1.0777],
+						[-0.405, 0.9, -1.0115],
+						[-0.405, 0.9, -1.0777]
+					],
+					"center": { "x": -0.3773, "y": 0.939, "z": -1.0446 },
+					"size": { "x": 0.0554, "y": 0.0779, "z": 0.0662 }
+				},
+				"objectOrientedBoundingBox": {
+					"cornerPoints": [
+						[-0.4132, 0.9, -1.0257],
+						[-0.3749, 0.9, -1.092],
+						[-0.3306, 0.9, -1.0665],
+						[-0.3689, 0.9, -1.0001],
+						[-0.4132, 0.9779, -1.0257],
+						[-0.3749, 0.9779, -1.092],
+						[-0.3306, 0.9779, -1.0665],
+						[-0.3689, 0.9779, -1.0001]
+					]
+				},
+				"simbotObjectClass": ["AppleSliced", "Food", "Fruit"],
+				"simbotPickedUp": 1,
+				"simbotLastParentReceptacle": "CounterTop|+00.07|+00.95|-01.20"
+			},
+			"Apple|-01.25|+00.90|-01.31|AppleSliced_1": {
+				"name": "Apple_22_Sliced_2",
+				"position": { "x": -0.3162, "y": 0.9426, "z": -1.0478 },
+				"rotation": { "x": -0.0003, "y": 119.9999, "z": 0.0003 },
+				"sliceable": false,
+				"mass": 0.07,
+				"distance": 0.9091,
+				"objectType": "AppleSliced",
+				"objectId": "Apple|-01.25|+00.90|-01.31|AppleSliced_1",
+				"parentReceptacles": ["CounterTop|+00.07|+00.95|-01.20"],
+				"axisAlignedBoundingBox": {
+					"cornerPoints": [
+						[-0.2853, 0.9779, -1.012],
+						[-0.2853, 0.9779, -1.0784],
+						[-0.2853, 0.9, -1.012],
+						[-0.2853, 0.9, -1.0784],
+						[-0.3407, 0.9779, -1.012],
+						[-0.3407, 0.9779, -1.0784],
+						[-0.3407, 0.9, -1.012],
+						[-0.3407, 0.9, -1.0784]
+					],
+					"center": { "x": -0.313, "y": 0.939, "z": -1.0452 },
+					"size": { "x": 0.0554, "y": 0.0779, "z": 0.0664 }
+				},
+				"objectOrientedBoundingBox": {
+					"cornerPoints": [
+						[-0.3152, 0.9, -1.0927],
+						[-0.2769, 0.9, -1.0263],
+						[-0.3212, 0.9, -1.0008],
+						[-0.3595, 0.9, -1.0671],
+						[-0.3152, 0.9779, -1.0927],
+						[-0.2769, 0.9779, -1.0263],
+						[-0.3212, 0.9779, -1.0008],
+						[-0.3595, 0.9779, -1.0671]
+					]
+				},
+				"simbotObjectClass": ["AppleSliced", "Food", "Fruit"],
+				"simbotPickedUp": 1,
+				"simbotLastParentReceptacle": "CounterTop|+00.07|+00.95|-01.20"
+			},
+			"Apple|-01.25|+00.90|-01.31|AppleSliced_0": {
+				"name": "Apple_22_Sliced_1",
+				"position": { "x": -0.3449, "y": 0.9426, "z": -1.0002 },
+				"rotation": { "x": 0.0001, "y": 0.0001, "z": -0.0 },
+				"sliceable": false,
+				"mass": 0.07,
+				"distance": 0.8536,
+				"objectType": "AppleSliced",
+				"objectId": "Apple|-01.25|+00.90|-01.31|AppleSliced_0",
+				"parentReceptacles": ["CounterTop|+00.07|+00.95|-01.20"],
+				"axisAlignedBoundingBox": {
+					"cornerPoints": [
+						[-0.3065, 0.9779, -0.9769],
+						[-0.3065, 0.9779, -1.0281],
+						[-0.3065, 0.9, -0.9769],
+						[-0.3065, 0.9, -1.0281],
+						[-0.3831, 0.9779, -0.9769],
+						[-0.3831, 0.9779, -1.0281],
+						[-0.3831, 0.9, -0.9769],
+						[-0.3831, 0.9, -1.0281]
+					],
+					"center": { "x": -0.3448, "y": 0.939, "z": -1.0025 },
+					"size": { "x": 0.0766, "y": 0.0779, "z": 0.0512 }
+				},
+				"objectOrientedBoundingBox": {
+					"cornerPoints": [
+						[-0.3065, 0.9, -0.9769],
+						[-0.3831, 0.9, -0.9769],
+						[-0.3831, 0.9, -1.0281],
+						[-0.3065, 0.9, -1.0281],
+						[-0.3065, 0.9779, -0.9769],
+						[-0.3831, 0.9779, -0.9769],
+						[-0.3831, 0.9779, -1.0281],
+						[-0.3065, 0.9779, -1.0281]
+					]
+				},
+				"simbotObjectClass": ["AppleSliced", "Food", "Fruit"],
+				"simbotPickedUp": 1,
+				"simbotLastParentReceptacle": "CounterTop|+00.07|+00.95|-01.20"
+			},
+			"Mug|-02.65|+00.92|-01.15": { "distance": 2.1017 },
+			"Cup|-01.51|+00.85|-01.25": {
+				"isFilledWithLiquid": true,
+				"fillLiquid": "water",
+				"isDirty": false,
+				"distance": 1.2542
+			},
+			"Knife|-01.42|+00.87|-01.36": { "distance": 1.2967 },
+			"Pot|-02.82|+00.93|-00.40": { "distance": 2.0783 },
+			"ButterKnife|-01.82|+00.91|-00.92": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.2656
+			},
+			"Spatula|-01.33|+00.85|-01.08": { "distance": 1.0184 },
+			"Plate|-02.02|+01.66|-01.40": { "distance": 1.869 },
+			"Fork|-02.86|+00.82|+00.93": { "distance": 2.421 },
+			"Mug|-02.69|+00.91|-00.06": {
+				"position": { "x": 1.0051, "y": 1.145, "z": 0.2038 },
+				"rotation": { "x": 0.0034, "y": 227.6837, "z": -0.0004 },
+				"fillLiquid": "coffee",
+				"distance": 1.8292,
+				"parentReceptacles": [
+					"CounterTop|+00.91|+01.15|+00.79",
+					"CoffeeMachine|+01.12|+01.10|+00.31"
+				],
+				"axisAlignedBoundingBox": {
+					"cornerPoints": [
+						[1.0662, 1.2486, 0.2649],
+						[1.0662, 1.2486, 0.1423],
+						[1.0662, 1.145, 0.2649],
+						[1.0662, 1.145, 0.1423],
+						[0.944, 1.2486, 0.2649],
+						[0.944, 1.2486, 0.1423],
+						[0.944, 1.145, 0.2649],
+						[0.944, 1.145, 0.1423]
+					],
+					"center": { "x": 1.0051, "y": 1.1968, "z": 0.2036 },
+					"size": { "x": 0.1223, "y": 0.1036, "z": 0.1226 }
+				},
+				"objectOrientedBoundingBox": {
+					"cornerPoints": [
+						[0.9328, 1.145, 0.2073],
+						[1.0173, 1.145, 0.1144],
+						[1.0931, 1.145, 0.1835],
+						[1.0086, 1.145, 0.2763],
+						[0.9328, 1.2486, 0.2073],
+						[1.0173, 1.2486, 0.1144],
+						[1.0931, 1.2486, 0.1835],
+						[1.0086, 1.2486, 0.2763]
+					]
+				},
+				"simbotPickedUp": 1,
+				"simbotLastParentReceptacle": "CoffeeMachine|+01.12|+01.10|+00.31",
+				"simbotIsFilledWithCoffee": true
+			},
+			"Knife|+00.29|+01.03|-01.45": { "distance": 1.5938 },
+			"Plate|+01.01|+00.76|+01.81": { "distance": 2.7149 },
+			"ButterKnife|-00.24|+00.91|-00.95": {
+				"position": { "x": -0.4506, "y": 0.9076, "z": -1.3659 },
+				"distance": 1.1554,
+				"axisAlignedBoundingBox": {
+					"cornerPoints": [
+						[-0.3139, 0.913, -1.3588],
+						[-0.3139, 0.913, -1.38],
+						[-0.3139, 0.9063, -1.3588],
+						[-0.3139, 0.9063, -1.38],
+						[-0.5824, 0.913, -1.3588],
+						[-0.5824, 0.913, -1.38],
+						[-0.5824, 0.9063, -1.3588],
+						[-0.5824, 0.9063, -1.38]
+					],
+					"center": { "x": -0.4481, "y": 0.9096, "z": -1.3694 },
+					"size": { "x": 0.2684, "y": 0.0067, "z": 0.0212 }
+				},
+				"objectOrientedBoundingBox": {
+					"cornerPoints": [
+						[-0.3139, 0.9063, -1.3588],
+						[-0.5824, 0.9063, -1.3588],
+						[-0.5824, 0.9063, -1.38],
+						[-0.3139, 0.9063, -1.38],
+						[-0.3139, 0.913, -1.3588],
+						[-0.5824, 0.913, -1.3588],
+						[-0.5824, 0.913, -1.38],
+						[-0.3139, 0.913, -1.38]
+					]
+				},
+				"simbotPickedUp": 1,
+				"simbotLastParentReceptacle": "CounterTop|+00.07|+00.95|-01.20"
+			},
+			"Cabinet|-02.65|+02.08|-00.88": { "distance": 2.3172 },
+			"Cabinet|-02.65|+02.08|-00.23": { "distance": 2.2314 },
+			"Cabinet|-00.82|+00.47|-00.91": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 0.7893
+			},
+			"Cabinet|-01.77|+02.01|-01.20": { "distance": 1.777 },
+			"Cabinet|-01.84|+02.01|-01.20": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.8179
+			},
+			"Cabinet|-01.85|+00.39|-00.90": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.3757
+			},
+			"Cabinet|-01.80|+00.47|-00.91": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.3127
+			},
+			"Cabinet|+01.12|+02.01|-01.20": { "distance": 2.3677 },
+			"Cabinet|+00.24|+02.01|-01.20": { "distance": 1.7601 },
+			"Cabinet|+01.13|+00.47|-00.90": { "distance": 2.0299 },
+			"Cabinet|-02.39|+00.39|+00.38": { "distance": 1.826 },
+			"Cabinet|+00.48|+00.39|-00.90": { "distance": 1.4851 },
+			"Cabinet|-02.63|+02.01|-01.20": { "distance": 2.3756 },
+			"Cabinet|-02.65|+02.01|-00.95": { "distance": 2.3051 },
+			"Cabinet|-02.65|+02.20|+01.67": { "distance": 2.9925 },
+			"Cabinet|-02.65|+02.01|+00.36": { "distance": 2.2822 },
+			"Cabinet|+00.17|+02.01|-01.20": { "distance": 1.7219 },
+			"Cabinet|-00.77|+02.01|-01.20": { "distance": 1.4587 },
+			"Cabinet|-00.84|+02.01|-01.20": { "distance": 1.4611 },
+			"Cabinet|-02.65|+02.20|+00.43": { "distance": 2.3994 },
+			"StoveBurner|-02.62|+00.89|-00.71": { "distance": 1.9285 },
+			"CounterTop|-02.70|+00.95|+00.11": {
+				"receptacleObjectIds": ["Toaster|-02.82|+00.90|+00.25"],
+				"distance": 1.9822
+			},
+			"CounterTop|+00.91|+01.15|+00.79": {
+				"receptacleObjectIds": [
+					"Egg|+00.17|+01.12|+01.26",
+					"Cup|+00.74|+01.11|+00.98",
+					"Tomato|+00.20|+01.15|+01.06",
+					"CoffeeMachine|+01.12|+01.10|+00.31",
+					"Mug|-02.69|+00.91|-00.06"
+				],
+				"distance": 1.9729
+			},
+			"StoveBurner|-02.62|+00.89|-00.40": { "distance": 1.8783 },
+			"Drawer|-02.03|+00.78|-01.08": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.5284
+			},
+			"Sink|-01.33|+00.92|-01.23": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.1339
+			},
+			"Floor|+00.00|+00.00|+00.00": { "distance": 1.1987 },
+			"StoveBurner|-02.82|+00.89|-00.71": { "distance": 2.1237 },
+			"Drawer|-02.57|+00.78|+00.10": { "distance": 1.8597 },
+			"StoveBurner|-02.82|+00.89|-00.40": { "distance": 2.0782 },
+			"CounterTop|+00.07|+00.95|-01.20": {
+				"visible": true,
+				"obstructed": false,
+				"receptacleObjectIds": [
+					"Apple|-01.25|+00.90|-01.31|AppleSliced_0",
+					"Apple|-01.25|+00.90|-01.31|AppleSliced_1",
+					"Apple|-01.25|+00.90|-01.31|AppleSliced_2",
+					"ButterKnife|-00.24|+00.91|-00.95",
+					"Potato|-00.60|+00.94|-01.12",
+					"ButterKnife|-01.82|+00.91|-00.92",
+					"Pan|-02.59|+00.90|-01.15",
+					"Bowl|-02.05|+00.90|-01.16",
+					"Mug|-02.65|+00.92|-01.15",
+					"Plate|-02.84|+00.91|-01.03",
+					"CreditCard|+01.00|+00.90|-00.98",
+					"Spatula|+01.07|+00.91|-01.20",
+					"Microwave|+00.28|+00.90|-01.33",
+					"Fork|+00.29|+01.01|-01.41",
+					"Knife|+00.29|+01.03|-01.45"
+				],
+				"distance": 1.2557,
+				"simbotIsReceptacleOf": [
+					"Apple|-01.25|+00.90|-01.31|AppleSliced_2",
+					"Apple|-01.25|+00.90|-01.31|AppleSliced_1",
+					"Apple|-01.25|+00.90|-01.31|AppleSliced_0",
+					"ButterKnife|-00.24|+00.91|-00.95"
+				]
+			},
+			"Drawer|+00.26|+00.78|-01.08": { "distance": 1.3106 },
+			"Pan|-02.59|+00.90|-01.15": { "distance": 2.047 },
+			"Apple|-01.25|+00.90|-01.31": {
+				"position": { "x": -0.3449, "y": 0.9607, "z": -1.0321 },
+				"isSliced": true,
+				"distance": 0.8828,
+				"parentReceptacles": null,
+				"axisAlignedBoundingBox": {
+					"cornerPoints": null,
+					"center": { "x": 0.0, "y": 0.0, "z": 0.0 },
+					"size": { "x": 0.0, "y": 0.0, "z": 0.0 }
+				},
+				"objectOrientedBoundingBox": {
+					"cornerPoints": [
+						[-0.3027, 0.9136, -0.992],
+						[-0.385, 0.9136, -0.992],
+						[-0.385, 0.9136, -1.0716],
+						[-0.3027, 0.9136, -1.0716],
+						[-0.3027, 0.9831, -0.992],
+						[-0.385, 0.9831, -0.992],
+						[-0.385, 0.9831, -1.0716],
+						[-0.3027, 0.9831, -1.0716]
+					]
+				}
+			},
+			"LightSwitch|-01.17|+01.31|+03.00": { "distance": 3.3018 },
+			"CoffeeMachine|+01.12|+01.10|+00.31": {
+				"receptacleObjectIds": ["Mug|-02.69|+00.91|-00.06"],
+				"distance": 1.9666,
+				"simbotIsReceptacleOf": ["Mug|-02.69|+00.91|-00.06"]
+			},
+			"StoveKnob|-02.43|+00.86|-00.62": { "distance": 1.721 },
+			"StoveKnob|-02.43|+00.86|-00.48": { "distance": 1.6957 },
+			"StoveKnob|-02.43|+00.86|-00.78": { "distance": 1.7625 },
+			"StoveKnob|-02.43|+00.86|-00.32": { "distance": 1.6819 },
+			"Fork|+00.29|+01.01|-01.41": { "distance": 1.5677 },
+			"Kettle|-02.62|+00.93|-00.72": { "distance": 1.9295 },
+			"CreditCard|+01.00|+00.90|-00.98": { "distance": 1.8946 },
+			"Bread|-00.55|+01.71|-01.36": { "distance": 1.3855 },
+			"Plate|-02.84|+00.91|-01.03": { "distance": 2.2353 },
+			"SoapBottle|-01.42|+00.85|-01.08": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.0704
+			},
+			"Window|+00.32|+01.45|+03.09": { "distance": 3.5494 },
+			"Spatula|+01.07|+00.91|-01.20": { "distance": 2.0569 },
+			"Lettuce|-02.70|+00.88|+00.95": { "distance": 2.2896 },
+			"Toaster|-02.82|+00.90|+00.25": { "distance": 2.1315 },
+			"Sink|-01.33|+00.92|-01.23|SinkBasin": {
+				"visible": true,
+				"obstructed": false,
+				"receptacleObjectIds": [
+					"Spatula|-01.33|+00.85|-01.08",
+					"SoapBottle|-01.42|+00.85|-01.08",
+					"Faucet|-01.39|+01.14|-01.40",
+					"DishSponge|-01.22|+00.84|-01.13",
+					"Knife|-01.42|+00.87|-01.36",
+					"Cup|-01.51|+00.85|-01.25"
+				],
+				"distance": 1.1652
+			},
+			"SaltShaker|-02.86|+00.37|+00.69": { "distance": 2.3707 },
+			"Tomato|+00.20|+01.15|+01.06": { "distance": 1.6376 },
+			"GarbageCan|-02.76|+00.00|+01.47": {
+				"visible": false,
+				"obstructed": true,
+				"distance": 2.791
+			},
+			"PepperShaker|-02.87|+00.94|-00.37": { "distance": 2.1207 },
+			"ButterKnife|+00.49|+01.66|-01.44": { "distance": 1.8741 },
+			"Pot|-02.74|+00.37|+01.01": { "distance": 2.4158 },
+			"Fridge|-02.86|+00.00|+00.85": {
+				"visible": false,
+				"obstructed": true,
+				"distance": 2.5419
+			},
+			"Potato|-00.60|+00.94|-01.12": { "distance": 0.8834 },
+			"Microwave|+00.28|+00.90|-01.33": { "distance": 1.4955 },
+			"DishSponge|-01.22|+00.84|-01.13": { "distance": 0.9966 },
+			"Egg|+00.17|+01.12|+01.26": { "distance": 1.7807 },
+			"Spoon|+01.52|+00.76|+01.31": { "distance": 2.7549 },
+			"Knife|-02.68|+00.84|+00.77": { "distance": 2.1845 },
+			"Cup|+00.74|+01.11|+00.98": { "distance": 1.9432 },
+			"Mug|-02.76|+00.03|+01.54": { "distance": 2.8244 },
+			"Stool|+01.54|+00.01|+01.33": { "distance": 2.9216 },
+			"Stool|+00.98|+00.01|+01.79": { "distance": 2.8236 },
+			"Faucet|-01.39|+01.14|-01.40": { "isToggled": false, "distance": 1.3374 },
+			"Bowl|-02.05|+00.90|-01.16": {
+				"visible": true,
+				"obstructed": false,
+				"distance": 1.586
+			}
+		}
+	},
+	"state_changes": {
+		"agents": {},
+		"objects": {
+			"Apple|-01.25|+00.90|-01.31|AppleSliced_2": {
+				"objectType": "AppleSliced",
+				"simbotPickedUp": 1,
+				"simbotLastParentReceptacle": "CounterTop|+00.07|+00.95|-01.20"
+			},
+			"Apple|-01.25|+00.90|-01.31|AppleSliced_1": {
+				"objectType": "AppleSliced",
+				"simbotPickedUp": 1,
+				"simbotLastParentReceptacle": "CounterTop|+00.07|+00.95|-01.20"
+			},
+			"Apple|-01.25|+00.90|-01.31|AppleSliced_0": {
+				"objectType": "AppleSliced",
+				"simbotPickedUp": 1,
+				"simbotLastParentReceptacle": "CounterTop|+00.07|+00.95|-01.20"
+			}
+		}
+	},
+	"history_subgoals": [
+		"Navigate",
+		"Mug",
+		"Pickup",
+		"Mug",
+		"Navigate",
+		"Faucet",
+		"ToggleOff",
+		"Faucet",
+		"Pour",
+		"Sink",
+		"Navigate",
+		"CoffeeMachine",
+		"Place",
+		"CoffeeMachine",
+		"ToggleOff",
+		"CoffeeMachine",
+		"ToggleOn",
+		"CoffeeMachine",
+		"Navigate",
+		"ButterKnife",
+		"Pickup",
+		"ButterKnife",
+		"Navigate",
+		"CounterTop",
+		"Place",
+		"CounterTop"
+	],
+	"future_subgoals": [
+		"Pickup",
+		"Apple",
+		"Place",
+		"CounterTop",
+		"Pickup",
+		"ButterKnife",
+		"Slice",
+		"Apple",
+		"Place",
+		"CounterTop"
+	],
+	"expected_init_goal_conditions_total": 15,
+	"expected_init_goal_conditions_satisfied": 0,
+	"dialog_history_cleaned": [
+		["Driver", "Hello, what is my task?"],
+		["Commander", "Hi. Today you are preparing breakfast."],
+		["Driver", "Where should i start"],
+		["Commander", "You can start by preparing coffee in a clean mug"],
+		["Driver", "done"],
+		["Driver", "next?"],
+		["Commander", "Serve a slice of apple on a plate"],
+		["Commander", "You have to clean the plate first by rinsing it with water"]
+	]
+}

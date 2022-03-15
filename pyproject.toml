@@ -55,6 +55,8 @@ black = { version = "^22.1.0", extras = ["jupyter"] }
 pytest-order = "^1.0.1"
 mypy = "^0.941"
 types-requests = "^2.27.12"
+pytest-mock = "^3.7.0"
+types-mock = "^4.0.11"
 
 [tool.black]
 line-length = 99

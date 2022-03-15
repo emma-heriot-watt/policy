@@ -1,11 +1,12 @@
 import argparse
 import logging
 from pathlib import Path
+from typing import Literal
 
 import boto3
 import botocore
 from emma_datasets.common import get_progress
-from emma_datasets.datamodels import Instance
+from emma_datasets.datamodels import BaseInstance, Instance, TeachEdhInstance
 from emma_datasets.db import DatasetDb
 
 from emma_policy.utils import get_logger
@@ -20,37 +21,63 @@ logging.getLogger("s3transfer").setLevel(logging.CRITICAL)
 logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 
 
-def main(args: argparse.Namespace) -> None:
+class FixtureDownload:
     """Downloads the features for all instances given a db."""
-    s3 = boto3.client("s3")
 
-    progress = get_progress()
+    def __init__(
+        self, input_db_path: Path, instance_type: Literal["default", "teach_edh"] = "default"
+    ) -> None:
+        self._db = DatasetDb(input_db_path)
 
-    with progress:
-        with DatasetDb(args.input_db) as in_db:
-            task_id = progress.add_task(
-                f"Downloading features from {args.input_db}", total=len(in_db)
-            )
-            for _, _, data in in_db:
-                instance = Instance.parse_raw(data)
+        self._instance_model: BaseInstance = Instance
+        if instance_type == "teach_edh":
+            self._instance_model = TeachEdhInstance
+
+        self._s3 = boto3.client("s3")
+
+        self._progress = get_progress()
+        self._task_id = self._progress.add_task(
+            f"Downloading features from {input_db_path}", total=len(self._db)
+        )
+
+    def run(self) -> None:
+        """Do the downloading for the fixtures."""
+        with self._progress, self._db:  # noqa: WPS316
+            for _, _, data in self._db:
+                instance = self._instance_model.parse_raw(data)
                 local_feature_path = instance.features_path
-                if "alfred" in local_feature_path.parts:
-                    # Will probably need something like that for teach as well
-                    idx2split = local_feature_path.parts.index("alfred")
-                    feature_path = Path(*local_feature_path.parts[idx2split + 1 :])
-                    s3_parts = ("datasets", "alfred", "full_2.1.0", feature_path)
-                    s3_feature_path = Path(*s3_parts)
-                else:
-                    idx2split = local_feature_path.parts.index("datasets")
-                    feature_path = Path(*local_feature_path.parts[idx2split + 1 :])
-                    s3_feature_path = Path.joinpath(Path("datasets"), feature_path)
 
-                Path.mkdir(local_feature_path.parent, parents=True, exist_ok=True)
-                try:
-                    s3.download_file("emma-simbot", str(s3_feature_path), str(local_feature_path))
-                except botocore.exceptions.ClientError:
-                    log.error(f"Failed to download {local_feature_path}")
-                progress.advance(task_id)
+                local_feature_path.parent.mkdir(parents=True, exist_ok=True)
+
+                if "alfred" in local_feature_path.parts:
+                    s3_path = self._get_paths_for_alfred(local_feature_path)
+                else:
+                    s3_path = self._get_paths(local_feature_path)
+
+                self._download_file(s3_path, local_feature_path)
+
+    def _download_file(self, s3_path: Path, local_path: Path) -> None:
+        try:
+            self._s3.download_file("emma-simbot", str(s3_path), str(local_path))
+        except botocore.exceptions.ClientError:
+            log.error(f"Failed to download {local_path}")
+
+        self._progress.advance(self._task_id)
+
+    def _get_paths(self, local_feature_path: Path) -> Path:
+        """Get the paths as is, without needing any special handling."""
+        idx2split = local_feature_path.parts.index("datasets")
+        feature_path = Path(*local_feature_path.parts[idx2split + 1 :])
+        s3_feature_path = Path("datasets", feature_path)
+
+        return s3_feature_path
+
+    def _get_paths_for_alfred(self, local_feature_path: Path) -> Path:
+        idx2split = local_feature_path.parts.index("alfred")
+        feature_path = Path(*local_feature_path.parts[idx2split + 1 :])
+        s3_feature_path = Path("datasets", "alfred", "full_2.1.0", feature_path)
+
+        return s3_feature_path
 
 
 if __name__ == "__main__":
@@ -63,5 +90,14 @@ if __name__ == "__main__":
         default="storage/fixtures/instances.db",
     )
 
+    parser.add_argument(
+        "--instance_type",
+        help="Type of instance model used within the DatasetDb",
+        choices=["default", "teach_edh"],
+        default="default",
+    )
+
     args = parser.parse_args()
-    main(args)
+
+    downloader = FixtureDownload(args.input_db, args.instance_type)
+    downloader.run()

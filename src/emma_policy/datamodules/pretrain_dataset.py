@@ -118,11 +118,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             object_attention_mask=visual_features.object_attention_mask,
             object_coordinates=visual_features.object_coordinates,
             object_features=visual_features.object_features,
-            object_frame_ids=visual_features.object_frame_ids,
+            object_frame_tokens=visual_features.object_frame_tokens,
             scene_attention_mask=visual_features.scene_attention_mask,
             scene_coordinates=visual_features.scene_coordinates,
             scene_features=visual_features.scene_features,
-            scene_frame_ids=visual_features.scene_frame_ids,
+            scene_frame_tokens=visual_features.scene_frame_tokens,
             visual_token_ids=visual_features.visual_token_ids,
             task=self._get_task_as_tensor(Task.mlm),
         )
@@ -181,7 +181,6 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         )
 
         visual_features = self._load_visual_features(instance)
-
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
@@ -190,11 +189,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             object_attention_mask=visual_features.object_attention_mask,
             object_coordinates=visual_features.object_coordinates,
             object_features=visual_features.object_features,
-            object_frame_ids=visual_features.object_frame_ids,
+            object_frame_tokens=visual_features.object_frame_tokens,
             scene_attention_mask=visual_features.scene_attention_mask,
             scene_coordinates=visual_features.scene_coordinates,
             scene_features=visual_features.scene_features,
-            scene_frame_ids=visual_features.scene_frame_ids,
+            scene_frame_tokens=visual_features.scene_frame_tokens,
             visual_token_ids=visual_features.visual_token_ids,
             task=self._get_task_as_tensor(Task.itm),
         )
@@ -248,8 +247,8 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             visual_token_ids=visual_features.visual_token_ids,
             scene_attention_mask=visual_features.scene_attention_mask,
             object_attention_mask=visual_features.object_attention_mask,
-            scene_frame_ids=visual_features.scene_frame_ids,
-            object_frame_ids=visual_features.object_frame_ids,
+            scene_frame_tokens=visual_features.scene_frame_tokens,
+            object_frame_tokens=visual_features.object_frame_tokens,
             task=self._get_task_as_tensor(Task.visual_grounding),
         )
 
@@ -300,8 +299,8 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             object_attention_mask=visual_features.object_attention_mask,
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
             decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
-            scene_frame_ids=visual_features.scene_frame_ids,
-            object_frame_ids=visual_features.object_frame_ids,
+            scene_frame_tokens=visual_features.scene_frame_tokens,
+            object_frame_tokens=visual_features.object_frame_tokens,
             task=self._get_task_as_tensor(Task.dense_captioning),
         )
 
@@ -327,11 +326,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             object_attention_mask=visual_features.object_attention_mask,
             object_coordinates=visual_features.object_coordinates,
             object_features=visual_features.object_features,
-            object_frame_ids=visual_features.object_frame_ids,
+            object_frame_tokens=visual_features.object_frame_tokens,
             scene_attention_mask=visual_features.scene_attention_mask,
             scene_coordinates=visual_features.scene_coordinates,
             scene_features=visual_features.scene_features,
-            scene_frame_ids=visual_features.scene_frame_ids,
+            scene_frame_tokens=visual_features.scene_frame_tokens,
             visual_token_ids=visual_features.visual_token_ids,
             task=self._get_task_as_tensor(Task.captioning),
         )
@@ -365,11 +364,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             object_attention_mask=visual_features.object_attention_mask,
             object_coordinates=visual_features.object_coordinates,
             object_features=visual_features.object_features,
-            object_frame_ids=visual_features.object_frame_ids,
+            object_frame_tokens=visual_features.object_frame_tokens,
             scene_attention_mask=visual_features.scene_attention_mask,
             scene_coordinates=visual_features.scene_coordinates,
             scene_features=visual_features.scene_features,
-            scene_frame_ids=visual_features.scene_frame_ids,
+            scene_frame_tokens=visual_features.scene_frame_tokens,
             visual_token_ids=visual_features.visual_token_ids,
             task=self._get_task_as_tensor(Task.vqa),
         )
@@ -435,8 +434,8 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             object_attention_mask=visual_features.object_attention_mask,
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
             decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
-            scene_frame_ids=visual_features.scene_frame_ids,
-            object_frame_ids=visual_features.object_frame_ids,
+            scene_frame_tokens=visual_features.scene_frame_tokens,
+            object_frame_tokens=visual_features.object_frame_tokens,
             task=torch.tensor([Task.get_index(Task.relation_detection)]),
         )
 
@@ -471,7 +470,9 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                 )
 
                 # Get the index of the objects from the current frame. Frames start from 1.
-                frame_objects = visual_features.object_frame_ids == action_idx + 1
+                frame_token = self.tokenizer.convert_tokens_to_ids(f"<frame_token_{action_idx+1}>")
+                frame_objects = visual_features.object_frame_tokens == frame_token
+
                 matched_index, gt_flags = self._best_match_features(
                     ground_truth_bbox=gt_bbox.unsqueeze(0),
                     object_coordinates_bbox=visual_features.object_coordinates[frame_objects],
@@ -506,11 +507,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             object_attention_mask=visual_features.object_attention_mask,
             object_coordinates=visual_features.object_coordinates,
             object_features=visual_features.object_features,
-            object_frame_ids=visual_features.object_frame_ids,
+            object_frame_tokens=visual_features.object_frame_tokens,
             scene_attention_mask=visual_features.scene_attention_mask,
             scene_coordinates=visual_features.scene_coordinates,
             scene_features=visual_features.scene_features,
-            scene_frame_ids=visual_features.scene_frame_ids,
+            scene_frame_tokens=visual_features.scene_frame_tokens,
             visual_token_ids=visual_features.visual_token_ids,
             task=self._get_task_as_tensor(Task.instruction_prediction),
         )
@@ -541,11 +542,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             object_attention_mask=visual_features.object_attention_mask,
             object_coordinates=visual_features.object_coordinates,
             object_features=visual_features.object_features,
-            object_frame_ids=visual_features.object_frame_ids,
+            object_frame_tokens=visual_features.object_frame_tokens,
             scene_attention_mask=visual_features.scene_attention_mask,
             scene_coordinates=visual_features.scene_coordinates,
             scene_features=visual_features.scene_features,
-            scene_frame_ids=visual_features.scene_frame_ids,
+            scene_frame_tokens=visual_features.scene_frame_tokens,
             visual_token_ids=visual_features.visual_token_ids,
             task=self._get_task_as_tensor(Task.action_execution),
         )
@@ -631,11 +632,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             object_attention_mask=visual_features.object_attention_mask,
             object_coordinates=visual_features.object_coordinates,
             object_features=visual_features.object_features,
-            object_frame_ids=visual_features.object_frame_ids,
+            object_frame_tokens=visual_features.object_frame_tokens,
             scene_attention_mask=visual_features.scene_attention_mask,
             scene_coordinates=visual_features.scene_coordinates,
             scene_features=visual_features.scene_features,
-            scene_frame_ids=visual_features.scene_frame_ids,
+            scene_frame_tokens=visual_features.scene_frame_tokens,
             visual_token_ids=visual_features.visual_token_ids,
             task=self._get_task_as_tensor(Task.vtm),
         )

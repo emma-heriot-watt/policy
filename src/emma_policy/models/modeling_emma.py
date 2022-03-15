@@ -43,7 +43,9 @@ class EmmaModel(EmmaPreTrainedModel):
         word_embeddings = Embedding(
             config.vocab_size, config.d_model, padding_idx=config.pad_token_id
         )
-        self.image_position_embeddings = EmmaImagePositionEmbeddings(config=config)
+        self.image_position_embeddings = EmmaImagePositionEmbeddings(
+            config=config, word_embeddings=word_embeddings
+        )
         self.scene_embeddings = EmmaSceneEmbeddings(
             config=config,
             image_position_embeddings=self.image_position_embeddings,
@@ -79,10 +81,10 @@ class EmmaModel(EmmaPreTrainedModel):
         self,
         scene_features: torch.Tensor,
         scene_coordinates: torch.Tensor,
-        scene_frame_ids: torch.Tensor,
+        scene_frame_tokens: torch.Tensor,
         object_features: torch.Tensor,
         object_coordinates: torch.Tensor,
-        object_frame_ids: torch.Tensor,
+        object_frame_tokens: torch.Tensor,
         visual_token_ids: torch.Tensor,
         language_token_ids: torch.Tensor,
     ) -> torch.Tensor:
@@ -90,14 +92,14 @@ class EmmaModel(EmmaPreTrainedModel):
         scene_embeddings = self.scene_embeddings(
             cnn_features=scene_features,
             image_coordinates=scene_coordinates,
-            frame_ids=scene_frame_ids,
+            frame_tokens=scene_frame_tokens,
         )
 
         object_embeddings = self.object_embeddings(
             object_features=object_features,
             image_coordinates=object_coordinates,
             visual_token_ids=visual_token_ids,
-            frame_ids=object_frame_ids,
+            frame_tokens=object_frame_tokens,
         )
 
         language_embeddings = self.encoder.text_embeddings(language_token_ids)
@@ -110,10 +112,10 @@ class EmmaModel(EmmaPreTrainedModel):
         self,
         scene_features: torch.Tensor,
         scene_coordinates: torch.Tensor,
-        scene_frame_ids: torch.Tensor,
+        scene_frame_tokens: torch.Tensor,
         object_features: torch.Tensor,
         object_coordinates: torch.Tensor,
-        object_frame_ids: torch.Tensor,
+        object_frame_tokens: torch.Tensor,
         visual_token_ids: torch.Tensor,
         language_token_ids: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
@@ -137,10 +139,10 @@ class EmmaModel(EmmaPreTrainedModel):
             inputs_embeds = self.embed_inputs(
                 scene_features=scene_features,
                 scene_coordinates=scene_coordinates,
-                scene_frame_ids=scene_frame_ids,
+                scene_frame_tokens=scene_frame_tokens,
                 object_features=object_features,
                 object_coordinates=object_coordinates,
-                object_frame_ids=object_frame_ids,
+                object_frame_tokens=object_frame_tokens,
                 visual_token_ids=visual_token_ids,
                 language_token_ids=language_token_ids,
             )

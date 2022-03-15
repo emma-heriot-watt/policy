@@ -78,10 +78,11 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
 
         object_features = []
         object_coordinates = []
-        scene_features = []
         vis_tokens = []
-        obj_frame_ids = []
+        obj_frame_tokens = []
         object_attention_mask = []
+        scene_features = []
+        scene_frame_tokens = []
 
         for frame_idx, feature_dict in enumerate(feature_dicts):
             object_features.append(feature_dict["bbox_features"])
@@ -104,26 +105,29 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
             )
             vis_tokens.append(curr_vis_tokens)
 
-            obj_frame_ids.append(
-                curr_vis_tokens.new_full(curr_vis_tokens.shape, fill_value=frame_idx + 1)
+            frame_token = self.tokenizer.convert_tokens_to_ids(f"<frame_token_{frame_idx+1}>")
+            obj_frame_tokens.append(
+                curr_vis_tokens.new_full(
+                    curr_vis_tokens.shape,
+                    fill_value=frame_token,  # type: ignore[arg-type]
+                )
             )
-
+            scene_frame_tokens.append(frame_token)
             object_attention_mask.append(torch.ones_like(curr_vis_tokens, dtype=torch.bool))
 
         num_frames = len(scene_features)
         scene_attention_mask = torch.ones(num_frames, dtype=torch.bool)
         scene_coordinates = torch.tensor([0, 0, 1.0, 1.0]).repeat(num_frames, 1)
-        scene_frame_ids = torch.arange(1, num_frames + 1)
 
         emma_visual_features = EmmaVisualFeatures(
             object_attention_mask=torch.cat(object_attention_mask),
             object_coordinates=torch.cat(object_coordinates),
             object_features=torch.cat(object_features),
-            object_frame_ids=torch.cat(obj_frame_ids),
+            object_frame_tokens=torch.cat(obj_frame_tokens),
             scene_attention_mask=scene_attention_mask,
             scene_coordinates=scene_coordinates,
             scene_features=torch.cat(scene_features),
-            scene_frame_ids=scene_frame_ids,
+            scene_frame_tokens=torch.tensor(scene_frame_tokens),
             visual_token_ids=torch.cat(vis_tokens),
         )
 

@@ -16,10 +16,10 @@ def test_model_forward_works(
     output = emma_model_for_causal_lm(
         scene_features=batch.scene_features,
         scene_coordinates=batch.scene_coordinates,
-        scene_frame_ids=batch.scene_frame_ids,
+        scene_frame_tokens=batch.scene_frame_tokens,
         object_features=batch.object_features,
         object_coordinates=batch.object_coordinates,
-        object_frame_ids=batch.object_frame_ids,
+        object_frame_tokens=batch.object_frame_tokens,
         visual_token_ids=batch.visual_token_ids,
         language_token_ids=batch.input_token_ids,
         attention_mask=batch.attention_mask,

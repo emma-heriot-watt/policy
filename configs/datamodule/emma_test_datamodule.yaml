@@ -1,7 +1,7 @@
 _target_: emma_policy.datamodules.pretrain_datamodule.EmmaPretrainDataModule
 
 model_name: heriot-watt/emma-small
-instances_db_file: ${work_dir}/storage/fixtures/instances_tiny_batch.db
+instances_db_file: ${work_dir}/storage/fixtures/instances.db
 pretrain_train_db_file: ${work_dir}/storage/fixtures/pretrain_train.db
 pretrain_valid_db_file: ${work_dir}/storage/fixtures/pretrain_valid.db
 force_prepare_data: True

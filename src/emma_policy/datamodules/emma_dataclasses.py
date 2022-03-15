@@ -12,8 +12,8 @@ class EmmaVisualFeatures:
     object_features: torch.Tensor
     object_coordinates: torch.Tensor
     visual_token_ids: torch.Tensor
-    scene_frame_ids: torch.Tensor
-    object_frame_ids: torch.Tensor
+    scene_frame_tokens: torch.Tensor
+    object_frame_tokens: torch.Tensor
     scene_attention_mask: torch.Tensor
     object_attention_mask: torch.Tensor
 
@@ -42,11 +42,11 @@ class EmmaDatasetPadding:
     object_attention_mask: int = 0
     object_coordinates: int = 0
     object_features: int = 0
-    object_frame_ids: int = 0
+    object_frame_tokens: int = 1
     scene_attention_mask: int = 0
     scene_coordinates: int = 0
     scene_features: int = 0
-    scene_frame_ids: int = 0
+    scene_frame_tokens: int = 1
     visual_token_ids: int = 1
     task: int = -1
 

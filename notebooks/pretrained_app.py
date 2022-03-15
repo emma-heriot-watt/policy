@@ -48,11 +48,14 @@ def load_image_features(
         dtype=torch.long,
     )
     feature_dict["viz_tokens"] = vis_tokens
-    feature_dict["obj_frame_ids"] = vis_tokens.new_full(vis_tokens.shape, fill_value=1)
+    frame_token = tokenizer.convert_tokens_to_ids(f"<frame_token_{1}>")
+    feature_dict["obj_frame_tokens"] = vis_tokens.new_full(
+        vis_tokens.shape, fill_value=frame_token  # type: ignore[arg-type]
+    )
     num_frames = 1
     feature_dict["scene_attention_mask"] = torch.ones(num_frames, dtype=torch.bool)
     feature_dict["scene_coordinates"] = torch.tensor([0, 0, 1.0, 1.0]).repeat(num_frames, 1)
-    feature_dict["scene_frame_ids"] = torch.arange(1, num_frames + 1)
+    feature_dict["scene_frame_tokens"] = torch.tensor(frame_token)
     feature_dict["object_attention_mask"] = torch.ones_like(vis_tokens, dtype=torch.bool)
 
     return feature_dict
@@ -89,12 +92,12 @@ def get_generate_response(
             task=torch.empty(1),
             object_attention_mask=feature_dict["object_attention_mask"].unsqueeze(0),
             object_coordinates=feature_dict["bbox_coords"].unsqueeze(0),
-            object_frame_ids=feature_dict["obj_frame_ids"].unsqueeze(0),
+            object_frame_tokens=feature_dict["obj_frame_tokens"].unsqueeze(0),
             object_features=feature_dict["bbox_features"].unsqueeze(0),
             scene_attention_mask=feature_dict["scene_attention_mask"].unsqueeze(0),
             scene_coordinates=feature_dict["scene_coordinates"].unsqueeze(0),
             scene_features=feature_dict["cnn_features"].unsqueeze(0),
-            scene_frame_ids=feature_dict["scene_frame_ids"].unsqueeze(0),
+            scene_frame_tokens=feature_dict["scene_frame_tokens"].unsqueeze(0),
             visual_token_ids=feature_dict["viz_tokens"].unsqueeze(0),
             attention_mask=attention_mask,
             global_attention_mask=global_attention_mask,
@@ -230,7 +233,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--input_db",
         help="Path to the input database",
-        default="storage/fixtures/instances_tiny_batch.db",
+        default="storage/fixtures/instances.db",
     )
     parser.add_argument(
         "--local_path",

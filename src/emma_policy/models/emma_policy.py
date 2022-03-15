@@ -145,10 +145,10 @@ class EmmaPolicy(pl.LightningModule):
         output = self.emma(
             scene_features=batch.scene_features,
             scene_coordinates=batch.scene_coordinates,
-            scene_frame_ids=batch.scene_frame_ids,
+            scene_frame_tokens=batch.scene_frame_tokens,
             object_features=batch.object_features,
             object_coordinates=batch.object_coordinates,
-            object_frame_ids=batch.object_frame_ids,
+            object_frame_tokens=batch.object_frame_tokens,
             visual_token_ids=batch.visual_token_ids,
             language_token_ids=batch.input_token_ids,
             attention_mask=batch.attention_mask,
@@ -167,10 +167,10 @@ class EmmaPolicy(pl.LightningModule):
         output = self.emma(
             scene_features=batch.scene_features,
             scene_coordinates=batch.scene_coordinates,
-            scene_frame_ids=batch.scene_frame_ids,
+            scene_frame_tokens=batch.scene_frame_tokens,
             object_features=batch.object_features,
             object_coordinates=batch.object_coordinates,
-            object_frame_ids=batch.object_frame_ids,
+            object_frame_tokens=batch.object_frame_tokens,
             visual_token_ids=batch.visual_token_ids,
             language_token_ids=batch.input_token_ids,
             attention_mask=batch.attention_mask,
@@ -205,10 +205,10 @@ class EmmaPolicy(pl.LightningModule):
         inputs_embeds = self.emma.emma.embed_inputs(
             scene_features=batch.scene_features,
             scene_coordinates=batch.scene_coordinates,
-            scene_frame_ids=batch.scene_frame_ids,
+            scene_frame_tokens=batch.scene_frame_tokens,
             object_features=batch.object_features,
             object_coordinates=batch.object_coordinates,
-            object_frame_ids=batch.object_frame_ids,
+            object_frame_tokens=batch.object_frame_tokens,
             visual_token_ids=batch.visual_token_ids,
             language_token_ids=batch.input_token_ids,
         )

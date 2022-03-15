@@ -39,7 +39,7 @@
 	"num_hidden_layers": 6,
 	"pad_token_id": 1,
 	"use_cache": true,
-	"vocab_size": 10000,
+	"vocab_size": 10252,
 	"scene_features_dim": 1024,
 	"object_features_dim": 2048,
 	"image_coordinates_dim": 4

@@ -81,7 +81,7 @@ if __name__ == "__main__":
         help="Number of total visual tokens for each visual frame.",
     )
 
-    parser.add_argument("--vocab_size", type=int, default=10000)  # noqa: WPS432
+    parser.add_argument("--vocab_size", type=int, default=10252)  # noqa: WPS432
     parser.add_argument("--min_frequency", type=int, default=0)
     parser.add_argument(
         "--output_path",

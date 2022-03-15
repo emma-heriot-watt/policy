@@ -489,7 +489,31 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
     def instruction_prediction(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the instruction prediction task."""
-        raise NotImplementedError
+        source_text = self._get_random_template_for_task(Task.instruction_prediction)
+        input_encoding = self.tokenizer.encode_plus(
+            source_text, return_tensors=self._return_tensor_type, truncation=True
+        )
+        visual_features = self._load_visual_features(instance)
+        target_encoding = self.tokenizer.encode_plus(
+            instance.caption.text, return_tensors=self._return_tensor_type, truncation=True
+        )
+
+        return EmmaDatasetItem(
+            input_token_ids=input_encoding.input_ids.squeeze(0),
+            text_attention_mask=input_encoding.attention_mask.squeeze(0),
+            target_token_ids=target_encoding.input_ids.squeeze(0),
+            decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
+            object_attention_mask=visual_features.object_attention_mask,
+            object_coordinates=visual_features.object_coordinates,
+            object_features=visual_features.object_features,
+            object_frame_ids=visual_features.object_frame_ids,
+            scene_attention_mask=visual_features.scene_attention_mask,
+            scene_coordinates=visual_features.scene_coordinates,
+            scene_features=visual_features.scene_features,
+            scene_frame_ids=visual_features.scene_frame_ids,
+            visual_token_ids=visual_features.visual_token_ids,
+            task=self._get_task_as_tensor(Task.instruction_prediction),
+        )
 
     def action_execution(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
         """Process the instance for the action execution task."""

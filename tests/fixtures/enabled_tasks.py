@@ -4,7 +4,7 @@ from pytest_cases import param_fixture
 from emma_policy.datamodules.pretrain_instances.datamodels import Task
 
 
-all_tasks_list = [task.name for task in Task if task != Task.instruction_prediction]
+all_tasks_list = [task.name for task in Task]
 
 enabled_tasks_list = param_fixture(
     "enabled_tasks_list",

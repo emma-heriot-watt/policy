@@ -50,4 +50,11 @@ jobs:
 
       - name: Run test suite
         run: |
-          poetry run pytest --cov=src -m 'not slow and not multiprocessing' -v
+          poetry run pytest -v --junitxml=pytest.xml --cov=src -m 'not slow and not multiprocessing' | tee pytest-coverage.txt
+
+      - name: Comment the coverage
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: ./pytest-coverage.txt
+          junitxml-path: ./pytest.xml

@@ -93,8 +93,10 @@ jobs:
       - name: Run mypy with reviewdog
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
           exit_val="0"
+          [[ $GITHUB_EVENT_NAME == "pull_request" ]] && reporter="github-pr-review" || reporter="github-check"
 
           poetry run mypy \
             --show-column-numbers \
@@ -103,7 +105,7 @@ jobs:
             -efm="%f:%l:%c: %t%*[^:]: %m" \
             -name="mypy" \
             -fail-on-error \
-            -reporter=github-pr-review || exit_val="$?"
+            -reporter="${reporter}" || exit_val="$?"
 
           if [[ "${exit_val}" -ne '0' ]]; then
             exit 1
@@ -152,15 +154,17 @@ jobs:
       - name: Run flake8
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
           exit_val="0"
+          [[ $GITHUB_EVENT_NAME == "pull_request" ]] && reporter="github-pr-review" || reporter="github-check"
 
           poetry run flake8 \
             --format=default . 2>&1 | reviewdog \
             -f=pep8 \
             -name="flake8" \
             -fail-on-error \
-            -reporter=github-pr-review || exit_val="$?"
+            -reporter="${reporter}" || exit_val="$?"
 
           if [[ "${exit_val}" -ne '0' ]]; then
             exit 1

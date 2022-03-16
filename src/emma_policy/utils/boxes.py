@@ -23,8 +23,6 @@ class BoxMode(IntEnum):
 
     XYXY_ABS = 0  # noqa: WPS115
     XYWH_ABS = 1  # noqa: WPS115
-    XYXY_REL = 2  # noqa: WPS115
-    XYWH_REL = 3  # noqa: WPS115
     XYWHA_ABS = 4  # noqa: WPS115
 
     @staticmethod

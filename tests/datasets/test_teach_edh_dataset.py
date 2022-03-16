@@ -1,49 +1,18 @@
 from pathlib import Path
-from typing import Any
-from unittest.mock import PropertyMock
 
 from emma_datasets.datamodels.datasets.teach import TeachEdhInstance
 from pytest_cases import fixture
-from pytest_mock import MockerFixture
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem
 from emma_policy.datamodules.teach_edh_dataset import TeachEdhDataset
 from emma_policy.models.tokenizer_emma import EmmaTokenizer
 
 
-class TeachEdhInstanceFeaturesPathPropertyMock(PropertyMock):  # type: ignore[misc]
-    """Mock the `features_path` property within the TeachEdhInstance.
-
-    The features path within each instance is derived automatically and NOT hard-coded into the
-    class. Therefore to be able to test the instances properly, we need to override the property
-    and return something else.
-    """
-
-    def __get__(self, obj: TeachEdhInstance, obj_type: Any = None) -> Path:  # noqa: WPS110
-        """Get the features path from the fixtures.
-
-        This updates the `return_value`, which is used by `unittest.Mock` to return a value.
-        """
-        dataset_index = obj._features_path.parts.index("datasets")
-        self.return_value = Path("storage", "fixtures", *obj._features_path.parts[dataset_index:])
-        return self()
-
-
 @fixture
 def teach_edh_dataset(
-    teach_edh_instances_db: Path, emma_tokenizer: EmmaTokenizer, mocker: MockerFixture
+    teach_edh_instances_db: Path, emma_tokenizer: EmmaTokenizer
 ) -> TeachEdhDataset:
-    """Instantiate the TeachEdhDataset for each test.
-
-    Additionally, this fixture also mocks the features path of each TeachEdhInstance to point to
-    the fixtures dir.
-    """
-    mocker.patch.object(
-        TeachEdhInstance,
-        "features_path",
-        new_callable=TeachEdhInstanceFeaturesPathPropertyMock,
-    )
-
+    """Instantiate the TeachEdhDataset for each test."""
     return TeachEdhDataset(dataset_db_path=teach_edh_instances_db, tokenizer=emma_tokenizer)
 
 

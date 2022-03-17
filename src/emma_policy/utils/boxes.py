@@ -58,9 +58,6 @@ class BoxModeConverter:
 
         Returns:
             The converted box of the same type.
-
-        Raises:
-            AssertionError: Relative mode is not supported
         """
         if from_mode == to_mode:
             return box

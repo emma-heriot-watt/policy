@@ -104,6 +104,7 @@ jobs:
             --no-error-summary . 2>&1 | reviewdog \
             -efm="%f:%l:%c: %t%*[^:]: %m" \
             -name="mypy" \
+            -filter-mode=nofilter \
             -fail-on-error \
             -reporter="${reporter}" || exit_val="$?"
 

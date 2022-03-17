@@ -165,6 +165,7 @@ jobs:
             -f=pep8 \
             -name="flake8" \
             -fail-on-error \
+            -filter-mode=file \
             -reporter="${reporter}" || exit_val="$?"
 
           if [[ "${exit_val}" -ne '0' ]]; then

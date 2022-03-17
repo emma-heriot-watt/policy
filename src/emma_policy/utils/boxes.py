@@ -23,6 +23,8 @@ class BoxMode(IntEnum):
 
     XYXY_ABS = 0  # noqa: WPS115
     XYWH_ABS = 1  # noqa: WPS115
+    # XYXY_REL = 2
+    # XYWH_REL = 3
     XYWHA_ABS = 4  # noqa: WPS115
 
     @staticmethod
@@ -63,8 +65,8 @@ class BoxModeConverter:
         if from_mode == to_mode:
             return box
 
-        if to_mode in self._unsupported_modes or from_mode in self._unsupported_modes:
-            raise AssertionError("Relative mode is not supported.")
+        # if to_mode in self._unsupported_modes or from_mode in self._unsupported_modes:
+        #   raise AssertionError("Relative mode is not supported.")
 
         original_type = type(box)
         box_as_tensor = self._convert_to_torch(box)
@@ -78,10 +80,10 @@ class BoxModeConverter:
 
         return converted_box
 
-    @property
-    def _unsupported_modes(self) -> list[BoxMode]:
-        """Get a list of the unsupported modes."""
-        return [BoxMode.XYXY_REL, BoxMode.XYWH_REL]
+    # @property
+    # def _unsupported_modes(self) -> list[BoxMode]:
+    #   """Get a list of the unsupported modes."""
+    #   return [BoxMode.XYXY_REL, BoxMode.XYWH_REL]
 
     def _convert(self, box: torch.Tensor, from_mode: BoxMode, to_mode: BoxMode) -> torch.Tensor:
         """Convert box to the desired mode if it's supported."""

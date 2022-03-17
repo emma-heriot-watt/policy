@@ -69,7 +69,7 @@ def test_utterances_are_immediately_after_the_text_action(
     instance = TeachEdhInstance.parse_raw(instance_str)
 
     # Verify that the driver has dialogue actions within this instance
-    assert instance.driver_dialog_history_cleaned
+    assert instance._driver_dialog_history
 
     input_actions_list = teach_edh_dataset._convert_actions_to_tokenizable_strings(
         instance.extended_driver_action_history
@@ -82,7 +82,7 @@ def test_utterances_are_immediately_after_the_text_action(
         if action_string == "Text":
             assert input_actions_list[idx + 1].startswith("<<")
             assert input_actions_list[idx + 1].endswith(
-                instance.driver_dialog_history_cleaned[utterance_counter]
+                instance._driver_dialog_history[utterance_counter]
             )
 
             utterance_counter += 1

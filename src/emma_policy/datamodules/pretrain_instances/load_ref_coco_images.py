@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from emma_datasets.common import Settings
-from emma_datasets.datamodels import DatasetName, Instance
+from emma_datasets.datamodels import DatasetName, DatasetSplit, Instance
 
 
 DEFAULT_COCO_SPLITS_PATH = Settings().paths.storage.joinpath(
@@ -36,12 +36,14 @@ def is_train_instance(coco_ref_images: set[str], instance: Instance) -> bool:
     that are present in the test set of the downstream tasks. We follow the same procedure used by
     UNITER/VL-T5.
     """
-    # TODO(amit): What about non-coco-related instances? Aren't then also part of the valid set?
-
     is_train = True
-    coco_metadata = instance.dataset.get(DatasetName.coco, None)
     # only instances associated with COCO images are problematic
-    if coco_metadata is not None and coco_metadata.id in coco_ref_images:
+    coco_metadata = instance.dataset.get(DatasetName.coco, None)
+    if coco_metadata is None:
+        is_train = all(
+            [dm.split == DatasetSplit.train for dm in instance.dataset.values() if dm.split]
+        )
+    elif coco_metadata.id in coco_ref_images:
         is_train = False
 
     # in any other case the instance can be part of the training

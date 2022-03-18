@@ -12,6 +12,7 @@ updates:
       interval: daily
   - package-ecosystem: pip
     directory: "/"
+    insecure-external-code-execution: allow
     registries:
       - github-emma
     schedule:

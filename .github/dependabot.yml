@@ -1,4 +1,10 @@
 version: 2
+registries:
+  github-emma:
+    type: git
+    url: https://github.com
+    username: x-access-token
+    password: ${{secrets.PAT}}
 updates:
   - package-ecosystem: github-actions
     directory: "/"
@@ -6,5 +12,7 @@ updates:
       interval: daily
   - package-ecosystem: pip
     directory: "/"
+    registries:
+      - github-emma
     schedule:
       interval: daily

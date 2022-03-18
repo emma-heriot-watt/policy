@@ -3225,7 +3225,7 @@
 	},
 	"post_processor": {
 		"type": "RobertaProcessing",
-		"sep": ["</s>", 2],
+		"sep": [".", 2],
 		"cls": ["<s>", 0],
 		"trim_offsets": true,
 		"add_prefix_space": false

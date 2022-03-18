@@ -39,7 +39,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         self,
         dataset_db_path: Path,
         tokenizer: PreTrainedTokenizer,
-        max_frames: Optional[int] = None,
+        max_frames: int = 0,
     ) -> None:
         self.db = DatasetDb(dataset_db_path)
 

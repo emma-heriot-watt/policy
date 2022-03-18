@@ -17,7 +17,7 @@
 		"__type": "AddedToken"
 	},
 	"sep_token": {
-		"content": "</s>",
+		"content": ".",
 		"single_word": false,
 		"lstrip": false,
 		"rstrip": false,

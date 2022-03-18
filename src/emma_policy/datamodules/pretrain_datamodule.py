@@ -40,7 +40,7 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         model_name: str = "heriot-watt/emma-base",
         mlm_probability: float = 0.3,
         max_lang_tokens: Optional[int] = None,
-        max_frames: Optional[int] = None,
+        max_frames: int = 0,
         enabled_tasks: Optional[EnabledTasksPerModality] = None,
         tokenizer_truncation_side: str = "right",
     ) -> None:

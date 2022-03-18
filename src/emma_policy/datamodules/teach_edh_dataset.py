@@ -8,6 +8,7 @@ from emma_datasets.datamodels.datasets.teach import (
 
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem
+from emma_policy.datamodules.pretrain_dataset import split_action_name
 from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.utils import get_logger
 
@@ -93,10 +94,12 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
         language: list[str] = []
 
         for action in actions:
-            language.append(action.action_name)
+            language.extend(split_action_name(action.action_name))
 
             if isinstance(action, ExtendedTeachDriverAction) and action.utterance:
                 prefixed_utterance = f"<<follower>> {action.utterance}"
                 language.append(prefixed_utterance)
+
+            language.append(self.tokenizer.sep_token)
 
         return language

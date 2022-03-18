@@ -9,7 +9,7 @@ batch_size: 2
 load_valid_data: True
 num_workers: 0
 max_lang_tokens: 256
-max_frames: 200
+max_frames: 100
 enabled_tasks:
   image:
     - mlm

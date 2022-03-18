@@ -23,7 +23,7 @@ class TeachEdhDataModule(LightningDataModule):
         num_workers: int = 0,
         model_name: str = "heriot-watt/emma-base",
         max_lang_tokens: Optional[int] = None,
-        max_frames: Optional[int] = None,
+        max_frames: int = 0,
         tokenizer_truncation_side: Literal["left", "right"] = "right",
     ) -> None:
         if isinstance(teach_edh_train_db_file, str):

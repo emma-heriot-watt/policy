@@ -2,9 +2,11 @@ from pathlib import Path
 
 from emma_datasets.datamodels import Instance
 from emma_datasets.db import DatasetDb
+from pytest_cases import parametrize
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
 from emma_policy.datamodules.pretrain_datamodule import EmmaPretrainDataModule
+from emma_policy.datamodules.pretrain_dataset import split_action_name
 from emma_policy.datamodules.pretrain_instances import (
     PretrainInstance,
     convert_instance_to_pretrain_instances,
@@ -71,3 +73,23 @@ def test_dataloader_creates_batches_properly(
 
     for batch in iter(dm.train_dataloader()):
         assert isinstance(batch, EmmaDatasetBatch)
+
+
+@parametrize(
+    "action_name, action_text",
+    [
+        ("Pickup", "pick up"),
+        ("PickupObject", "pick up"),
+        ("Stop", "stop"),
+        ("Move to", "move to"),
+        ("Forward", "forward"),
+        ("Turn Left", "turn left"),
+        ("Look Up", "look up"),
+        ("ToggleOn", "toggle on"),
+        ("ToggleOff", "toggle off"),
+        ("BehindAboveOn", "behind above on"),
+        ("OpenProgressCheck", "open progress check"),
+    ],
+)
+def test_convert_action_name_to_consistent_form(action_name: str, action_text: str) -> None:
+    assert split_action_name(action_name) == action_text.split(" ")

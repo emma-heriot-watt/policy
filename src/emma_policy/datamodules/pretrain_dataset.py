@@ -1,6 +1,6 @@
 import random
 from pathlib import Path
-from re import finditer
+from re import sub
 from typing import Callable, Optional
 
 import torch
@@ -34,10 +34,17 @@ def apply_token_masking(input_text: str, mlm_probability: float = 0.3) -> tuple[
     return " ".join(tokens), input_text
 
 
-def camel_case_split(identifier: str) -> list[str]:
-    """Split a camel case action to lower case words."""
-    matches = finditer(".+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)", identifier)
-    return [match.group(0).lower() for match in matches if match.group(0) != "Object"]
+def split_action_name(identifier: str) -> list[str]:
+    """Split a action to lower case words."""
+    # Split camel case
+    matches = sub(
+        "([A-Z][a-z]+)",
+        r" \1",
+        sub("([A-Z]+)", r" \1", identifier),
+    )
+    # Split "Pickup"
+    matches = sub(r"(.+?)(up)($|\s)", r"\1 \2\3", matches)
+    return [match.lower() for match in matches.split() if match != "Object"]
 
 
 class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
@@ -52,7 +59,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         dataset_db_path: Path,
         tokenizer: PreTrainedTokenizer,
         mlm_probability: float = 0.3,
-        max_frames: Optional[int] = None,
+        max_frames: int = 0,
         match_threshold: float = 0.5,
     ) -> None:
         super().__init__(
@@ -443,15 +450,14 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         self, instance: PretrainInstance, visual_features: EmmaVisualFeatures
     ) -> Optional[str]:
         """Convert an Alfred trajectory to text."""
-        feature_dicts = torch.load(instance.features_path)["frames"]
+        feature_dicts = torch.load(instance.features_path)["frames"][-self.max_frames :]
+        actions = instance.trajectory.low_level_actions[-self.max_frames :]
 
         trajectory = []
-        for action_idx, action in enumerate(instance.trajectory.low_level_actions):
-            if action_idx > 0:
-                trajectory.append(self.tokenizer.eos_token)
+        for action_idx, action in enumerate(actions):
 
             # Split a cama case action to words
-            trajectory.extend(camel_case_split(action.api_action.action))
+            trajectory.extend(split_action_name(action.api_action.action))
             # Match the object to a predicted bounding box
             if "bbox" in action.discrete_action.args:
 
@@ -485,6 +491,8 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                         visual_features.visual_token_ids[frame_objects][matched_index[0]]
                     )
                 )
+
+            trajectory.append(self.tokenizer.sep_token)
 
         return " ".join(trajectory)
 
@@ -530,8 +538,9 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         target_text = self.convert_trajectory_to_text(instance, visual_features)
         if target_text is None:
             return None
+
         target_encoding = self.tokenizer.encode_plus(
-            target_text, return_tensors=self._return_tensor_type, truncation=True
+            target_text, return_tensors=self._return_tensor_type, truncation=False
         )
 
         return EmmaDatasetItem(

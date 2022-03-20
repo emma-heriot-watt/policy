@@ -484,13 +484,16 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                     object_coordinates_bbox=visual_features.object_coordinates[frame_objects],
                     threshold=self.match_threshold,
                 )
-                if not gt_flags[0]:
-                    return None
-                trajectory.append(
-                    self.tokenizer.decode(
-                        visual_features.visual_token_ids[frame_objects][matched_index[0]]
+
+                found_matched_object = gt_flags[0]
+                if found_matched_object:
+                    trajectory.append(
+                        self.tokenizer.decode(
+                            visual_features.visual_token_ids[frame_objects][matched_index[0]]
+                        )
                     )
-                )
+                else:
+                    trajectory.append(self.tokenizer.unk_token)
 
             trajectory.append(self.tokenizer.sep_token)
 

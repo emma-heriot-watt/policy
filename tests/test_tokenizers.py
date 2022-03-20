@@ -51,7 +51,7 @@ def test_tokenize_input(emma_tokenizer: EmmaTokenizer) -> None:
 
 
 @parametrize("max_length", [5])
-def test_tokenize_and_truncate_input(emma_tokenizer: EmmaTokenizer, max_length: int) -> None:
+def test_tokenizer_truncates_input(emma_tokenizer: EmmaTokenizer, max_length: int) -> None:
     phrase = "The dog is eating an icecream."
     emma_tokenizer.model_max_length = max_length
     emma_tokenizer.truncation_side = "left"

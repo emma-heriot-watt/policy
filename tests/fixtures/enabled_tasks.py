@@ -9,7 +9,8 @@ all_tasks_list = [task.name for task in Task]
 enabled_tasks_list = param_fixture(
     "enabled_tasks_list",
     [
-        pytest.param(["mlm"], id="single_task"),
+        # Add all the tasks to test the model individually
+        *[pytest.param([task], id=task) for task in all_tasks_list],
         pytest.param(["mlm", "itm", "visual_grounding"], id="multiple_tasks"),
         pytest.param(["mlm", "mlm"], id="repeated_tasks"),
         pytest.param(
@@ -17,16 +18,15 @@ enabled_tasks_list = param_fixture(
         ),
         pytest.param(all_tasks_list, id="all_tasks"),
     ],
+    scope="session",
 )
 
 
 enabled_tasks_per_modality = param_fixture(
     "enabled_tasks_per_modality",
     [
-        pytest.param(
-            {"image": ["mlm"], "video": []},
-            id="single_task",
-        ),
+        # Add all the tasks to test the model individually
+        *[pytest.param({"image": [task], "video": [task]}, id=task) for task in all_tasks_list],
         pytest.param(
             {"image": ["mlm", "itm", "captioning"], "video": ["action_execution"]},
             id="multiple_tasks",
@@ -59,4 +59,5 @@ enabled_tasks_per_modality = param_fixture(
             id="all_tasks",
         ),
     ],
+    scope="session",
 )

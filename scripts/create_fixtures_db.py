@@ -53,7 +53,6 @@ class FixturesDbCreator:
         self._valid_tasks = {
             task: self.progress.add_task(f"[b]{task.value}[/] (valid)", total=min_valid_instances)
             for task in Task
-            if task not in {Task.instruction_prediction, Task.action_execution, Task.vtm}
         }
 
         self._index_order = list(range(len(self.in_db)))

@@ -48,19 +48,21 @@ def teach_edh_instances_db(
         new_callable=TeachEdhInstanceFeaturesPathPropertyMock,
     )
 
-    progress = get_progress()
-
-    instance_creator = TeachEdhInstanceCreator(progress)
-    instance_iterator = instance_creator(
-        input_data=fixtures_root.joinpath("teach_edh").rglob("*.json"),
-        progress=progress,
-    )
-
     teach_instances_db_path = cached_db_dir_path.joinpath("teach_instances.db")
-    db = DatasetDb(teach_instances_db_path, readonly=False)
 
-    with db:
-        for idx, instance in enumerate(instance_iterator):
-            db[(idx, f"teach_edh_{idx}")] = instance
+    if not teach_instances_db_path.exists():
+        progress = get_progress()
+
+        instance_creator = TeachEdhInstanceCreator(progress)
+        instance_iterator = instance_creator(
+            input_data=fixtures_root.joinpath("teach_edh").rglob("*.json"),
+            progress=progress,
+        )
+
+        db = DatasetDb(teach_instances_db_path, readonly=False)
+
+        with db:
+            for idx, instance in enumerate(instance_iterator):
+                db[(idx, f"teach_edh_{idx}")] = instance
 
     return teach_instances_db_path

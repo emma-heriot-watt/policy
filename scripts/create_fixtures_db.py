@@ -10,9 +10,11 @@ from emma_datasets.db import DatasetDb
 from rich.progress import BarColumn, Progress
 
 from emma_policy.datamodules.pretrain_instances import (
+    DEFAULT_COCO_SPLITS_PATH,
     PretrainInstanceCreator,
     Task,
     is_train_instance,
+    load_ref_coco_images,
 )
 
 
@@ -32,6 +34,7 @@ class FixturesDbCreator:
 
         self._fixtures_datasets_path = fixtures_datasets_path
 
+        self._train_valid_splits = load_ref_coco_images(DEFAULT_COCO_SPLITS_PATH)
         self._new_data_idx = 0
 
         self.progress = Progress(
@@ -100,7 +103,7 @@ class FixturesDbCreator:
 
     def process_single_instance(self, instance: Instance, tasks: list[Task]) -> None:
         """Process a single instance and its task."""
-        is_instance_in_train_set = is_train_instance(instance)
+        is_instance_in_train_set = is_train_instance(self._train_valid_splits, instance)
 
         if is_instance_in_train_set:
             return self.process_single_instance_for_training_only(instance, tasks)

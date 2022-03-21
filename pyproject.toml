@@ -31,7 +31,7 @@ envfile = ".env"
 
 		[tool.poe.tasks.test-everything]
 		help = "Run all the tests and get the coverage"
-		cmd = "pytest -v --junitxml=pytest.xml --cov=src -m 'not slow and not multiprocessing' -n 2"
+		cmd = "pytest -v --junitxml=pytest.xml --cov=src -m 'not slow and not multiprocessing'"
 
 		[tool.poe.tasks.update-torch-cuda]
 		## See https://github.com/python-poetry/poetry/issues/2543
@@ -82,7 +82,6 @@ types-requests = "^2.27.12"
 pytest-mock = "^3.7.0"
 types-mock = "^4.0.11"
 flake8-pytest-style = "^1.6.0"
-pytest-xdist = "^2.5.0"
 
 [tool.black]
 line-length = 99

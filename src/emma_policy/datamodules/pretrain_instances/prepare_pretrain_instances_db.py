@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader, IterableDataset
 
 from emma_policy.datamodules.pretrain_instances import convert_instance_to_pretrain_instances
 from emma_policy.datamodules.pretrain_instances.datamodels import EnabledTasksHandler, Task
-from emma_policy.datamodules.pretrain_instances.load_ref_coco_images import is_train_instance
+from emma_policy.datamodules.pretrain_instances.is_train_instance import is_train_instance
 
 
 class DatasetDbReaderReturn(NamedTuple):
@@ -31,7 +31,6 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
     def __init__(
         self,
         db_path: Path,
-        coco_ref_images: set[str],
         enabled_tasks: dict[MediaType, set[Task]],
     ) -> None:
         db = DatasetDb(db_path, readonly=True)
@@ -41,7 +40,6 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
         self.start = 0
         self.end = len(db)
 
-        self._coco_ref_images = coco_ref_images
         self._storage = JsonStorage()
         self._enabled_tasks = enabled_tasks
 
@@ -70,7 +68,7 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
             data = self.db[data_idx]
 
             instance = Instance.parse_raw(data)
-            is_train = is_train_instance(self._coco_ref_images, instance)
+            is_train = is_train_instance(instance)
 
             pretrain_instance_iterator = convert_instance_to_pretrain_instances(
                 instance=instance,
@@ -119,7 +117,6 @@ class PreparePretrainInstancesDb:
     def __init__(
         self,
         instances_db_file_path: Path,
-        coco_ref_images: set[str],
         train_db_file_path: Path,
         valid_db_file_path: Optional[Path] = None,
         loader_batch_size: int = 48,
@@ -139,7 +136,7 @@ class PreparePretrainInstancesDb:
         )
 
         self._dataset = IterableDatasetDbReader(
-            instances_db_file_path, coco_ref_images, enabled_tasks=self._enabled_tasks
+            instances_db_file_path, enabled_tasks=self._enabled_tasks
         )
         self._train_db = DatasetDb(
             train_db_file_path, readonly=False, batch_size=write_db_batch_size

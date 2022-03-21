@@ -9,11 +9,7 @@ from transformers import AutoTokenizer
 from emma_policy.datamodules.collate import collate_fn
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
 from emma_policy.datamodules.pretrain_dataset import EmmaPretrainDataset
-from emma_policy.datamodules.pretrain_instances import (
-    DEFAULT_COCO_SPLITS_PATH,
-    PreparePretrainInstancesDb,
-    load_ref_coco_images,
-)
+from emma_policy.datamodules.pretrain_instances import PreparePretrainInstancesDb
 from emma_policy.datamodules.pretrain_instances.datamodels import (
     EnabledTasksHandler,
     EnabledTasksPerModality,
@@ -36,7 +32,6 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         num_workers: int = 0,
         prepare_data_num_workers: int = 0,
         batch_size: int = 8,
-        coco_split_path: Union[str, Path] = DEFAULT_COCO_SPLITS_PATH,
         model_name: str = "heriot-watt/emma-base",
         mlm_probability: float = 0.3,
         max_lang_tokens: Optional[int] = None,
@@ -63,9 +58,6 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         if isinstance(pretrain_valid_db_file, str):
             pretrain_valid_db_file = Path(pretrain_valid_db_file)
 
-        if isinstance(coco_split_path, str):
-            coco_split_path = Path(coco_split_path)
-
         self._instances_db_file = instances_db_file
         self._pretrain_train_db_file = pretrain_train_db_file
         self._pretrain_valid_db_file = pretrain_valid_db_file
@@ -88,7 +80,6 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
 
         self._batch_size = batch_size
         self._num_workers = num_workers
-        self._coco_ref_images = load_ref_coco_images(coco_split_path)
         self.load_valid_data = load_valid_data
         self.max_lang_tokens = max_lang_tokens
         self.max_frames = max_frames
@@ -158,7 +149,6 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
 
         preparer = PreparePretrainInstancesDb(
             instances_db_file_path=self._instances_db_file,
-            coco_ref_images=self._coco_ref_images,
             train_db_file_path=self._pretrain_train_db_file,
             valid_db_file_path=self._pretrain_valid_db_file if self.load_valid_data else None,
             loader_batch_size=loader_batch_size,

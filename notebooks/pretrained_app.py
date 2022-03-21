@@ -16,7 +16,7 @@ from pydantic import HttpUrl
 from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
-from emma_policy.datamodules.pretrain_instances import is_train_instance, load_ref_coco_images
+from emma_policy.datamodules.pretrain_instances import is_train_instance
 from emma_policy.models.emma_policy import EmmaPolicy
 from emma_policy.utils import get_logger
 
@@ -164,7 +164,6 @@ def get_dowloaded_image_path(instance: Instance, is_train: bool) -> Union[None, 
 def prepare_examples(args: argparse.Namespace) -> list[list[str]]:
     """Select validation samples and download the corresponding images."""
     os.makedirs(args.local_path, exist_ok=True)
-    ref_coco_images = load_ref_coco_images()
     examples = []
     progress = get_progress()
     with progress:
@@ -177,9 +176,7 @@ def prepare_examples(args: argparse.Namespace) -> list[list[str]]:
             for idx in indices:
                 data = in_db[int(idx)]
                 instance = Instance.parse_raw(data)
-                image_path = get_dowloaded_image_path(
-                    instance, is_train_instance(ref_coco_images, instance)
-                )
+                image_path = get_dowloaded_image_path(instance, is_train_instance(instance))
 
                 if not image_path:
                     continue

@@ -7,10 +7,9 @@ from emma_policy.datamodules.pretrain_instances.datamodels import (
     PretrainInstance,
     Task,
 )
-from emma_policy.datamodules.pretrain_instances.load_ref_coco_images import (
-    DEFAULT_COCO_SPLITS_PATH,
+from emma_policy.datamodules.pretrain_instances.is_train_instance import (
+    get_validation_coco_ids,
     is_train_instance,
-    load_ref_coco_images,
 )
 from emma_policy.datamodules.pretrain_instances.prepare_pretrain_instances_db import (
     DatasetDbReaderReturn,

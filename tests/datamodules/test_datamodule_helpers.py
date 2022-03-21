@@ -1,14 +1,11 @@
-from pathlib import Path
-
 from pytest_cases import parametrize
 
 from emma_policy.datamodules.pretrain_dataset import split_action_name
-from emma_policy.datamodules.pretrain_instances import load_ref_coco_images
+from emma_policy.datamodules.pretrain_instances import get_validation_coco_ids
 
 
 def test_valid_ids_from_coco_load() -> None:
-    coco_splits_path = Path("storage/constants/mscoco_resplit_val.json")
-    valid_ids = load_ref_coco_images(coco_splits_path)
+    valid_ids = get_validation_coco_ids()
 
     assert valid_ids
 

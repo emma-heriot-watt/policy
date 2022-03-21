@@ -11,15 +11,39 @@ packages = [{ include = "emma_policy", from = "src" }]
 [tool.poe]
 envfile = ".env"
 
-[tool.poe.tasks]
-format = { cmd = "pre-commit run --all-files", help = "Format using pre-commit hooks" }
-typecheck = { cmd = "mypy .", help = "Check types with mypy" }
-lint = { cmd = "flake8 .", help = "Lint with flake8" }
-test = { cmd = "pytest --cov=src -m 'not slow'", help = "Run the fast Python tests" }
-## See https://github.com/python-poetry/poetry/issues/2543
-update-torch-cuda = { shell = "python scripts/update_torch_cuda.py", help = "Update torch to use the latest CUDA version" }
-outdated = { shell = "poetry show --outdated | grep --file=<$(poetry show --tree | grep '^\\w' | sed 's/^\\([^ ]*\\).*/^\\1/')", help = "Show all outdated top-level dependencies" }
+	[tool.poe.tasks]
 
+		[tool.poe.tasks.format]
+		help = "Format using the pre-commit hooks"
+		cmd = "pre-commit run --all-files"
+
+		[tool.poe.tasks.typecheck]
+		help = "Check types with mypy"
+		cmd = "mypy ."
+
+		[tool.poe.tasks.lint]
+		help = "Lint with flake8"
+		cmd = "flake8 ."
+
+		[tool.poe.tasks.test]
+		help = "Run the fast Python tests"
+		cmd = "pytest --cov=src -m 'not slow'"
+
+		[tool.poe.tasks.test-everything]
+		help = "Run all the tests and get the coverage"
+		cmd = "pytest -v --junitxml=pytest.xml --cov=src -m 'not slow and not multiprocessing'"
+
+		[tool.poe.tasks.update-torch-cuda]
+		## See https://github.com/python-poetry/poetry/issues/2543
+		help = "Update torch to use the latest CUDA version"
+		shell = "python scripts/update_torch_cuda.py"
+
+		[tool.poe.tasks.outdated]
+		help = 'Show all outdated top-level dependencies'
+		shell = """
+			poetry show --outdated | grep --file=<(poetry show --tree | grep '^\\w' | sed 's/^\\([^ ]*\\).*/^\\1\\\\s/')
+		"""
+		interpreter = "bash"
 
 [tool.poetry.dependencies]
 python = "^3.9"

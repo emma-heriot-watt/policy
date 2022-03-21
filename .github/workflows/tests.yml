@@ -53,7 +53,7 @@ jobs:
 
       - name: Run test suite
         run: |
-          poetry run pytest -v --junitxml=pytest.xml --cov=src -m 'not slow and not multiprocessing' | tee pytest-coverage.txt
+          poetry run poe test-everything | tee pytest-coverage.txt
 
       - name: Comment the coverage
         if: ${{ always() && github.event_name == 'pull_request' }}

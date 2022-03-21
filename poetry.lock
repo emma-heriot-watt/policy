@@ -2995,7 +2995,7 @@ vision = ["pillow"]
 
 [[package]]
 name = "types-mock"
-version = "4.0.11"
+version = "4.0.12"
 description = "Typing stubs for mock"
 category = "dev"
 optional = false
@@ -3269,7 +3269,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "07d740f26c75481b6dfca86f3b45d3a6540d44702138f907dcfadfe9381656ff"
+content-hash = "31abd6eab4af98407363fdb7e393bcae086d7ddf1fc2671c192d7ec4cf38c2ba"
 
 [metadata.files]
 absl-py = [
@@ -5560,8 +5560,8 @@ transformers = [
     {file = "transformers-4.17.0.tar.gz", hash = "sha256:986fd59255460555b893a2b1827b9b8dd4e5cd6343e4409d18539208f69fb51b"},
 ]
 types-mock = [
-    {file = "types-mock-4.0.11.tar.gz", hash = "sha256:1d87d4d9d4dfda7bf77029b60f79fe0aef75d5d519169dccb742f8446213dcbd"},
-    {file = "types_mock-4.0.11-py3-none-any.whl", hash = "sha256:c670c4c1700ee0cee50d25a68b55de7ef1f3758711de43228f04e278ec827ecc"},
+    {file = "types-mock-4.0.12.tar.gz", hash = "sha256:f8b1dbe128dc2d5aa038876a8b497dfd1a9405210a5eb3dc4b4757c2e254627c"},
+    {file = "types_mock-4.0.12-py3-none-any.whl", hash = "sha256:81f98e66bddde1b2a8d96c15c084d5d3ed96cf6137bca9ba8aabc6b6865b9ca7"},
 ]
 types-requests = [
     {file = "types-requests-2.27.13.tar.gz", hash = "sha256:cf0646031dd6307113b37814f743c04f0707a3357378c2bb1326f848412f5ba9"},

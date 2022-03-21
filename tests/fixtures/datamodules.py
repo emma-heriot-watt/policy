@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from pytest_cases import fixture, parametrize
 
@@ -36,9 +36,9 @@ def emma_pretrain_datamodule(
 
 
 @fixture
-@parametrize("valid_data_split", [None, "seen", "unseen", "both"])
+@parametrize("valid_data_split", ["seen", "unseen", "both"])
 def teach_edh_datamodule(
-    teach_edh_instances_db: Path, valid_data_split: Optional[Literal["seen", "unseen", "both"]]
+    teach_edh_instances_db: Path, valid_data_split: Literal["seen", "unseen", "both"]
 ) -> TeachEdhDataModule:
     datamodule = TeachEdhDataModule(
         teach_edh_instances_db,

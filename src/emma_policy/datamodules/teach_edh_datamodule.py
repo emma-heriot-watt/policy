@@ -94,16 +94,11 @@ class TeachEdhDataModule(LightningDataModule):
         )
 
     def val_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
-        """Generate validation dataloader for the TEACh EDH instances."""
-        if self._load_valid_data_split == "seen":
-            return DataLoader(
-                self._valid_seen_dataset,  # type: ignore[arg-type]
-                batch_size=self._batch_size,
-                num_workers=self._num_workers,
-                collate_fn=collate_fn,
-                shuffle=False,
-            )
+        """Generate validation dataloader for the TEACh EDH instances.
 
+        Default to returning the valid seen dataset because there needs to be a return else it will
+        causes exceptions down the line.
+        """
         if self._load_valid_data_split == "unseen":
             return DataLoader(
                 self._valid_unseen_dataset,  # type: ignore[arg-type]
@@ -122,6 +117,10 @@ class TeachEdhDataModule(LightningDataModule):
                 shuffle=False,
             )
 
-        raise NotImplementedError(
-            f"Invalid option specified for `load_valid_data_split`. Provided value: {self._load_valid_data_split}"
+        return DataLoader(
+            self._valid_seen_dataset,  # type: ignore[arg-type]
+            batch_size=self._batch_size,
+            num_workers=self._num_workers,
+            collate_fn=collate_fn,
+            shuffle=False,
         )

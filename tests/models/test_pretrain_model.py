@@ -1,16 +1,32 @@
+from typing import Union
+
+import torch
+from pytest_cases import parametrize_with_cases
 from transformers import PreTrainedModel
 
 from emma_policy.datamodules.pretrain_datamodule import EmmaPretrainDataModule
+from emma_policy.datamodules.teach_edh_datamodule import TeachEdhDataModule
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
 
 
-def test_pretrain_model_forward_returns_output_dataclass(
+# ---------------------------- Cases for the tests --------------------------- #
+def case_pretrain_datamodule(
     emma_pretrain_datamodule: EmmaPretrainDataModule,
-    emma_model_for_causal_lm: PreTrainedModel,
-) -> None:
-    train_loader = emma_pretrain_datamodule.train_dataloader()
+) -> EmmaPretrainDataModule:
+    return emma_pretrain_datamodule
 
-    # once the data are ready, we inspect the train dataloader
+
+def case_teach_edh_datamodule(teach_edh_datamodule: TeachEdhDataModule) -> TeachEdhDataModule:
+    return teach_edh_datamodule
+
+
+# ----------------------------------- Tests ---------------------------------- #
+@parametrize_with_cases("datamodule", cases=".", glob="*_datamodule")
+def test_pretrain_model_forward_works_on_train_data(
+    emma_model_for_causal_lm: PreTrainedModel,
+    datamodule: Union[EmmaPretrainDataModule, TeachEdhDataModule],
+) -> None:
+    train_loader = datamodule.train_dataloader()
     batch = next(iter(train_loader))
 
     output = emma_model_for_causal_lm(
@@ -24,7 +40,7 @@ def test_pretrain_model_forward_returns_output_dataclass(
         language_token_ids=batch.input_token_ids,
         attention_mask=batch.attention_mask,
         global_attention_mask=batch.global_attention_mask,
-        # =batch.text_attention_mask,
+        # =batch.text_attention_mask
         labels=batch.target_token_ids,
         decoder_attention_mask=batch.decoder_attention_mask,
         # =batch.object_attention_mask,
@@ -32,3 +48,10 @@ def test_pretrain_model_forward_returns_output_dataclass(
     )
 
     assert isinstance(output, EmmaSeq2SeqLMOutput)
+
+    # Verify the loss exists and is not nan
+    assert output.loss is not None
+    assert not torch.isnan(output.loss)
+
+    # Verify the loss is using cross-entropy
+    assert output.loss.grad_fn.name().lower().startswith("nllloss")

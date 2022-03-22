@@ -74,7 +74,7 @@ pytest-cov = "^3.0.0"
 jupyterlab = "^3.2.9"
 pudb = "^2022.1"
 isort = "^5.10.1"
-pytest-cases = "^3.6.9"
+pytest-cases = "^3.6.11"
 black = { version = "^22.1.0", extras = ["jupyter"] }
 pytest-order = "^1.0.1"
 mypy = "^0.941"

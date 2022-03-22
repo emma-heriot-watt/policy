@@ -78,7 +78,7 @@ pytest-cases = "^3.6.9"
 black = { version = "^22.1.0", extras = ["jupyter"] }
 pytest-order = "^1.0.1"
 mypy = "^0.941"
-types-requests = "^2.27.12"
+types-requests = "^2.27.14"
 pytest-mock = "^3.7.0"
 types-mock = "^4.0.12"
 flake8-pytest-style = "^1.6.0"

@@ -5,9 +5,6 @@
 # The repository labels will be automatically configured using this file and
 # the GitHub Action https://github.com/marketplace/actions/github-labeler.
 ## more info https://github.com/crazy-max/ghaction-github-labeler
-- name: breaking
-  description: Breaking Changes
-  color: AB2232
 - name: bug
   description: Something isn't working
   color: d23832
@@ -24,7 +21,7 @@
   description: Developer tools and automation
   color: "A8D8F0"
 - name: configuration
-  description: Model configurations
+  description: Modifying the model configurations
   color: 8334C4
 - name: dependencies
   description: Pull requests that update a dependency file
@@ -48,7 +45,7 @@
   description: This doesn't seem right
   color: ffffff
 - name: performance
-  description: Performance
+  description: Improving efficiency and speed
   color: "F2A33C"
 - name: question
   description: Further information is requested
@@ -72,10 +69,10 @@
   description: Further information is requested
   color: EE328E
 - name: testing
-  description: Testing
+  description: Testing the code base
   color: FEEDB2
-- name: training
-  description: Training models
+- name: experiments
+  description: Performing experiments with the models
   color: CD93F3
 - name: wontfix
   description: This will not be worked on

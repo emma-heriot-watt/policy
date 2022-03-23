@@ -1,6 +1,6 @@
 import random
 from pathlib import Path
-from typing import Any, Optional, TypeVar
+from typing import Any, Literal, Optional, TypeVar
 
 import torch
 from emma_datasets.datamodels import BaseInstance, MediaType
@@ -54,27 +54,20 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         """Get a single instance from the dataset."""
         raise NotImplementedError
 
-    def _load_visual_features(self, instance: BaseInstance) -> EmmaVisualFeatures:
-        """Get all the visual features from the given path."""
-        if not instance.features_path.exists():
-            raise AssertionError("Provided features path does not exist.")
-
-        feature_dicts: list[dict[str, Any]]
-
-        if instance.modality == MediaType.video:
-            feature_dicts = [
-                feature_dict["features"]
-                for feature_dict in torch.load(instance.features_path)["frames"]
-            ]
-
-        elif instance.modality == MediaType.image:
-            feature_dicts = [torch.load(instance.features_path)]
-
-        if not feature_dicts:
-            raise AssertionError("No dict of features have been loaded.")
-
-        if self.max_frames:
-            feature_dicts = feature_dicts[-self.max_frames :]
+    def _load_visual_features(
+        self,
+        instance: BaseInstance,
+        truncation_side: Literal["left", "right", "both"] = "left",
+        start_offset: int = 0,
+    ) -> EmmaVisualFeatures:
+        """Get all the visual features from the given instance."""
+        if truncation_side == "both":
+            feature_dicts = self._load_feature_dicts(instance=instance)
+        else:
+            feature_dicts = self._load_feature_dicts(
+                instance=instance,
+                truncation_side=truncation_side,
+            )
 
         object_features = []
         object_coordinates = []
@@ -105,7 +98,9 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
             )
             vis_tokens.append(curr_vis_tokens)
 
-            frame_token = self.tokenizer.convert_tokens_to_ids(f"<frame_token_{frame_idx+1}>")
+            frame_token = self.tokenizer.convert_tokens_to_ids(
+                f"<frame_token_{frame_idx+start_offset+1}>"
+            )
             obj_frame_tokens.append(
                 curr_vis_tokens.new_full(
                     curr_vis_tokens.shape,
@@ -160,3 +155,41 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
     def _get_random_template_for_task(self, task: Task) -> str:
         """Choose a random template for the given task."""
         return random.choice(TASK_TEMPLATES_MAP[task])
+
+    def _truncate_frames(
+        self, frame_sequence: list[Any], truncation_side: Literal["left", "right"] = "left"
+    ) -> list[Any]:
+        """Truncate a list where each element corresponds to a frame.
+
+        The list elements can be either feature_dicts or actions of TEACh EDH instances.
+        """
+        if truncation_side == "left":
+            frame_sequence = frame_sequence[-self.max_frames :]
+        else:
+            frame_sequence = frame_sequence[: self.max_frames]
+        return frame_sequence
+
+    def _load_feature_dicts(
+        self,
+        instance: BaseInstance,
+        truncation_side: Literal["left", "right"] = "left",
+    ) -> list[dict[str, torch.Tensor]]:
+        """Load the visual features from file and truncate them to max_frames."""
+        if not instance.features_path.exists():
+            raise AssertionError("Provided features path does not exist.")
+
+        if instance.modality == MediaType.video:
+            feature_dicts = [
+                feature_dict["features"]
+                for feature_dict in torch.load(instance.features_path)["frames"]
+            ]
+
+        elif instance.modality == MediaType.image:
+            feature_dicts = [torch.load(instance.features_path)]
+
+        if not feature_dicts:
+            raise AssertionError("No dict of features have been loaded.")
+
+        if self.max_frames:
+            feature_dicts = self._truncate_frames(feature_dicts, truncation_side=truncation_side)
+        return feature_dicts

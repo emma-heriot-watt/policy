@@ -1,10 +1,12 @@
-from typing import Union
+from typing import Literal, Union
 
+import torch
 from emma_datasets.datamodels.datasets.teach import (
     ExtendedTeachDriverAction,
     TeachDriverAction,
     TeachEdhInstance,
 )
+from overrides import overrides
 
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem
@@ -45,7 +47,7 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
             return_tensors=self._return_tensor_type,
         )
 
-        visual_features = self._load_visual_features(instance)
+        visual_features = self._load_visual_features(instance, truncation_side="both")
 
         return EmmaDatasetItem(
             # Language
@@ -70,14 +72,16 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
     def _get_input_text_from_instance(self, instance: TeachEdhInstance) -> str:
         """Get the input text from a TEACh EDH instance."""
         actions = self._convert_actions_to_tokenizable_strings(
-            instance.extended_driver_action_history
+            instance.extended_driver_action_history,
+            truncation_side="left",  # keep most recent actions
         )
         return " ".join(actions)
 
     def _get_target_text_from_instance(self, instance: TeachEdhInstance) -> str:
         """Get the target text from a TEACh EDH instance, with task template."""
         actions_as_list = self._convert_actions_to_tokenizable_strings(
-            instance.driver_actions_future
+            instance.driver_actions_future,
+            truncation_side="right",  # keep first actions
         )
         actions_as_string = " ".join(actions_as_list)
         return self._get_random_template_for_task(Task.action_execution).format(
@@ -85,13 +89,18 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
         )
 
     def _convert_actions_to_tokenizable_strings(
-        self, actions: Union[list[ExtendedTeachDriverAction], list[TeachDriverAction]]
+        self,
+        actions: Union[list[ExtendedTeachDriverAction], list[TeachDriverAction]],
+        truncation_side: Literal["left", "right"] = "left",
     ) -> list[str]:
         """Convert actions from each TEACh EDH instance to tokenizable strings.
 
         The speaker for the actions is equivalent to what was used in the ET baseline.
         """
         language: list[str] = []
+        # Make sure to keep the same actions as frames
+        if self.max_frames:
+            actions = self._truncate_frames(actions, truncation_side=truncation_side)
 
         for action in actions:
             language.extend(split_action_name(action.action_name))
@@ -103,3 +112,39 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
             language.append(self.tokenizer.sep_token)
 
         return language
+
+    @overrides(check_signature=False)
+    def _load_feature_dicts(
+        self,
+        instance: TeachEdhInstance,
+    ) -> list[dict[str, torch.Tensor]]:
+        """Load both history and future features for an EDH instance."""
+        if not instance.features_path.exists():
+            raise AssertionError("Provided features path does not exist.")
+
+        feature_dicts_history = [
+            feature_dict["features"]
+            for feature_dict in torch.load(instance.features_path)["frames"]
+        ]
+        if self.max_frames:
+            feature_dicts_history = self._truncate_frames(
+                feature_dicts_history, truncation_side="left"
+            )
+
+        if instance.future_features_path.exists():
+            feature_dicts_future = [
+                feature_dict["features"]
+                for feature_dict in torch.load(instance.future_features_path)["frames"]
+            ]
+
+            if self.max_frames:
+                feature_dicts_future = self._truncate_frames(
+                    feature_dicts_future, truncation_side="right"
+                )
+        else:
+            feature_dicts_future = []
+
+        feature_dicts = feature_dicts_history + feature_dicts_future
+        if not feature_dicts:
+            raise AssertionError("No dict of features have been loaded.")
+        return feature_dicts

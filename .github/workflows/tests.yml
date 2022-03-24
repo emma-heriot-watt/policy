@@ -56,7 +56,7 @@ jobs:
           poetry run poe test-everything | tee pytest-coverage.txt
 
       - name: Comment the coverage
-        if: ${{ always() && github.event_name == 'pull_request' }}
+        if: ${{ always() && github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' }}
         uses: MishaKav/pytest-coverage-comment@main
         with:
           pytest-coverage-path: ./pytest-coverage.txt

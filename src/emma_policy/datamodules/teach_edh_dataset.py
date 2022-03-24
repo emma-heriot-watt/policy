@@ -78,15 +78,12 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
         return " ".join(actions)
 
     def _get_target_text_from_instance(self, instance: TeachEdhInstance) -> str:
-        """Get the target text from a TEACh EDH instance, with task template."""
+        """Get the target text from a TEACh EDH instance."""
         actions_as_list = self._convert_actions_to_tokenizable_strings(
             instance.driver_actions_future,
             truncation_side="right",  # keep first actions
         )
-        actions_as_string = " ".join(actions_as_list)
-        return self._get_random_template_for_task(Task.action_execution).format(
-            instruction=actions_as_string
-        )
+        return " ".join(actions_as_list)
 
     def _convert_actions_to_tokenizable_strings(
         self,

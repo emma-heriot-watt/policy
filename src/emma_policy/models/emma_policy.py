@@ -181,7 +181,7 @@ class EmmaPolicy(pl.LightningModule):
 
         self.log("valid_loss", output.loss, sync_dist=True)
         logits = output.logits
-        targets = batch.target_token_ids.view(-1)  # noqa: WPS204
+        targets = batch.target_token_ids.view(-1)
         loss_tasks = self.loss_fn(logits.view(-1, logits.shape[-1]), targets)
         output.losses = loss_tasks.view(logits.shape[0], -1)
         output.tasks = batch.task

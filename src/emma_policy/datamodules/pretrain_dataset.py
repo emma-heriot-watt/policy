@@ -594,23 +594,26 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
             if other_instance.trajectory is not None:
                 other_visual_features = self._load_visual_features(other_instance)
-                input_text_candidates = f"{input_text_candidates} {self.convert_trajectory_to_text(other_instance, other_visual_features)}"
+                other_action_trajectory = self.convert_trajectory_to_text(
+                    other_instance, other_visual_features
+                )
+                if other_action_trajectory is None:
+                    return None
+                input_text_candidates = "{input_text} {sep_token} {action_trajectory}".format(
+                    input_text=input_text_candidates,
+                    sep_token=self.tokenizer.sep_token,
+                    action_trajectory=other_action_trajectory,
+                )
         else:
             input_text_candidates = None
 
         return input_text_candidates
 
-    def vtm(self, instance: PretrainInstance) -> EmmaDatasetItem:
+    def vtm(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
         """Process the instance for the VTM task."""
         input_text = instance.caption.text
 
         visual_features = self._load_visual_features(instance)
-        if instance.trajectory is not None:
-            input_text = "{input_text} {sep_token} {action_trajectory}".format(
-                input_text=input_text,
-                sep_token=self.tokenizer.sep_token,
-                action_trajectory=self.convert_trajectory_to_text(instance, visual_features),
-            )
         target_text = "true"
         if random.random() < 0.5:  # noqa: WPS459
             target_text = "false"
@@ -621,6 +624,15 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             while input_text is None:
                 rand_idx = int(len(self.db) * random.random())
                 input_text = self.vtm_negative_candidate(rand_idx, dataset_id)
+        elif instance.trajectory is not None:
+            action_trajectory = self.convert_trajectory_to_text(instance, visual_features)
+            if action_trajectory is None:
+                return None
+            input_text = "{input_text} {sep_token} {action_trajectory}".format(
+                input_text=input_text,
+                sep_token=self.tokenizer.sep_token,
+                action_trajectory=action_trajectory,
+            )
 
         source_text = self._get_random_template_for_task(task=Task.vtm).format(
             statement=input_text.strip("."),

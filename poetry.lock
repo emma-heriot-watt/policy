@@ -2859,7 +2859,7 @@ typing-extensions = "*"
 
 [[package]]
 name = "torchmetrics"
-version = "0.7.2"
+version = "0.7.3"
 description = "PyTorch native Metrics"
 category = "main"
 optional = false
@@ -2872,14 +2872,14 @@ pyDeprecate = ">=0.3.0,<0.4.0"
 torch = ">=1.3.1"
 
 [package.extras]
-all = ["sphinx (>=4.0)", "sphinxcontrib-mockautodoc", "sphinx-copybutton (>=0.3)", "nbsphinx (>=0.8)", "myst-parser", "sphinx-paramlinks (>=0.5.1)", "pandoc (>=1.0)", "lpips", "scipy", "torch-fidelity", "torchvision", "pytorch-lightning (>=1.3)", "cloudpickle (>=1.3)", "check-manifest", "pytest-cov (>2.10)", "coverage (>5.2)", "codecov (>=2.1)", "pre-commit (>=1.0)", "sacrebleu (>=2.0.0)", "mypy (>=0.790)", "scikit-image (>0.17.1)", "bert-score (==0.3.10)", "pystoi", "pesq (>=0.0.3)", "fast-bss-eval (>=0.1.0)", "torchvision (>=0.8)", "sphinx-togglebutton (>=0.2)", "sphinx-autodoc-typehints (>=1.0)", "pytorch-lightning (>=1.1)", "docutils (>=0.16)", "sphinxcontrib-fulltoc (>=1.0)", "scikit-learn (>=0.24)", "pytest (>=6.0.0,<7.0.0)", "phmdoctest (>=1.1.1)", "pytorch-msssim", "twine (>=3.2)", "pypesq", "jiwer (>=2.3.0)", "transformers (>=4.0)", "pytest-doctestplus (>=0.9.0)", "rouge-score (>=0.0.4)", "mir-eval (>=0.6)", "regex (>=2021.9.24)", "tqdm (>=4.41.0)", "nltk (>=3.6)"]
+all = ["pystoi", "pesq (>=0.0.3)", "fast-bss-eval (>=0.1.0)", "torchvision (>=0.8)", "docutils (>=0.16)", "nbsphinx (>=0.8)", "sphinx-autodoc-typehints (>=1.0)", "sphinx (>=4.0)", "pandoc (>=1.0)", "sphinx-paramlinks (>=0.5.1)", "pytorch-lightning (>=1.1)", "sphinx-copybutton (>=0.3)", "sphinxcontrib-mockautodoc", "sphinx-togglebutton (>=0.2)", "sphinxcontrib-fulltoc (>=1.0)", "myst-parser", "scipy", "torchvision", "torch-fidelity", "lpips", "pytorch-lightning (>=1.3)", "cloudpickle (>=1.3)", "codecov (>=2.1)", "pytest (>=6.0.0,<7.0.0)", "coverage (>5.2)", "phmdoctest (>=1.1.1)", "jiwer (>=2.3.0)", "mypy (>=0.790)", "sacrebleu (>=2.0.0)", "pytest-cov (>2.10)", "pytorch-msssim", "pypesq", "pytest-doctestplus (>=0.9.0)", "pre-commit (>=1.0)", "mir-eval (>=0.6)", "transformers (>=4.0)", "twine (>=3.2)", "check-manifest", "bert-score (==0.3.10)", "scikit-image (>0.17.1)", "rouge-score (>=0.0.4)", "psutil", "scikit-learn (>=0.24)", "regex (>=2021.9.24)", "nltk (>=3.6)", "tqdm (>=4.41.0)"]
 audio = ["pystoi", "pesq (>=0.0.3)", "fast-bss-eval (>=0.1.0)"]
 detection = ["torchvision (>=0.8)"]
-docs = ["sphinx-togglebutton (>=0.2)", "sphinx-autodoc-typehints (>=1.0)", "pytorch-lightning (>=1.1)", "docutils (>=0.16)", "sphinxcontrib-fulltoc (>=1.0)", "sphinx (>=4.0)", "sphinxcontrib-mockautodoc", "sphinx-copybutton (>=0.3)", "nbsphinx (>=0.8)", "myst-parser", "sphinx-paramlinks (>=0.5.1)", "pandoc (>=1.0)"]
-image = ["lpips", "scipy", "torch-fidelity", "torchvision"]
+docs = ["docutils (>=0.16)", "nbsphinx (>=0.8)", "sphinx-autodoc-typehints (>=1.0)", "sphinx (>=4.0)", "pandoc (>=1.0)", "sphinx-paramlinks (>=0.5.1)", "pytorch-lightning (>=1.1)", "sphinx-copybutton (>=0.3)", "sphinxcontrib-mockautodoc", "sphinx-togglebutton (>=0.2)", "sphinxcontrib-fulltoc (>=1.0)", "myst-parser"]
+image = ["scipy", "torchvision", "torch-fidelity", "lpips"]
 integrate = ["pytorch-lightning (>=1.3)"]
-test = ["cloudpickle (>=1.3)", "check-manifest", "pytest-cov (>2.10)", "coverage (>5.2)", "codecov (>=2.1)", "pre-commit (>=1.0)", "sacrebleu (>=2.0.0)", "mypy (>=0.790)", "scikit-image (>0.17.1)", "bert-score (==0.3.10)", "scikit-learn (>=0.24)", "pytest (>=6.0.0,<7.0.0)", "phmdoctest (>=1.1.1)", "pytorch-msssim", "twine (>=3.2)", "pypesq", "jiwer (>=2.3.0)", "transformers (>=4.0)", "pytest-doctestplus (>=0.9.0)", "rouge-score (>=0.0.4)", "mir-eval (>=0.6)"]
-text = ["regex (>=2021.9.24)", "tqdm (>=4.41.0)", "nltk (>=3.6)"]
+test = ["cloudpickle (>=1.3)", "codecov (>=2.1)", "pytest (>=6.0.0,<7.0.0)", "coverage (>5.2)", "phmdoctest (>=1.1.1)", "jiwer (>=2.3.0)", "mypy (>=0.790)", "sacrebleu (>=2.0.0)", "pytest-cov (>2.10)", "pytorch-msssim", "pypesq", "pytest-doctestplus (>=0.9.0)", "pre-commit (>=1.0)", "mir-eval (>=0.6)", "transformers (>=4.0)", "twine (>=3.2)", "check-manifest", "bert-score (==0.3.10)", "scikit-image (>0.17.1)", "rouge-score (>=0.0.4)", "psutil", "scikit-learn (>=0.24)"]
+text = ["regex (>=2021.9.24)", "nltk (>=3.6)", "tqdm (>=4.41.0)"]
 
 [[package]]
 name = "torchvision"
@@ -3269,7 +3269,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "0295490150c5b3fd7d906399b625848ad56d28a3f5e07f3b0a37dcc79e3eb4fa"
+content-hash = "36c6d77d7e9304ac187c37d476d0d4e16a5faeae26629d333ed39dc7dbeed2e0"
 
 [metadata.files]
 absl-py = [
@@ -4404,6 +4404,7 @@ numpy = [
     {file = "numpy-1.22.3-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:8251ed96f38b47b4295b1ae51631de7ffa8260b5b087808ef09a39a9d66c97ab"},
     {file = "numpy-1.22.3-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:48a3aecd3b997bf452a2dedb11f4e79bc5bfd21a1d4cc760e703c31d57c84b3e"},
     {file = "numpy-1.22.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a3bae1a2ed00e90b3ba5f7bd0a7c7999b55d609e0c54ceb2b076a25e345fa9f4"},
+    {file = "numpy-1.22.3-cp310-cp310-win32.whl", hash = "sha256:f950f8845b480cffe522913d35567e29dd381b0dc7e4ce6a4a9f9156417d2430"},
     {file = "numpy-1.22.3-cp310-cp310-win_amd64.whl", hash = "sha256:08d9b008d0156c70dc392bb3ab3abb6e7a711383c3247b410b39962263576cd4"},
     {file = "numpy-1.22.3-cp38-cp38-macosx_10_14_x86_64.whl", hash = "sha256:201b4d0552831f7250a08d3b38de0d989d6f6e4658b709a02a73c524ccc6ffce"},
     {file = "numpy-1.22.3-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:f8c1f39caad2c896bc0018f699882b345b2a63708008be29b1f355ebf6f933fe"},
@@ -5479,8 +5480,8 @@ torch = [
     {file = "torch-1.11.0-cp39-none-macosx_11_0_arm64.whl", hash = "sha256:0e48af66ad755f0f9c5f2664028a414f57c49d6adc37e77e06fe0004da4edb61"},
 ]
 torchmetrics = [
-    {file = "torchmetrics-0.7.2-py3-none-any.whl", hash = "sha256:d0fbf8440912ef93f22e21bae43fda8fa26a651313acc3ea93beafe3c86dd474"},
-    {file = "torchmetrics-0.7.2.tar.gz", hash = "sha256:af03334c4a33fc32a9a40b037b1ce3ff6273ea9a0050c11ddde29bf1335da95e"},
+    {file = "torchmetrics-0.7.3-py3-none-any.whl", hash = "sha256:2eed83d09058e6141b132dd2ee5136549e5d6faff09a8fb13d3a606b6c65cb86"},
+    {file = "torchmetrics-0.7.3.tar.gz", hash = "sha256:875e744a6db63c88757260d63cb80919d0398734a7f456f8ea4181bb2db957d8"},
 ]
 torchvision = [
     {file = "torchvision-0.12.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:693656e6790b6ab21e4a6e87e81c2982bad9e455b5eb24e14bb672382ec6130f"},

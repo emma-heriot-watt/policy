@@ -9,7 +9,7 @@ from emma_datasets.datamodels.datasets.teach import (
 from overrides import overrides
 
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
-from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem
+from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
 from emma_policy.datamodules.pretrain_dataset import split_action_name
 from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.utils import get_logger
@@ -48,13 +48,10 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
             return_tensors=self._return_tensor_type,
         )
 
-        visual_features = self._load_visual_features(instance, truncation_side="both")
-
-        # Suppose that future frames are loaded
-        scene_temporal_ids, object_temporal_ids = self._make_image_future_indices(
-            instance,
-            visual_features.object_frame_tokens,
+        visual_features, scene_temporal_ids, object_temporal_ids = self._prepare_visual_input(
+            instance
         )
+
         return EmmaDatasetItem(
             # Language
             input_token_ids=input_encoding.input_ids.squeeze(0),
@@ -118,60 +115,13 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
 
         return language
 
-    @overrides(check_signature=False)
-    def _load_feature_dicts(
-        self,
-        instance: TeachEdhInstance,
-    ) -> list[dict[str, torch.Tensor]]:
-        """Load both history and future features for an EDH instance."""
-        if not instance.features_path.exists():
-            raise AssertionError("Provided features path does not exist.")
-
-        feature_dicts_history = [
-            feature_dict["features"]
-            for feature_dict in torch.load(instance.features_path)["frames"]
-        ]
-        if self.max_frames:
-            feature_dicts_history = self._truncate_frames(
-                feature_dicts_history, truncation_side="left"
-            )
-
-        if instance.future_features_path.exists():
-            feature_dicts_future = [
-                feature_dict["features"]
-                for feature_dict in torch.load(instance.future_features_path)["frames"]
-            ]
-
-            if self.max_frames:
-                feature_dicts_future = self._truncate_frames(
-                    feature_dicts_future, truncation_side="right"
-                )
-        else:
-            feature_dicts_future = []
-
-        feature_dicts = feature_dicts_history + feature_dicts_future
-        if not feature_dicts:
-            raise AssertionError("No dict of features have been loaded.")
-        return feature_dicts
-
-    def _make_image_future_indices(
-        self, instance: TeachEdhInstance, object_frame_tokens: torch.Tensor
+    def _make_image_temporal_ids(
+        self, feature_len_history: int, feature_len_future: int, object_frame_tokens: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Get future indices for scenes and objects.
+        """Get temporal ids for scenes and objects.
 
         We assign -1 to history tokens and the corresponding frame index to future tokens.
         """
-        feature_len_history = len(torch.load(instance.features_path)["frames"])
-        if self.max_frames:
-            feature_len_history = min(self.max_frames, feature_len_history)
-
-        if instance.future_features_path.exists():
-            feature_len_future = len(torch.load(instance.future_features_path)["frames"])
-            if self.max_frames:
-                feature_len_future = min(self.max_frames, feature_len_future)
-        else:
-            feature_len_future = 0
-
         scene_temporal_ids = torch.cat(
             [torch.full((feature_len_history,), -1), torch.arange(1, feature_len_future + 1)]
         )
@@ -182,3 +132,37 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
         object_temporal_ids = object_frame_ids - feature_len_history
         object_temporal_ids.masked_fill_(object_temporal_ids <= 0, -1)
         return scene_temporal_ids, object_temporal_ids
+
+    def _prepare_visual_input(
+        self, instance: TeachEdhInstance
+    ) -> tuple[EmmaVisualFeatures, torch.Tensor, torch.Tensor]:
+        """Load history and future visual features and compute temporal ids."""
+        # Load history visual features
+        visual_features = self._load_visual_features(
+            features_path=instance.features_path,
+            modality=instance.modality,
+            truncation_side="left",
+        )
+        len_history = visual_features.scene_features.shape[0]
+        # Load future visual features
+        len_future = 0
+        if instance.future_features_path.exists():
+            visual_features_future = self._load_visual_features(
+                features_path=instance.future_features_path,
+                modality=instance.modality,
+                truncation_side="right",
+                start_offset=len(visual_features.scene_features),
+            )
+            len_future = visual_features_future.scene_features.shape[0]
+            # Combine history and future visual features
+            visual_features = self._concat_visual_features(
+                [visual_features, visual_features_future]
+            )
+
+        scene_temporal_ids, object_temporal_ids = self._make_image_temporal_ids(
+            feature_len_history=len_history,
+            feature_len_future=len_future,
+            object_frame_tokens=visual_features.object_frame_tokens,
+        )
+
+        return visual_features, scene_temporal_ids, object_temporal_ids

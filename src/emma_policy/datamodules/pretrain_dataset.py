@@ -115,7 +115,9 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             target_text, return_tensors=self._return_tensor_type, truncation=True
         )
 
-        visual_features = self._load_visual_features(instance)
+        visual_features = self._load_visual_features(
+            features_path=instance.features_path, modality=instance.modality
+        )
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
@@ -187,7 +189,9 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             target_text, return_tensors=self._return_tensor_type
         )
 
-        visual_features = self._load_visual_features(instance)
+        visual_features = self._load_visual_features(
+            features_path=instance.features_path, modality=instance.modality
+        )
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
@@ -207,7 +211,9 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
     def visual_grounding(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
         """Process the instance for the Visual Grounding task."""
-        visual_features = self._load_visual_features(instance=instance)
+        visual_features = self._load_visual_features(
+            features_path=instance.features_path, modality=instance.modality
+        )
         feature_dict = torch.load(instance.features_path)
         if instance.regions is None:
             raise AssertionError(
@@ -261,7 +267,9 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
     def dense_captioning(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
         """Process the instance for the dense captioning task."""
-        visual_features = self._load_visual_features(instance=instance)
+        visual_features = self._load_visual_features(
+            features_path=instance.features_path, modality=instance.modality
+        )
         feature_dict = torch.load(instance.features_path)
         if instance.regions is None:
             raise AssertionError(
@@ -323,7 +331,9 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             target_text, return_tensors=self._return_tensor_type, truncation=True
         )
 
-        visual_features = self._load_visual_features(instance)
+        visual_features = self._load_visual_features(
+            features_path=instance.features_path, modality=instance.modality
+        )
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
@@ -359,7 +369,9 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             target_text, return_tensors=self._return_tensor_type, truncation=True
         )
 
-        visual_features = self._load_visual_features(instance)
+        visual_features = self._load_visual_features(
+            features_path=instance.features_path, modality=instance.modality
+        )
 
         decoder_attention_mask = target_encoding.attention_mask
 
@@ -382,7 +394,9 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
     def relation_detection(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
         """Process the instance for the relation detection task."""
-        visual_features = self._load_visual_features(instance=instance)
+        visual_features = self._load_visual_features(
+            features_path=instance.features_path, modality=instance.modality
+        )
         feature_dict = torch.load(instance.features_path)
         if instance.relations is None:
             raise AssertionError(
@@ -505,7 +519,9 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         input_encoding = self.tokenizer.encode_plus(
             source_text, return_tensors=self._return_tensor_type, truncation=True
         )
-        visual_features = self._load_visual_features(instance)
+        visual_features = self._load_visual_features(
+            features_path=instance.features_path, modality=instance.modality
+        )
         target_encoding = self.tokenizer.encode_plus(
             instance.caption.text, return_tensors=self._return_tensor_type, truncation=True
         )
@@ -536,7 +552,9 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             source_text, return_tensors=self._return_tensor_type, truncation=True
         )
 
-        visual_features = self._load_visual_features(instance)
+        visual_features = self._load_visual_features(
+            features_path=instance.features_path, modality=instance.modality
+        )
 
         target_text = self.convert_trajectory_to_text(instance, visual_features)
         if target_text is None:
@@ -593,7 +611,9 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             )
 
             if other_instance.trajectory is not None:
-                other_visual_features = self._load_visual_features(other_instance)
+                other_visual_features = self._load_visual_features(
+                    features_path=other_instance.features_path, modality=other_instance.modality
+                )
                 other_action_trajectory = self.convert_trajectory_to_text(
                     other_instance, other_visual_features
                 )
@@ -613,7 +633,9 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         """Process the instance for the VTM task."""
         input_text = instance.caption.text
 
-        visual_features = self._load_visual_features(instance)
+        visual_features = self._load_visual_features(
+            features_path=instance.features_path, modality=instance.modality
+        )
         target_text = "true"
         if random.random() < 0.5:  # noqa: WPS459
             target_text = "false"
@@ -642,7 +664,9 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             source_text, return_tensors=self._return_tensor_type, truncation=True
         )
 
-        visual_features = self._load_visual_features(instance)
+        visual_features = self._load_visual_features(
+            features_path=instance.features_path, modality=instance.modality
+        )
 
         target_encoding = self.tokenizer.encode_plus(
             target_text, return_tensors=self._return_tensor_type, truncation=True

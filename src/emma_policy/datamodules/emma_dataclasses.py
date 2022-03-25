@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 import torch
 
@@ -27,6 +28,8 @@ class EmmaDatasetItem(EmmaVisualFeatures):
     target_token_ids: torch.Tensor
     decoder_attention_mask: torch.Tensor
     task: torch.Tensor
+    scene_temporal_ids: Optional[torch.Tensor] = None
+    object_temporal_ids: Optional[torch.Tensor] = None
 
 
 @dataclass
@@ -48,12 +51,19 @@ class EmmaDatasetPadding:
     scene_features: int = 0
     scene_frame_tokens: int = 1
     visual_token_ids: int = 1
+    scene_temporal_ids: int = 0
+    object_temporal_ids: int = 0
     task: int = -1
 
 
 @dataclass
-class EmmaDatasetBatch(EmmaDatasetItem):
+class EmmaDatasetBatch(EmmaVisualFeatures):
     """Output for the dataset reader."""
 
+    input_token_ids: torch.Tensor
+    text_attention_mask: torch.Tensor
+    target_token_ids: torch.Tensor
+    decoder_attention_mask: torch.Tensor
+    task: torch.Tensor
     attention_mask: torch.Tensor
     global_attention_mask: torch.Tensor

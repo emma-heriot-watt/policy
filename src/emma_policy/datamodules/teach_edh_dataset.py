@@ -25,6 +25,7 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
     `EmmaDatasetItem` before being returned.
     """
 
+    @overrides(check_signature=False)
     def __getitem__(self, index: int) -> EmmaDatasetItem:
         """Get the EDH instance at the given index as an instance of `EmmaDatasetItem`."""
         with self.db:
@@ -49,6 +50,11 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
 
         visual_features = self._load_visual_features(instance, truncation_side="both")
 
+        # Suppose that future frames are loaded
+        scene_temporal_ids, object_temporal_ids = self._make_image_future_indices(
+            instance,
+            visual_features.object_frame_tokens,
+        )
         return EmmaDatasetItem(
             # Language
             input_token_ids=input_encoding.input_ids.squeeze(0),
@@ -65,6 +71,8 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
             scene_features=visual_features.scene_features,
             scene_frame_tokens=visual_features.scene_frame_tokens,
             visual_token_ids=visual_features.visual_token_ids,
+            scene_temporal_ids=scene_temporal_ids,
+            object_temporal_ids=object_temporal_ids,
             # Task
             task=self._get_task_as_tensor(Task.action_execution),
         )
@@ -145,3 +153,32 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
         if not feature_dicts:
             raise AssertionError("No dict of features have been loaded.")
         return feature_dicts
+
+    def _make_image_future_indices(
+        self, instance: TeachEdhInstance, object_frame_tokens: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Get future indices for scenes and objects.
+
+        We assign -1 to history tokens and the corresponding frame index to future tokens.
+        """
+        feature_len_history = len(torch.load(instance.features_path)["frames"])
+        if self.max_frames:
+            feature_len_history = min(self.max_frames, feature_len_history)
+
+        if instance.future_features_path.exists():
+            feature_len_future = len(torch.load(instance.future_features_path)["frames"])
+            if self.max_frames:
+                feature_len_future = min(self.max_frames, feature_len_future)
+        else:
+            feature_len_future = 0
+
+        scene_temporal_ids = torch.cat(
+            [torch.full((feature_len_history,), -1), torch.arange(1, feature_len_future + 1)]
+        )
+        # Relying on the fact that frame ids are consecutive tokens
+        start = self.tokenizer("<frame_token_1>").input_ids[1]
+        # We get the object frame id from the frame tokens
+        object_frame_ids = object_frame_tokens - start + 1
+        object_temporal_ids = object_frame_ids - feature_len_history
+        object_temporal_ids.masked_fill_(object_temporal_ids <= 0, -1)
+        return scene_temporal_ids, object_temporal_ids

@@ -14,7 +14,10 @@ from emma_policy.utils.boxes import Boxes, pairwise_iou
 
 
 DatasetReturn_Co = TypeVar(
-    "DatasetReturn_Co", EmmaDatasetItem, Optional[EmmaDatasetItem], covariant=True
+    "DatasetReturn_Co",
+    EmmaDatasetItem,
+    Optional[EmmaDatasetItem],
+    covariant=True,
 )
 
 

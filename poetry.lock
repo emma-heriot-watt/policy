@@ -964,7 +964,7 @@ tool = ["click (>=6.0.0)"]
 
 [[package]]
 name = "gradio"
-version = "2.8.13"
+version = "2.8.14"
 description = "Python library for easily interacting with trained machine learning models"
 category = "main"
 optional = false
@@ -3269,7 +3269,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "e500d89dc324aea738b953967fde89038cf77d9806333aa4470648214ca31f7b"
+content-hash = "e7f90b3c257cb825c877e6a2f7aa09eb48e1e8d4bc9323c0dec7ee5b29f61431"
 
 [metadata.files]
 absl-py = [
@@ -3964,8 +3964,8 @@ google-auth-oauthlib = [
     {file = "google_auth_oauthlib-0.4.6-py2.py3-none-any.whl", hash = "sha256:3f2a6e802eebbb6fb736a370fbf3b055edcb6b52878bf2f26330b5e041316c73"},
 ]
 gradio = [
-    {file = "gradio-2.8.13-py3-none-any.whl", hash = "sha256:800b9c944aeaf63893c3471c901d6a41e5bc325a9f7abe647bf1cd5ecd090392"},
-    {file = "gradio-2.8.13.tar.gz", hash = "sha256:c23107695600519084a39d8db9f2bbec221e83855ce8c700f3a4a6d5cadd2da7"},
+    {file = "gradio-2.8.14-py3-none-any.whl", hash = "sha256:32f680a1eaf489ce629dd5ca5782a223e80e90f2ee40247046a9e485b9dc369d"},
+    {file = "gradio-2.8.14.tar.gz", hash = "sha256:2dcb405cbe0034709b89d3748497e142972c1032e024553d7aa97ed18d9d7d55"},
 ]
 grpcio = [
     {file = "grpcio-1.44.0-cp310-cp310-linux_armv7l.whl", hash = "sha256:11f811c0fffd84fca747fbc742464575e5eb130fd4fb4d6012ccc34febd001db"},

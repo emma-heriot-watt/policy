@@ -23,6 +23,7 @@ class Task(Enum):
     # TODO: check whether we can put together the entire trajectory
     # goal_prediction = "Goal prediction for an action trajectory"
     vtm = "Video-Text Matching"
+    fom = "Frame Order Modeling"
 
     @classmethod
     def get_index(cls, task: Any) -> int:
@@ -170,6 +171,13 @@ TASK_TEMPLATES_MAP: Mapping[Task, list[str]] = MappingProxyType(
             "{statement}. Is this description false or true?",
             "{statement}. Do you consider this statement true or false?",
             "{statement}. Do you consider this statement false or true?",
+        ],
+        Task.fom: [
+            "Order frames in the order of instructions: {instruction}. ",
+            "Instruction: {instruction}.  Re-order the frames according to instruction",
+            "{instruction}. What is the temporal order of frames?",
+            "Given the instruction, {instruction}, what is the sequence of scenes?",
+            "Correct the order of frames based on instruction: {instruction}",
         ],
     }
 )

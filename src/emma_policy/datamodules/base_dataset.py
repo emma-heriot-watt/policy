@@ -64,6 +64,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         modality: MediaType,
         truncation_side: Literal["left", "right"] = "left",
         start_offset: int = 0,
+        shuffle_frames: bool = False,
     ) -> EmmaVisualFeatures:
         """Get all the visual features from the given instance."""
         feature_dicts = self._load_feature_dicts(
@@ -79,6 +80,13 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         object_attention_mask = []
         scene_features = []
         scene_frame_tokens = []
+
+        num_features = len(feature_dicts)
+        original_frame_order = torch.arange(num_features)
+        # shuffling
+        if shuffle_frames:
+            original_frame_order = torch.randperm(num_features)
+            feature_dicts = [feature_dicts[j] for j in original_frame_order.tolist()]
 
         for frame_idx, feature_dict in enumerate(feature_dicts):
             object_features.append(feature_dict["bbox_features"])
@@ -127,6 +135,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
             scene_features=torch.cat(scene_features),
             scene_frame_tokens=torch.tensor(scene_frame_tokens),
             visual_token_ids=torch.cat(vis_tokens),
+            original_frame_order=original_frame_order,
         )
 
         return emma_visual_features

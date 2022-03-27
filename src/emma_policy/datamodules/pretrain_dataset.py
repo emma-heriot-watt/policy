@@ -84,6 +84,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             Task.instruction_prediction: self.instruction_prediction,
             Task.action_execution: self.action_execution,
             Task.vtm: self.vtm,
+            Task.fom: self.fom,
         }
 
     def __getitem__(self, index: int) -> Optional[EmmaDatasetItem]:
@@ -475,11 +476,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             # Match the object to a predicted bounding box
             if "bbox" in action.discrete_action.args:
 
-                bbox_coord = BoxMode.convert(
-                    list(action.discrete_action.args["bbox"]),  # noqa: WPS529
-                    from_mode=BoxMode.XYWH_ABS,
-                    to_mode=BoxMode.XYXY_ABS,
-                )
+                bbox_coord = action.discrete_action.args["bbox"]  # noqa: WPS529
                 gt_bbox = torch.tensor(
                     [
                         bbox_coord[0] / feature_dicts[action_idx]["features"]["width"],
@@ -687,6 +684,54 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             scene_frame_tokens=visual_features.scene_frame_tokens,
             visual_token_ids=visual_features.visual_token_ids,
             task=self._get_task_as_tensor(Task.vtm),
+        )
+
+    def fom(self, instance: PretrainInstance) -> EmmaDatasetItem:
+        """Process the instance for the FOM task."""
+        visual_features = self._load_visual_features(
+            features_path=instance.features_path, modality=instance.modality, shuffle_frames=True
+        )
+        original_order = visual_features.original_frame_order
+        input_text = instance.caption.text
+
+        if instance.trajectory is not None:
+            ordered_features = self._load_visual_features(
+                features_path=instance.features_path, modality=instance.modality
+            )
+            action_trajectory = self.convert_trajectory_to_text(instance, ordered_features)
+            if action_trajectory is not None:
+                input_text = "{input_text} {sep_token} {action_trajectory}".format(
+                    input_text=input_text,
+                    sep_token=self.tokenizer.sep_token,
+                    action_trajectory=action_trajectory,
+                )
+        source_text = self._get_random_template_for_task(Task.fom).format(instruction=input_text)
+        input_encoding = self.tokenizer.encode_plus(
+            source_text, return_tensors=self._return_tensor_type, truncation=True
+        )
+
+        sequence_order = torch.argsort(original_order)
+        order_encoded = visual_features.scene_frame_tokens.squeeze(0)[sequence_order]
+        target_text = " ".join([self.tokenizer.decode(i) for i in order_encoded])
+        target_encoding = self.tokenizer.encode_plus(
+            target_text, return_tensors=self._return_tensor_type, truncation=True
+        )
+
+        return EmmaDatasetItem(
+            input_token_ids=input_encoding.input_ids.squeeze(0),
+            text_attention_mask=input_encoding.attention_mask.squeeze(0),
+            target_token_ids=target_encoding.input_ids.squeeze(0),
+            decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
+            scene_features=visual_features.scene_features,
+            scene_coordinates=visual_features.scene_coordinates,
+            object_features=visual_features.object_features,
+            object_coordinates=visual_features.object_coordinates,
+            visual_token_ids=visual_features.visual_token_ids,
+            scene_attention_mask=visual_features.scene_attention_mask,
+            object_attention_mask=visual_features.object_attention_mask,
+            scene_frame_tokens=visual_features.scene_frame_tokens,
+            object_frame_tokens=visual_features.object_frame_tokens,
+            task=self._get_task_as_tensor(Task.fom),
         )
 
     def _relation_detection_target(self, selected_relation: Relation) -> str:

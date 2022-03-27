@@ -67,6 +67,7 @@ class PretrainInstanceCreator:
             Task.instruction_prediction: self.instruction_prediction,
             Task.action_execution: self.action_execution,
             Task.vtm: self.vtm,
+            Task.fom: self.fom,
         }
 
         if list(self.instance_task_map.keys()) != list(Task):
@@ -251,6 +252,20 @@ class PretrainInstanceCreator:
             trajectory=self.instance.trajectory,
             dataset=self.instance.dataset,
             task=Task.vtm,
+        )
+
+    @property  # type: ignore[misc]
+    @video_task_check
+    def fom(self) -> Iterator[PretrainInstance]:
+        """Get the pretrain instance for the feature order modeling task given a subgoal."""
+        if self.instance.caption is None or Task.fom not in self.enabled_tasks:
+            return []
+
+        yield PretrainInstance(
+            caption=self.instance.caption,
+            trajectory=self.instance.trajectory,
+            dataset=self.instance.dataset,
+            task=Task.fom,
         )
 
 

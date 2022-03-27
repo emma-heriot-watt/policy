@@ -23,7 +23,8 @@ enabled_tasks:
     # - instruction_prediction
     # - action_execution
     # - vtm
-    #- relation_detection
+    # - relation_detection
+    # - fom
   video:
     # - mlm
     # - itm
@@ -34,4 +35,5 @@ enabled_tasks:
     # - instruction_prediction
     # - action_execution
     # - vtm
+    # - fom
 # pin_memory: False

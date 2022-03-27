@@ -17,12 +17,22 @@ class EmmaVisualFeatures:
     object_frame_tokens: torch.Tensor
     scene_attention_mask: torch.Tensor
     object_attention_mask: torch.Tensor
+    original_frame_order: torch.Tensor
 
 
 @dataclass
-class EmmaDatasetItem(EmmaVisualFeatures):
+class EmmaDatasetItem:
     """Output for the dataset reader."""
 
+    scene_features: torch.Tensor
+    scene_coordinates: torch.Tensor
+    object_features: torch.Tensor
+    object_coordinates: torch.Tensor
+    visual_token_ids: torch.Tensor
+    scene_frame_tokens: torch.Tensor
+    object_frame_tokens: torch.Tensor
+    scene_attention_mask: torch.Tensor
+    object_attention_mask: torch.Tensor
     input_token_ids: torch.Tensor
     text_attention_mask: torch.Tensor
     target_token_ids: torch.Tensor
@@ -57,9 +67,18 @@ class EmmaDatasetPadding:
 
 
 @dataclass
-class EmmaDatasetBatch(EmmaVisualFeatures):
+class EmmaDatasetBatch:
     """Output for the dataset reader."""
 
+    scene_features: torch.Tensor
+    scene_coordinates: torch.Tensor
+    object_features: torch.Tensor
+    object_coordinates: torch.Tensor
+    visual_token_ids: torch.Tensor
+    scene_frame_tokens: torch.Tensor
+    object_frame_tokens: torch.Tensor
+    scene_attention_mask: torch.Tensor
+    object_attention_mask: torch.Tensor
     input_token_ids: torch.Tensor
     text_attention_mask: torch.Tensor
     target_token_ids: torch.Tensor

@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Literal, Optional, TypeVar
 
 import torch
-from emma_datasets.datamodels import MediaType
+from emma_datasets.datamodels import BaseInstance, MediaType
 from emma_datasets.db import DatasetDb
 from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizer
@@ -15,10 +15,7 @@ from emma_policy.utils.boxes import Boxes, pairwise_iou
 
 
 DatasetReturn_Co = TypeVar(
-    "DatasetReturn_Co",
-    EmmaDatasetItem,
-    Optional[EmmaDatasetItem],
-    covariant=True,
+    "DatasetReturn_Co", EmmaDatasetItem, Optional[EmmaDatasetItem], covariant=True
 )
 
 
@@ -218,3 +215,9 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
             for field in dataclasses.fields(EmmaVisualFeatures)
         }
         return EmmaVisualFeatures(**concat_features)
+
+    def _convert_trajectory_to_text(
+        self, instance: BaseInstance, visual_features: EmmaVisualFeatures
+    ) -> str:
+        """Convert an action trajectory from an instance to a text representation."""
+        raise NotImplementedError

@@ -3,6 +3,7 @@ from typing import Any
 from unittest.mock import PropertyMock
 
 from emma_datasets.common import get_progress
+from emma_datasets.datamodels import DatasetSplit
 from emma_datasets.datamodels.datasets.teach import TeachEdhInstance
 from emma_datasets.db import DatasetDb
 from emma_datasets.parsers.instance_creators import TeachEdhInstanceCreator
@@ -36,7 +37,7 @@ class TeachEdhInstanceFeaturesPathPropertyMock(PropertyMock):  # type: ignore[mi
 @fixture(scope="session")
 def teach_edh_instances_db(
     cached_db_dir_path: Path, fixtures_root: Path, session_mocker: MockerFixture
-) -> Path:
+) -> dict[DatasetSplit, Path]:
     """Create an DatasetDb of TEACh EDH instances and cache to use across tests.
 
     Additionally, this fixture also mocks the features path of each TeachEdhInstance to point to
@@ -48,21 +49,27 @@ def teach_edh_instances_db(
         new_callable=TeachEdhInstanceFeaturesPathPropertyMock,
     )
 
-    teach_instances_db_path = cached_db_dir_path.joinpath("teach_instances.db")
+    all_instance_dbs: dict[DatasetSplit, Path] = {}
 
-    if not teach_instances_db_path.exists():
-        progress = get_progress()
+    teach_dataset_splits = {DatasetSplit.train, DatasetSplit.valid_seen, DatasetSplit.valid_unseen}
 
-        instance_creator = TeachEdhInstanceCreator(progress)
-        instance_iterator = instance_creator(
-            input_data=fixtures_root.joinpath("teach_edh").rglob("*.json"),
-            progress=progress,
-        )
+    for dataset_split in teach_dataset_splits:
+        db_path = cached_db_dir_path.joinpath(f"teach_{dataset_split.name}.db")
+        all_instance_dbs[dataset_split] = db_path
 
-        db = DatasetDb(teach_instances_db_path, readonly=False)
+        if not db_path.exists():
+            progress = get_progress()
 
-        with db:
-            for idx, instance in enumerate(instance_iterator):
-                db[(idx, f"teach_edh_{idx}")] = instance
+            instance_creator = TeachEdhInstanceCreator(progress)
+            instance_iterator = instance_creator(
+                input_data=fixtures_root.joinpath("teach_edh", dataset_split.name).glob("*.json"),
+                progress=progress,
+            )
 
-    return teach_instances_db_path
+            db = DatasetDb(db_path, readonly=False)
+
+            with db:
+                for idx, instance in enumerate(instance_iterator):
+                    db[(idx, f"teach_edh_{idx}")] = instance
+
+    return all_instance_dbs

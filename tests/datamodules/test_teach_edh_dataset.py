@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from emma_datasets.datamodels.datasets.teach import TeachEdhInstance
+from emma_datasets.datamodels import DatasetSplit, TeachEdhInstance
+from emma_datasets.db import DatasetDb
 from pytest_cases import fixture
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem
@@ -10,10 +11,26 @@ from emma_policy.models.tokenizer_emma import EmmaTokenizer
 
 @fixture
 def teach_edh_dataset(
-    teach_edh_instances_db: Path, emma_tokenizer: EmmaTokenizer
+    cached_db_dir_path: Path,
+    teach_edh_instances_db: dict[DatasetSplit, Path],
+    emma_tokenizer: EmmaTokenizer,
 ) -> TeachEdhDataset:
-    """Instantiate the TeachEdhDataset for each test."""
-    return TeachEdhDataset(dataset_db_path=teach_edh_instances_db, tokenizer=emma_tokenizer)
+    """Merge all the TEACh EDH instances into a single DatasetDB to test all the instances."""
+
+    output_db_path = cached_db_dir_path.joinpath("teach_merged.db")
+
+    if not output_db_path.exists():
+        output_db = DatasetDb(output_db_path, readonly=False)
+
+        with output_db:
+            data_idx = 0
+            for teach_db_path in teach_edh_instances_db.values():
+                teach_split_db = DatasetDb(teach_db_path)
+                for _, _, instance in teach_split_db:
+                    output_db[(data_idx, f"teach_edh_{data_idx}")] = instance
+                    data_idx += 1
+
+    return TeachEdhDataset(dataset_db_path=output_db_path, tokenizer=emma_tokenizer)
 
 
 def test_dataset_can_get_instances_without_error(teach_edh_dataset: TeachEdhDataset) -> None:

@@ -1,0 +1,12 @@
+_target_: emma_policy.datamodules.teach_edh_datamodule.TeachEdhDataModule
+
+model_name: heriot-watt/emma-small
+teach_edh_train_db_file: ${work_dir}/storage/db/teach_training.db
+teach_edh_valid_seen_db_file: ${work_dir}/storage/db/teach_valid_seen.db
+teach_edh_valid_unseen_db_file: ${work_dir}/storage/db/teach_valid_unseen.db
+load_valid_data_split: both
+batch_size: 100
+num_workers: 12
+max_lang_tokens: 512
+max_frames: 100
+tokenizer_truncation_side: right

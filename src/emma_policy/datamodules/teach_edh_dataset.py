@@ -81,8 +81,12 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
             instance.extended_driver_action_history,
             truncation_side="left",  # keep most recent actions
         )
-        input_text = dialog_history + actions
-        return " ".join(input_text)
+        input_text = " ".join(dialog_history + actions)
+        #  Add action execution task prefix
+        input_text = self._get_random_template_for_task(Task.action_execution).format(
+            instruction=input_text,
+        )
+        return input_text
 
     def _get_target_text_from_instance(self, instance: TeachEdhInstance) -> str:
         """Get the target text from a TEACh EDH instance."""

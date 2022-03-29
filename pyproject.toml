@@ -75,7 +75,7 @@ jupyterlab = "^3.2.9"
 pudb = "^2022.1"
 isort = "^5.10.1"
 pytest-cases = "^3.6.11"
-black = { version = "^22.1.0", extras = ["jupyter"] }
+black = { version = "^22.3.0", extras = ["jupyter"] }
 pytest-order = "^1.0.1"
 mypy = "^0.942"
 types-requests = "^2.27.14"

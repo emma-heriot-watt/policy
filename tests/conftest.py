@@ -10,6 +10,8 @@ pytest_plugins = [
     for fixture_file in glob("tests/fixtures/[!__]*.py", recursive=True)
 ]
 
+os.environ["RUNNING_TESTS"] = "1"
+
 if os.getenv("_PYTEST_RAISE", "0") != "0":
 
     @pytest.hookimpl(tryfirst=True)

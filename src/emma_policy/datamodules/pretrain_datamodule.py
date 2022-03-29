@@ -1,22 +1,26 @@
+import itertools
+import os
 from pathlib import Path
 from typing import Optional, Union
 
-from emma_datasets.common import Settings
+from emma_datasets.common import Downloader, Settings
+from emma_datasets.datamodels import DatasetSplit
 from pytorch_lightning import LightningDataModule
-from torch.utils.data import DataLoader
+from torch.utils.data import ConcatDataset, DataLoader
 from transformers import AutoTokenizer
 
 from emma_policy.datamodules.collate import collate_fn
-from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
+from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch, EmmaDatasetItem
 from emma_policy.datamodules.pretrain_dataset import EmmaPretrainDataset
-from emma_policy.datamodules.pretrain_instances import PreparePretrainInstancesDb
-from emma_policy.datamodules.pretrain_instances.datamodels import (
+from emma_policy.datamodules.pretrain_instances import (
+    PRETRAIN_DATASET_SPLITS,
     EnabledTasksHandler,
     EnabledTasksPerModality,
+    get_db_file_name,
 )
 
 
-DEFAULT_DATASET_DB_PATH = Settings().paths.databases.joinpath("instances.db")
+DEFAULT_DB_PATH = Settings().paths.databases
 
 
 class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
@@ -24,13 +28,10 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
 
     def __init__(
         self,
-        pretrain_train_db_file: Union[str, Path],
-        pretrain_valid_db_file: Union[str, Path],
-        instances_db_file: Union[str, Path] = DEFAULT_DATASET_DB_PATH,
-        force_prepare_data: bool = False,
+        pretrain_db_dir_path: Union[str, Path] = DEFAULT_DB_PATH,
+        remote_pretrain_db_dir: str = "s3://emma-simbot/db/",
         load_valid_data: bool = False,
         num_workers: int = 0,
-        prepare_data_num_workers: int = 0,
         batch_size: int = 8,
         model_name: str = "heriot-watt/emma-base",
         mlm_probability: float = 0.3,
@@ -39,7 +40,6 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         enabled_tasks: Optional[EnabledTasksPerModality] = None,
         tokenizer_truncation_side: str = "right",
     ) -> None:
-
         self.model_name = model_name
         self.mlm_probability = mlm_probability
 
@@ -49,34 +49,14 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
             else EnabledTasksHandler.process_tasks_per_modality(enabled_tasks)
         )
 
-        if isinstance(instances_db_file, str):
-            instances_db_file = Path(instances_db_file)
+        if isinstance(pretrain_db_dir_path, str):
+            pretrain_db_dir_path = Path(pretrain_db_dir_path)
 
-        if isinstance(pretrain_train_db_file, str):
-            pretrain_train_db_file = Path(pretrain_train_db_file)
+        if not pretrain_db_dir_path.is_dir():
+            raise AssertionError("`pretrain_db_dir_path` needs to point to a directory.")
 
-        if isinstance(pretrain_valid_db_file, str):
-            pretrain_valid_db_file = Path(pretrain_valid_db_file)
-
-        self._instances_db_file = instances_db_file
-        self._pretrain_train_db_file = pretrain_train_db_file
-        self._pretrain_valid_db_file = pretrain_valid_db_file
-
-        self._instances_db_file_exists = (
-            self._instances_db_file is not None and self._instances_db_file.exists()
-        )
-
-        no_pretrain_db_files = (
-            not self._pretrain_train_db_file.exists() or not self._pretrain_valid_db_file.exists()
-        )
-
-        if no_pretrain_db_files and not self._instances_db_file_exists:
-            raise ValueError(
-                "Both `instances_db_file` and `pretrain_*_db_file` cannot be None. At least one MUST be provided."
-            )
-
-        self._force_prepare_data = force_prepare_data
-        self._prepare_data_num_workers = prepare_data_num_workers
+        self._pretrain_db_dir_path = pretrain_db_dir_path
+        self._remote_pretrain_db_dir = remote_pretrain_db_dir
 
         self._batch_size = batch_size
         self._num_workers = num_workers
@@ -86,14 +66,19 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         self.tokenizer_truncation_side = tokenizer_truncation_side
 
     def prepare_data(self) -> None:
-        """Prepare the DatasetDb for the pretraining.
+        """Download the pretrain DBs if necessary.
 
-        This will only create the pretraining instances db file if it does not already exist.
+        This will NOT download them if running the code using pytest.
         """
         super().prepare_data()
 
-        if not self._pretrain_train_db_file.exists() or self._force_prepare_data:
-            self._prepare_pretrain_instances_db()
+        # Make the directory for the pretrain DBs if it does not already exist
+        if not self._pretrain_db_dir_path.exists():
+            self._pretrain_db_dir_path.mkdir(parents=True, exist_ok=True)
+
+        # Only download the pretrain DBs if not running tests
+        if os.getenv("RUNNING_TESTS", "0") != "1":
+            self._download_pretrain_dbs()
 
         # make sure to trigger the tokenizer download on the main process
         AutoTokenizer.from_pretrained(self.model_name)
@@ -105,20 +90,10 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         if self.max_lang_tokens:
             self.tokenizer.model_max_length = self.max_lang_tokens
 
-        self._train_dataset = EmmaPretrainDataset(
-            dataset_db_path=self._pretrain_train_db_file,
-            tokenizer=self.tokenizer,
-            mlm_probability=self.mlm_probability,
-            max_frames=self.max_frames,
-        )
+        self._train_dataset = self._get_dataset_from_tasks(DatasetSplit.train)
 
         if self.load_valid_data:
-            self._val_dataset = EmmaPretrainDataset(
-                dataset_db_path=self._pretrain_valid_db_file,
-                tokenizer=self.tokenizer,
-                mlm_probability=self.mlm_probability,
-                max_frames=self.max_frames,
-            )
+            self._val_dataset = self._get_dataset_from_tasks(DatasetSplit.valid)
 
     def train_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
         """Generate train dataloader."""
@@ -141,18 +116,46 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
             shuffle=False,
         )
 
-    def _prepare_pretrain_instances_db(self) -> None:
-        loader_batch_size = 512
+    def _get_dataset_from_tasks(
+        self, dataset_split: DatasetSplit
+    ) -> ConcatDataset[Optional[EmmaDatasetItem]]:
+        """Iterate over all the enabled tasks and create a concatenated dataset."""
+        all_datasets: list[EmmaPretrainDataset] = []
 
-        if self._prepare_data_num_workers > loader_batch_size:
-            raise AssertionError("Ensure the `num_workers` is less than the `loader_batch_size`")
+        for task in itertools.chain.from_iterable(self._enabled_tasks.values()):
+            task_db_name = get_db_file_name(task, dataset_split)
 
-        preparer = PreparePretrainInstancesDb(
-            instances_db_file_path=self._instances_db_file,
-            train_db_file_path=self._pretrain_train_db_file,
-            valid_db_file_path=self._pretrain_valid_db_file if self.load_valid_data else None,
-            loader_batch_size=loader_batch_size,
-            loader_num_workers=self._prepare_data_num_workers,
-            enabled_tasks=self._enabled_tasks,
-        )
-        preparer.run()
+            dataset = EmmaPretrainDataset(
+                dataset_db_path=self._pretrain_db_dir_path.joinpath(task_db_name),
+                tokenizer=self.tokenizer,
+                mlm_probability=self.mlm_probability,
+                max_frames=self.max_frames,
+            )
+            all_datasets.append(dataset)
+
+        return ConcatDataset(all_datasets)
+
+    def _download_pretrain_dbs(self) -> None:
+        """Download all the pretrain DBs from S3.
+
+        Get all the file names for every DB that needs to be downloaded, convert into a URL and
+        then download them all in one go.
+
+        The `Downloader` will skip the file if it already exists --- determined by making sure the
+        local file is not smaller than the requested file.
+        """
+        if not self._remote_pretrain_db_dir.endswith("/"):
+            self._remote_pretrain_db_dir = f"{self._remote_pretrain_db_dir}/"
+
+        all_db_file_names = [
+            get_db_file_name(task, dataset_split)
+            for task, dataset_split in zip(
+                itertools.chain.from_iterable(self._enabled_tasks.values()),
+                itertools.cycle(PRETRAIN_DATASET_SPLITS),
+            )
+        ]
+
+        all_urls = [self._remote_pretrain_db_dir + file_name for file_name in all_db_file_names]
+
+        downloader = Downloader()
+        downloader.download(all_urls, self._pretrain_db_dir_path)

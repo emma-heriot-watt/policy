@@ -1,3 +1,4 @@
+import itertools
 from pathlib import Path
 from typing import Any
 from unittest.mock import PropertyMock
@@ -11,10 +12,30 @@ from filelock import FileLock
 from pytest_cases import fixture
 from pytest_mock import MockerFixture
 
+from emma_policy.commands.create_pretrain_dbs import create_pretrain_dbs
+from emma_policy.datamodules.pretrain_instances import (
+    PRETRAIN_DATASET_SPLITS,
+    Task,
+    get_db_file_name,
+)
+
 
 @fixture(scope="session")
-def instances_tiny_batch_db_path(fixtures_root: Path) -> Path:
-    return fixtures_root.joinpath("instances_tiny_batch.db")
+def pretrain_db_dir_path(cached_db_dir_path: Path, instances_db_path: Path) -> Path:
+    """Create and cache the various task-specific pretrain DBs.
+
+    This fixture will only create the DBs if the files do not already exist.
+    """
+    with FileLock(cached_db_dir_path.joinpath("pretrain_db.lock")):
+        all_dbs_exist = all(
+            cached_db_dir_path.joinpath(get_db_file_name(task, dataset_split)).exists()
+            for task, dataset_split in itertools.product(Task, PRETRAIN_DATASET_SPLITS)
+        )
+
+        if not all_dbs_exist:
+            create_pretrain_dbs(instances_db_path, cached_db_dir_path)
+
+    return cached_db_dir_path
 
 
 class TeachEdhInstanceFeaturesPathPropertyMock(PropertyMock):  # type: ignore[misc]

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
 from emma_datasets.datamodels import DatasetSplit
 from pytest_cases import fixture, parametrize
@@ -10,9 +10,7 @@ from emma_policy.datamodules.teach_edh_datamodule import TeachEdhDataModule
 
 @fixture
 def emma_pretrain_datamodule(
-    request: Any,
-    cached_db_dir_path: Path,
-    instances_db_path: Path,
+    pretrain_db_dir_path: Path,
     model_metadata_path: str,
     enabled_tasks_per_modality: dict[str, list[str]],
 ) -> EmmaPretrainDataModule:
@@ -20,12 +18,8 @@ def emma_pretrain_datamodule(
 
     Caching it like this should hopefully reduce the running time/memory usage of the tests.
     """
-    db_suffix = request.node.callspec.id
-
     dm = EmmaPretrainDataModule(
-        cached_db_dir_path.joinpath(f"pretrain_train_{db_suffix}.db"),
-        cached_db_dir_path.joinpath(f"pretrain_valid_{db_suffix}.db"),
-        instances_db_path,
+        pretrain_db_dir_path,
         model_name=model_metadata_path,
         load_valid_data=True,
         enabled_tasks=enabled_tasks_per_modality,

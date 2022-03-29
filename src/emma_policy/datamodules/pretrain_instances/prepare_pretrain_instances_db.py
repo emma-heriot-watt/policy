@@ -4,14 +4,32 @@ from pathlib import Path
 from typing import Iterator, NamedTuple, Optional
 
 import torch
-from emma_datasets.common import get_progress
-from emma_datasets.datamodels import Instance, MediaType
+from emma_datasets.datamodels import DatasetSplit, Instance, MediaType
 from emma_datasets.db import DatasetDb, JsonStorage
+from rich.console import Group
+from rich.live import Live
+from rich.panel import Panel
+from rich.progress import SpinnerColumn, TaskID
 from torch.utils.data import DataLoader, IterableDataset
 
+from emma_policy.common import (
+    BatchesProcessedColumn,
+    CustomBarColumn,
+    CustomProgress,
+    CustomTimeColumn,
+    ProcessingSpeedColumn,
+)
 from emma_policy.datamodules.pretrain_instances import convert_instance_to_pretrain_instances
 from emma_policy.datamodules.pretrain_instances.datamodels import EnabledTasksHandler, Task
 from emma_policy.datamodules.pretrain_instances.is_train_instance import is_train_instance
+
+
+PRETRAIN_DATASET_SPLITS = (DatasetSplit.train, DatasetSplit.valid)
+
+
+def get_db_file_name(task: Task, dataset_split: DatasetSplit) -> str:
+    """Get the name of the DB file for a given task and dataset split."""
+    return f"{task.name}_{dataset_split.name}.db"
 
 
 class DatasetDbReaderReturn(NamedTuple):
@@ -20,6 +38,7 @@ class DatasetDbReaderReturn(NamedTuple):
     source_instance_idx: int
     pretrain_instance: bytes
     is_train: bool
+    task: Task
 
 
 class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
@@ -80,6 +99,7 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
                     source_instance_idx=data_idx,
                     pretrain_instance=self._storage.compress(pretrain_instance),
                     is_train=is_train,
+                    task=pretrain_instance.task,
                 )
                 for pretrain_instance in pretrain_instance_iterator
             )
@@ -99,13 +119,11 @@ class PreparePretrainInstancesDb:
 
     Args:
         instances_db_file_path (Path): Path to the DB of _all_ instances.
-        coco_ref_images (CocoRefImages): Reference images for the coco dataset to determine whether
-            an instance is for the training or validation set.
-        train_db_file_path (Path): Output path to the training db file.
-        valid_db_file_path (Optional[Path]): Output path to the validation db file. If left as
-            `None`, the valid db will not be created. Defaults to None.
-        loader_batch_size (int): Batch size for the torch DataLoader. Defaults to 48.
-        loader_num_workers (int): Number of workers for the torch DataLoader. Defaults to 24.
+        output_dir_path (Path): Output directory to save all DBs.
+        loader_num_workers (int): Number of workers for the torch DataLoader. Defaults to 0.
+        loader_batch_size_per_worker (int): Batch size for each worker in the torch DataLoader.
+            This ensures that all workers are used to their maximum and none are left waiting for
+            another to finish processing. Defaults to 5.
         write_db_batch_size (int): Total cache size for the output dbs before writing to disk.
             If you are running out of memory, you should make this value smaller. Alternative, if
             you are finding it slowing down too much, set this number to be much larger. Defaults
@@ -117,121 +135,109 @@ class PreparePretrainInstancesDb:
     def __init__(
         self,
         instances_db_file_path: Path,
-        train_db_file_path: Path,
-        valid_db_file_path: Optional[Path] = None,
-        loader_batch_size: int = 48,
-        loader_num_workers: int = 24,
+        output_dir_path: Path,
+        loader_num_workers: int = 0,
+        loader_batch_size_per_worker: int = 5,
         write_db_batch_size: int = 300000,
         example_id_prefix: str = "pretrain_",
-        enabled_tasks: Optional[dict[MediaType, set[Task]]] = None,
     ) -> None:
-        self._instance_counter: Counter[int] = Counter()
-
-        self._example_id_prefix = example_id_prefix
-
-        self._enabled_tasks = (
-            enabled_tasks
-            if enabled_tasks is not None
-            else EnabledTasksHandler.get_default_enabled_tasks_per_modality()
-        )
-
         self._dataset = IterableDatasetDbReader(
-            instances_db_file_path, enabled_tasks=self._enabled_tasks
-        )
-        self._train_db = DatasetDb(
-            train_db_file_path, readonly=False, batch_size=write_db_batch_size
-        )
-
-        self._valid_db = (
-            DatasetDb(valid_db_file_path, readonly=False, batch_size=write_db_batch_size)
-            if valid_db_file_path is not None
-            else None
+            instances_db_file_path,
+            enabled_tasks=EnabledTasksHandler.get_default_enabled_tasks_per_modality(),
         )
 
         self._loader = DataLoader(
             self._dataset,
             collate_fn=_loader_collate_fn,
-            batch_size=loader_batch_size,
+            batch_size=max(
+                loader_batch_size_per_worker,
+                loader_num_workers * loader_batch_size_per_worker,
+            ),
             shuffle=False,
             num_workers=loader_num_workers,
         )
 
-        self._progress = get_progress()
-        self._get_instance_task_id = self._progress.add_task(
-            "Instances processed", total=self._dataset.end
+        self._example_id_prefix = example_id_prefix
+
+        self._instance_counter: Counter[int] = Counter()
+
+        self._overall_progress = CustomProgress(
+            "[progress.description]{task.description}",
+            CustomBarColumn(),
+            BatchesProcessedColumn(),
+            CustomTimeColumn(),
+            ProcessingSpeedColumn(),
         )
-        self._save_train_instance_task_id = self._progress.add_task(
-            "Saving train instances", total=float("inf"), start=False
+
+        self._task_progress = CustomProgress(
+            "[progress.description]{task.description}",
+            SpinnerColumn(),
+            BatchesProcessedColumn(),
         )
-        self._save_valid_instance_task_id = self._progress.add_task(
-            "Saving valid instances",
-            total=float("inf"),
-            start=False,
-            visible=self._valid_db is not None,
+
+        self._output_dbs: dict[Task, dict[DatasetSplit, DatasetDb]] = {
+            task: {
+                split: DatasetDb(
+                    output_dir_path.joinpath(get_db_file_name(task, split)),
+                    readonly=False,
+                    batch_size=write_db_batch_size,
+                )
+                for split in PRETRAIN_DATASET_SPLITS
+            }
+            for task in Task
+        }
+
+        self._overall_task_id = self._overall_progress.add_task(
+            "Instances processed", total=self._dataset.end, start=False
         )
+
+        self._task_ids: dict[Task, dict[DatasetSplit, TaskID]] = {
+            task: {
+                split: self._task_progress.add_task(
+                    f"{task.value} ({split.name})",
+                    total=float("inf"),
+                    start=False,
+                )
+                for split in PRETRAIN_DATASET_SPLITS
+            }
+            for task in Task
+        }
 
     def run(self) -> None:
-        """Run the preparation process."""
-        with self._progress, self._train_db:  # noqa: WPS316
-            self._progress.start_task(self._save_train_instance_task_id)
+        """Run the preparation process and save all the DBs."""
+        with self._display_progress():
+            self._start_tasks()
+            self.process_instances()
 
-            if self._valid_db is None:
-                self.process_train_instances()
+        self._close_all_dbs()
 
-            elif self._valid_db is not None:
-                self._progress.start_task(self._save_valid_instance_task_id)
-
-                with self._valid_db:
-                    self.process_train_valid_instances()
-
-    def process_train_instances(self) -> None:
-        """Process all the training instances."""
+    def process_instances(self) -> None:
+        """Process all the instances and make sure to save to the correct DB."""
         for batch in self._loader:
-            for source_idx, pretrain_instance, is_train in batch:
+            for source_idx, pretrain_instance, is_train, task in batch:
                 self.add_index_to_counter(source_idx)
 
                 if is_train:
-                    self.add_instance_to_train_db(pretrain_instance)
-
-    def process_train_valid_instances(self) -> None:
-        """Process both training and validation instances."""
-        if self._valid_db is None:
-            raise AssertionError(
-                "`self.valid_db` is None, meaning it's not been initialised. Check the params used when setting up the class."
-            )
-
-        for batch in self._loader:
-            for source_idx, pretrain_instance, is_train in batch:
-                self.add_index_to_counter(source_idx)
-
-                if is_train:
-                    self.add_instance_to_train_db(pretrain_instance)
+                    self.add_instance_to_db(pretrain_instance, task, DatasetSplit.train)
                 else:
-                    self.add_instance_to_valid_db(pretrain_instance)
+                    self.add_instance_to_db(pretrain_instance, task, DatasetSplit.valid)
 
-    def add_instance_to_train_db(self, pretrain_instance: bytes) -> None:
-        """Add the pretrain instance to the training db.
+    def add_instance_to_db(
+        self, pretrain_instance: bytes, task: Task, dataset_split: DatasetSplit
+    ) -> None:
+        """Append the instance to the DB for the given task/split.
 
-        The pretrain instance has already been compressed into bytes for the DatasetDb.
+        The progress bar is used directly to get the next data index for the DB.
         """
-        data_idx = self._progress.tasks[self._save_train_instance_task_id].completed
+        progress_task_id = self._task_ids[task][dataset_split]
+
+        # Get the data_idx from the progress bar and create the key
+        data_idx = int(self._task_progress.tasks[progress_task_id].completed)
         key = (data_idx, f"{self._example_id_prefix}{data_idx}")
 
-        self._train_db[key] = pretrain_instance
+        self._output_dbs[task][dataset_split][key] = pretrain_instance
 
-        self._progress.advance(self._save_train_instance_task_id)
-
-    def add_instance_to_valid_db(self, pretrain_instance: bytes) -> None:
-        """Add the pretrain instance to the validation db.
-
-        The pretrain instance has already been compressed into bytes for the DatasetDb.
-        """
-        data_idx = self._progress.tasks[self._save_valid_instance_task_id].completed
-        key = (data_idx, f"{self._example_id_prefix}{data_idx}")
-
-        self._valid_db[key] = pretrain_instance
-
-        self._progress.advance(self._save_valid_instance_task_id)
+        self._task_progress.advance(progress_task_id)
 
     def add_index_to_counter(self, source_idx: int) -> None:
         """Add the index of the source instance to the counter and update the progress bar."""
@@ -240,6 +246,35 @@ class PreparePretrainInstancesDb:
         self._instance_counter[source_idx] += 1
 
         if should_update_progress_bar:
-            self._progress.update(
-                self._get_instance_task_id, completed=len(self._instance_counter.keys())
+            self._overall_progress.update(
+                self._overall_task_id, completed=len(self._instance_counter.keys())
             )
+
+    def _start_tasks(self) -> None:
+        """Start all the progress tasks."""
+        self._overall_progress.start_task(self._overall_task_id)
+
+        for task_id_per_split in self._task_ids.values():
+            for task_id in task_id_per_split.values():
+                self._task_progress.start_task(task_id)
+
+    def _close_all_dbs(self) -> None:
+        """Close all the DBs.
+
+        This makes sure that everything has been saved and closed properly.
+        """
+        for task_dbs in self._output_dbs.values():
+            for db in task_dbs.values():
+                db.close()
+
+    def _display_progress(self) -> Live:
+        """Return a rich `Live` object to display the progress bars.
+
+        This should be used as a context manager.
+        """
+        progress_group = Group(
+            Panel(self._task_progress),
+            self._overall_progress,
+        )
+
+        return Live(progress_group)

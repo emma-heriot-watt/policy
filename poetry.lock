@@ -553,7 +553,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "emma-datasets"
-version = "0.11.14"
+version = "0.12.0"
 description = ""
 category = "main"
 optional = false
@@ -566,7 +566,7 @@ numpy = "^1.22.3"
 orjson = "^3.6.7"
 overrides = "^6.1.0"
 Pillow = "^9.0.1"
-py7zr = "^0.18.1"
+py7zr = "^0.18.3"
 pydantic = {version = "^1.8.2", extras = ["dotenv"]}
 rich = "^12.0.1"
 
@@ -577,7 +577,7 @@ torch = ["torch (>=1.11.0,<2.0.0)"]
 type = "git"
 url = "https://github.com/emma-simbot/datasets"
 reference = "main"
-resolved_reference = "56d41ce75aa0405f74a62700ee382fd8c31e09a1"
+resolved_reference = "b795cdd722b99cfa479cece8167096b0e478a7cc"
 
 [[package]]
 name = "entrypoints"

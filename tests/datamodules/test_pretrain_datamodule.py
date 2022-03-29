@@ -29,7 +29,7 @@ def test_instances_convert_to_pretrain_instances(instances_db_path: Path) -> Non
 
 
 def test_prepare_data_does_not_fail(
-    tmp_path: Path, instances_db_path: Path, enabled_tasks_per_modality: dict[str, list[str]]
+    pretrain_db_dir_path: Path, enabled_tasks_per_modality: dict[str, list[str]]
 ) -> None:
     """Make sure preparing the data works.
 
@@ -38,15 +38,13 @@ def test_prepare_data_does_not_fail(
     API.
     """
     dm = EmmaPretrainDataModule(
-        tmp_path.joinpath("pretrain_train.db"),
-        tmp_path.joinpath("pretrain_valid.db"),
-        instances_db_path,
-        force_prepare_data=True,
+        pretrain_db_dir_path,
         load_valid_data=True,
         enabled_tasks=enabled_tasks_per_modality,
     )
 
     dm.prepare_data()
+    dm.setup()
 
 
 def test_dataloader_creates_batches(emma_pretrain_datamodule: EmmaPretrainDataModule) -> None:

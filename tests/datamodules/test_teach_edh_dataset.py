@@ -1,7 +1,9 @@
+import itertools
 from pathlib import Path
 
 from emma_datasets.datamodels import DatasetSplit, TeachEdhInstance
 from emma_datasets.db import DatasetDb
+from filelock import FileLock
 from pytest_cases import fixture
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem
@@ -16,17 +18,19 @@ def teach_edh_dataset(
     emma_tokenizer: EmmaTokenizer,
 ) -> TeachEdhDataset:
     """Merge all the TEACh EDH instances into a single DatasetDB to test all the instances."""
-
     output_db_path = cached_db_dir_path.joinpath("teach_merged.db")
 
-    if not output_db_path.exists():
-        output_db = DatasetDb(output_db_path, readonly=False)
+    with FileLock(cached_db_dir_path.joinpath("teach_edh_dataset.lock")):
 
-        with output_db:
-            data_idx = 0
-            for teach_db_path in teach_edh_instances_db.values():
-                teach_split_db = DatasetDb(teach_db_path)
-                for _, _, instance in teach_split_db:
+        if not output_db_path.exists():
+            output_db = DatasetDb(output_db_path, readonly=False)
+            teach_split_dbs = itertools.chain.from_iterable(
+                [DatasetDb(db_dir) for db_dir in teach_edh_instances_db.values()]
+            )
+
+            with output_db:
+                data_idx = 0
+                for _, _, instance in teach_split_dbs:
                     output_db[(data_idx, f"teach_edh_{data_idx}")] = instance
                     data_idx += 1
 

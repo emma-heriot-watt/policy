@@ -7,6 +7,7 @@ from emma_datasets.datamodels import DatasetSplit
 from emma_datasets.datamodels.datasets.teach import TeachEdhInstance
 from emma_datasets.db import DatasetDb
 from emma_datasets.parsers.instance_creators import TeachEdhInstanceCreator
+from filelock import FileLock
 from pytest_cases import fixture
 from pytest_mock import MockerFixture
 
@@ -49,27 +50,29 @@ def teach_edh_instances_db(
         new_callable=TeachEdhInstanceFeaturesPathPropertyMock,
     )
 
-    all_instance_dbs: dict[DatasetSplit, Path] = {}
-
     teach_dataset_splits = {DatasetSplit.train, DatasetSplit.valid_seen, DatasetSplit.valid_unseen}
 
-    for dataset_split in teach_dataset_splits:
-        db_path = cached_db_dir_path.joinpath(f"teach_{dataset_split.name}.db")
-        all_instance_dbs[dataset_split] = db_path
+    all_instance_dbs: dict[DatasetSplit, Path] = {
+        dataset_split: cached_db_dir_path.joinpath(f"teach_{dataset_split.name}.db")
+        for dataset_split in teach_dataset_splits
+    }
 
-        if not db_path.exists():
-            progress = get_progress()
+    with FileLock(cached_db_dir_path.joinpath("teach_edh_dataset_splits.lock")):
+        for dataset_split, db_path in all_instance_dbs.items():
+            if not db_path.exists():
+                progress = get_progress()
+                instance_creator = TeachEdhInstanceCreator(progress)
 
-            instance_creator = TeachEdhInstanceCreator(progress)
-            instance_iterator = instance_creator(
-                input_data=fixtures_root.joinpath("teach_edh", dataset_split.name).glob("*.json"),
-                progress=progress,
-            )
+                instance_iterator = instance_creator(
+                    input_data=fixtures_root.joinpath("teach_edh", dataset_split.name).glob(
+                        "*.json"
+                    ),
+                    progress=progress,
+                )
+                db = DatasetDb(db_path, readonly=False)
 
-            db = DatasetDb(db_path, readonly=False)
-
-            with db:
-                for idx, instance in enumerate(instance_iterator):
-                    db[(idx, f"teach_edh_{idx}")] = instance
+                with db:
+                    for idx, instance in enumerate(instance_iterator):
+                        db[(idx, f"teach_edh_{idx}")] = instance  # noqa: WPS220
 
     return all_instance_dbs

@@ -40,6 +40,7 @@ class EmmaDatasetItem:
     task: torch.Tensor
     scene_temporal_ids: Optional[torch.Tensor] = None
     object_temporal_ids: Optional[torch.Tensor] = None
+    target_temporal_ids: Optional[torch.Tensor] = None
 
 
 @dataclass
@@ -63,6 +64,7 @@ class EmmaDatasetPadding:
     visual_token_ids: int = 1
     scene_temporal_ids: int = 0
     object_temporal_ids: int = 0
+    target_temporal_ids: int = 0
     task: int = -1
 
 
@@ -86,3 +88,4 @@ class EmmaDatasetBatch:
     task: torch.Tensor
     attention_mask: torch.Tensor
     global_attention_mask: torch.Tensor
+    encoder_decoder_mask: Optional[torch.Tensor] = None

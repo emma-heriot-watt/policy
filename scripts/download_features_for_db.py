@@ -30,7 +30,8 @@ class FixtureDownload:
         self._db = DatasetDb(input_db_path)
 
         self._instance_model: BaseInstance = Instance
-        if instance_type == "teach_edh":
+        self.instance_type = instance_type
+        if self.instance_type == "teach_edh":
             self._instance_model = TeachEdhInstance
 
         self._s3 = boto3.client("s3")
@@ -56,13 +57,19 @@ class FixtureDownload:
 
                 self._download_file(s3_path, local_feature_path)
 
+                if self.instance_type == "teach_edh":
+                    local_feature_path = instance.future_features_path
+                    local_feature_path.parent.mkdir(parents=True, exist_ok=True)
+                    s3_path = self._get_paths(local_feature_path)
+                    self._download_file(s3_path, local_feature_path)
+
+                self._progress.advance(self._task_id)
+
     def _download_file(self, s3_path: Path, local_path: Path) -> None:
         try:
             self._s3.download_file("emma-simbot", str(s3_path), str(local_path))
         except botocore.exceptions.ClientError:
             log.error(f"Failed to download {local_path}")
-
-        self._progress.advance(self._task_id)
 
     def _get_paths(self, local_feature_path: Path) -> Path:
         """Get the paths as is, without needing any special handling."""

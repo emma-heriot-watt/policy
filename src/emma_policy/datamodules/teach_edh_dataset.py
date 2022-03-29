@@ -149,6 +149,15 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
         object_temporal_ids.masked_fill_(object_temporal_ids <= 0, -1)
         return scene_temporal_ids, object_temporal_ids
 
+    def _make_target_temporal_ids(self, target_tokens: torch.Tensor) -> torch.Tensor:
+        """Get future indices for target tokens."""
+        target_temporal_ids = torch.zeros_like(target_tokens)
+        separator_indices = torch.where(target_tokens == self.tokenizer.sep_token_id)[0]
+        target_temporal_ids[separator_indices + 1] = 1
+        # Increment the frame id after each observed separator token
+        target_temporal_ids = torch.cumsum(target_temporal_ids, -1) + 1
+        return target_temporal_ids
+
     def _prepare_visual_input(
         self, instance: TeachEdhInstance
     ) -> tuple[EmmaVisualFeatures, torch.Tensor, torch.Tensor]:

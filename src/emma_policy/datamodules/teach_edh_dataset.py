@@ -76,11 +76,13 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
 
     def _get_input_text_from_instance(self, instance: TeachEdhInstance) -> str:
         """Get the input text from a TEACh EDH instance."""
+        dialog_history = self._get_concatenated_dialog_history(instance)
         actions = self._convert_actions_to_tokenizable_strings(
             instance.extended_driver_action_history,
             truncation_side="left",  # keep most recent actions
         )
-        return " ".join(actions)
+        input_text = dialog_history + actions
+        return " ".join(input_text)
 
     def _get_target_text_from_instance(self, instance: TeachEdhInstance) -> str:
         """Get the target text from a TEACh EDH instance."""
@@ -90,27 +92,37 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
         )
         return " ".join(actions_as_list)
 
+    def _get_concatenated_dialog_history(
+        self, instance: TeachEdhInstance, cleaned: bool = True
+    ) -> list[str]:
+        """Get dialog history as a concatenated list of strings."""
+        if cleaned:
+            dialog_history = instance.dialog_history_cleaned
+        else:
+            dialog_history = instance.dialog_history
+
+        concat_dialog_history = [
+            f"<<{utterance.speaker.lower()}>> {utterance.utterance}"
+            for utterance in dialog_history
+            if utterance.utterance
+        ]
+        concat_dialog_history.append(self.tokenizer.sep_token)
+        return concat_dialog_history
+
     def _convert_actions_to_tokenizable_strings(
         self,
         actions: Union[list[ExtendedTeachDriverAction], list[TeachDriverAction]],
         truncation_side: Literal["left", "right"] = "left",
     ) -> list[str]:
-        """Convert actions from each TEACh EDH instance to tokenizable strings.
-
-        The speaker for the actions is equivalent to what was used in the ET baseline.
-        """
+        """Convert actions from each TEACh EDH instance to tokenizable strings."""
         language: list[str] = []
+
         # Make sure to keep the same actions as frames
         if self.max_frames:
             actions = self._truncate_frames(actions, truncation_side=truncation_side)
 
         for action in actions:
             language.extend(split_action_name(action.action_name))
-
-            if isinstance(action, ExtendedTeachDriverAction) and action.utterance:
-                prefixed_utterance = f"<<follower>> {action.utterance}"
-                language.append(prefixed_utterance)
-
             language.append(self.tokenizer.sep_token)
 
         return language

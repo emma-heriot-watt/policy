@@ -40,7 +40,7 @@ def main(args: Namespace) -> None:
 
     object_tokens = [f"<vis_token_{idx}>" for idx in range(1, args.num_visual_tokens + 1)]
     frame_tokens = [f"<frame_token_{idx}>" for idx in range(1, args.num_frame_tokens + 1)]
-    speaker_tokens = ["<<commander>>", "<<follower>>"]
+    speaker_tokens = ["<<commander>>", "<<driver>>"]
     new_special_tokens = object_tokens + frame_tokens + speaker_tokens
     tokenizer = tokenizer.train_new_from_iterator(
         itertools.chain(extract_task_prefix_strings(TASK_TEMPLATES_MAP), data_iterator),

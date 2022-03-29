@@ -62,13 +62,19 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         truncation_side: Literal["left", "right"] = "left",
         start_offset: int = 0,
         shuffle_frames: bool = False,
+        allow_empty: bool = False,
     ) -> EmmaVisualFeatures:
         """Get all the visual features from the given instance."""
         feature_dicts = self._load_feature_dicts(
             features_path=features_path,
             modality=modality,
             truncation_side=truncation_side,
+            allow_empty=allow_empty,
         )
+        if not len(feature_dicts) and allow_empty:
+            return EmmaVisualFeatures(
+                **{field.name: torch.empty(0) for field in dataclasses.fields(EmmaVisualFeatures)},
+            )
 
         object_features = []
         object_coordinates = []
@@ -183,6 +189,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         features_path: Path,
         modality: MediaType,
         truncation_side: Literal["left", "right"] = "left",
+        allow_empty: bool = False,
     ) -> list[dict[str, torch.Tensor]]:
         """Load the visual features from file and truncate them to max_frames."""
         if not features_path.exists():
@@ -196,7 +203,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         elif modality == MediaType.image:
             feature_dicts = [torch.load(features_path)]
 
-        if not feature_dicts:
+        if not feature_dicts and not allow_empty:
             raise AssertionError("No dict of features have been loaded.")
 
         if self.max_frames:
@@ -211,7 +218,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         concat_features = {
             field.name: torch.cat(
                 [getattr(visual_features, field.name) for visual_features in visual_features_list],
-            )
+            ).type(getattr(visual_features_list[-1], field.name).dtype)
             for field in dataclasses.fields(EmmaVisualFeatures)
         }
         return EmmaVisualFeatures(**concat_features)

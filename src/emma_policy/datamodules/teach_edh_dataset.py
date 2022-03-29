@@ -158,6 +158,7 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
             features_path=instance.features_path,
             modality=instance.modality,
             truncation_side="left",
+            allow_empty=True,
         )
         len_history = visual_features.scene_features.shape[0]
         # Load future visual features

@@ -56,6 +56,28 @@ class TeachEdhInstanceFeaturesPathPropertyMock(PropertyMock):  # type: ignore[mi
         return self()
 
 
+class TeachEdhInstanceFutureFeaturesPathPropertyMock(PropertyMock):  # type: ignore[misc]
+    """Mock the `future_features_path` property within the TeachEdhInstance.
+
+    The future features path within each instance is derived automatically and NOT hard-coded into
+    the class. Therefore to be able to test the instances properly, we need to override the
+    property and return something else.
+    """
+
+    def __get__(self, obj: TeachEdhInstance, obj_type: Any = None) -> Path:  # noqa: WPS110
+        """Get the future features path from the fixtures.
+
+        This updates the `return_value`, which is used by `unittest.Mock` to return a value.
+        """
+        dataset_index = obj._features_path.parts.index("datasets")
+        self.return_value = Path(
+            "storage",
+            "fixtures",
+            *obj._future_features_path.parts[dataset_index:],
+        )
+        return self()
+
+
 @fixture(scope="session")
 def teach_edh_instances_db(
     cached_db_dir_path: Path, fixtures_root: Path, session_mocker: MockerFixture
@@ -69,6 +91,12 @@ def teach_edh_instances_db(
         TeachEdhInstance,
         "features_path",
         new_callable=TeachEdhInstanceFeaturesPathPropertyMock,
+    )
+
+    session_mocker.patch.object(
+        TeachEdhInstance,
+        "future_features_path",
+        new_callable=TeachEdhInstanceFutureFeaturesPathPropertyMock,
     )
 
     teach_dataset_splits = {DatasetSplit.train, DatasetSplit.valid_seen, DatasetSplit.valid_unseen}

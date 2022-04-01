@@ -10,6 +10,7 @@ class EmmaVisualFeatures:
 
     scene_features: torch.Tensor
     scene_coordinates: torch.Tensor
+    object_classes: torch.Tensor
     object_features: torch.Tensor
     object_coordinates: torch.Tensor
     visual_token_ids: torch.Tensor
@@ -89,3 +90,7 @@ class EmmaDatasetBatch:
     attention_mask: torch.Tensor
     global_attention_mask: torch.Tensor
     encoder_decoder_mask: Optional[torch.Tensor] = None
+
+    def __len__(self) -> int:
+        """Returns the batch size."""
+        return self.attention_mask.shape[0]

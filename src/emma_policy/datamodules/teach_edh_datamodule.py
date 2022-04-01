@@ -26,6 +26,7 @@ class TeachEdhDataModule(LightningDataModule):
         max_frames: int = 0,
         tokenizer_truncation_side: Literal["left", "right"] = "right",
     ) -> None:
+        super().__init__()
         if isinstance(teach_edh_train_db_file, str):
             teach_edh_train_db_file = Path(teach_edh_train_db_file)
         if isinstance(teach_edh_valid_seen_db_file, str):

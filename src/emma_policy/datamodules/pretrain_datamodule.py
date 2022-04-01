@@ -40,6 +40,7 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         enabled_tasks: Optional[EnabledTasksPerModality] = None,
         tokenizer_truncation_side: str = "right",
     ) -> None:
+        super().__init__()
         self.model_name = model_name
         self.mlm_probability = mlm_probability
 

@@ -1,4 +1,6 @@
-from typing import Literal, Union
+import json
+from pathlib import Path
+from typing import Any, Literal, Union
 
 import torch
 from emma_datasets.datamodels.datasets.teach import (
@@ -7,7 +9,9 @@ from emma_datasets.datamodels.datasets.teach import (
     TeachEdhInstance,
 )
 from overrides import overrides
+from transformers import PreTrainedTokenizer
 
+from emma_policy.common.settings import Settings
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
 from emma_policy.datamodules.pretrain_dataset import split_action_name
@@ -17,6 +21,10 @@ from emma_policy.utils import get_logger
 
 logger = get_logger(__name__)
 
+BBOX_DIAMETER = 10
+BBOX_RADIUS = BBOX_DIAMETER / 2
+AI2THOR_CLASS_DICT_FILE = Settings().paths.constants.joinpath("ai2thor_labels.json")
+
 
 class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
     """Dataset for EDH instances from TEACh.
@@ -24,6 +32,16 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
     Each instance is loaded from the DatasetDb file and converted to an instance of
     `EmmaDatasetItem` before being returned.
     """
+
+    def __init__(
+        self, dataset_db_path: Path, tokenizer: PreTrainedTokenizer, max_frames: int = 0
+    ) -> None:
+        super().__init__(
+            dataset_db_path=dataset_db_path, tokenizer=tokenizer, max_frames=max_frames
+        )
+
+        with open(AI2THOR_CLASS_DICT_FILE) as in_file:
+            self.ai2thor_label_mapping = json.load(in_file)
 
     @overrides(check_signature=False)
     def __getitem__(self, index: int) -> EmmaDatasetItem:
@@ -38,18 +56,17 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
         self, instance: TeachEdhInstance
     ) -> EmmaDatasetItem:
         """Convert the EDH instance to an instance of `EmmaDatasetItem`."""
+        visual_features, scene_temporal_ids, object_temporal_ids = self._prepare_visual_input(
+            instance
+        )
         input_encoding = self.tokenizer(
-            self._get_input_text_from_instance(instance),
+            self._get_input_text_from_instance(instance, visual_features),
             return_tensors=self._return_tensor_type,
             truncation=True,
         )
         target_encoding = self.tokenizer(
-            self._get_target_text_from_instance(instance),
+            self._get_target_text_from_instance(instance, visual_features),
             return_tensors=self._return_tensor_type,
-        )
-
-        visual_features, scene_temporal_ids, object_temporal_ids = self._prepare_visual_input(
-            instance
         )
 
         return EmmaDatasetItem(
@@ -74,31 +91,45 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
             task=self._get_task_as_tensor(Task.action_execution),
         )
 
-    def _get_input_text_from_instance(self, instance: TeachEdhInstance) -> str:
+    def _get_input_text_from_instance(
+        self, instance: TeachEdhInstance, visual_features: EmmaVisualFeatures
+    ) -> str:
         """Get the input text from a TEACh EDH instance."""
         dialog_history = self._get_concatenated_dialog_history(instance)
-        actions = self._convert_actions_to_tokenizable_strings(
-            instance.extended_driver_action_history,
+
+        actions = self._convert_trajectory_to_text(
+            actions=instance.extended_driver_action_history,
+            feature_dicts=self._load_feature_dicts(
+                instance.features_path, instance.modality, allow_empty=True
+            ),
+            visual_features=visual_features,
             truncation_side="left",  # keep most recent actions
         )
-        input_text = " ".join(dialog_history + actions)
+
+        input_text = dialog_history + actions
+
         #  Add action execution task prefix
         input_text = self._get_random_template_for_task(Task.action_execution).format(
             instruction=input_text,
         )
         return input_text
 
-    def _get_target_text_from_instance(self, instance: TeachEdhInstance) -> str:
+    def _get_target_text_from_instance(
+        self, instance: TeachEdhInstance, visual_features: EmmaVisualFeatures
+    ) -> str:
         """Get the target text from a TEACh EDH instance."""
-        actions_as_list = self._convert_actions_to_tokenizable_strings(
-            instance.driver_actions_future,
+        return self._convert_trajectory_to_text(
+            actions=instance.driver_actions_future,
+            feature_dicts=self._load_feature_dicts(
+                instance.future_features_path, instance.modality, allow_empty=True
+            ),
+            visual_features=visual_features,
             truncation_side="right",  # keep first actions
         )
-        return " ".join(actions_as_list)
 
     def _get_concatenated_dialog_history(
         self, instance: TeachEdhInstance, cleaned: bool = True
-    ) -> list[str]:
+    ) -> str:
         """Get dialog history as a concatenated list of strings."""
         if cleaned:
             dialog_history = instance.dialog_history_cleaned
@@ -111,25 +142,67 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
             if utterance.utterance
         ]
         concat_dialog_history.append(self.tokenizer.sep_token)
-        return concat_dialog_history
+        return " ".join(concat_dialog_history)
 
-    def _convert_actions_to_tokenizable_strings(
+    def _convert_trajectory_to_text(
         self,
         actions: Union[list[ExtendedTeachDriverAction], list[TeachDriverAction]],
+        feature_dicts: list[dict[str, Any]],
+        visual_features: EmmaVisualFeatures,
         truncation_side: Literal["left", "right"] = "left",
-    ) -> list[str]:
-        """Convert actions from each TEACh EDH instance to tokenizable strings."""
-        language: list[str] = []
-
-        # Make sure to keep the same actions as frames
+    ) -> str:
+        """Convert a list of driver actions to a single string."""
         if self.max_frames:
+            feature_dicts = self._truncate_frames(feature_dicts, truncation_side=truncation_side)
             actions = self._truncate_frames(actions, truncation_side=truncation_side)
 
-        for action in actions:
-            language.extend(split_action_name(action.action_name))
-            language.append(self.tokenizer.sep_token)
+        trajectory = []
 
-        return language
+        for action_idx, action in enumerate(actions):
+            trajectory.extend(split_action_name(action.action_name))
+
+            if action.obj_interaction_action == 1:
+                ground_truth_centroid_coord = (
+                    action.x * feature_dicts[action_idx]["width"],
+                    action.y * feature_dicts[action_idx]["height"],
+                )
+                ground_truth_bbox = torch.tensor(
+                    [
+                        ground_truth_centroid_coord[0] - BBOX_RADIUS,  # x1
+                        ground_truth_centroid_coord[1] - BBOX_RADIUS,  # y1
+                        ground_truth_centroid_coord[0] + BBOX_RADIUS,  # x2
+                        ground_truth_centroid_coord[1] + BBOX_RADIUS,  # y2
+                    ]
+                )
+                # normalized coordinates
+                ground_truth_bbox[[0, 2]] /= feature_dicts[action_idx]["width"]
+                ground_truth_bbox[[1, 3]] /= feature_dicts[action_idx]["height"]
+
+                # Get the index of the objects from the current frame. Frames start from 1.
+                frame_token = self.tokenizer.convert_tokens_to_ids(f"<frame_token_{action_idx+1}>")
+                frame_objects = visual_features.object_frame_tokens == frame_token
+
+                matched_index, gt_flags = self._best_match_features(
+                    ground_truth_bbox=ground_truth_bbox.unsqueeze(0),
+                    object_coordinates_bbox=visual_features.object_coordinates[frame_objects],
+                    threshold=0,  # this is set to 0 to filter out boxes not matching at all
+                )
+
+                # we first add the class of the object we want to interact with
+                trajectory.append(action.object_name.lower())
+
+                # then if we have a matching bounding box, we add the visual token as well
+                found_matched_object = gt_flags[0]
+                if found_matched_object:
+                    trajectory.append(
+                        self.tokenizer.decode(
+                            visual_features.visual_token_ids[frame_objects][matched_index[0]]
+                        )
+                    )
+
+            trajectory.append(self.tokenizer.sep_token)
+
+        return " ".join(trajectory)
 
     def _make_image_temporal_ids(
         self, feature_len_history: int, feature_len_future: int, object_frame_tokens: torch.Tensor

@@ -56,7 +56,8 @@ def test_dataset_creates_input_text_without_errors(teach_edh_dataset: TeachEdhDa
             instance_str: str = teach_edh_dataset.db[idx]
 
         instance = TeachEdhInstance.parse_raw(instance_str)
-        input_text = teach_edh_dataset._get_input_text_from_instance(instance)
+        visual_features, _, _ = teach_edh_dataset._prepare_visual_input(instance)
+        input_text = teach_edh_dataset._get_input_text_from_instance(instance, visual_features)
 
         assert input_text
         assert isinstance(input_text, str)
@@ -71,43 +72,48 @@ def test_dataset_creates_target_text_without_errors(teach_edh_dataset: TeachEdhD
             instance_str: str = teach_edh_dataset.db[idx]
 
         instance = TeachEdhInstance.parse_raw(instance_str)
-        target_text = teach_edh_dataset._get_target_text_from_instance(instance)
+        visual_features, _, _ = teach_edh_dataset._prepare_visual_input(instance)
+        target_text = teach_edh_dataset._get_target_text_from_instance(instance, visual_features)
 
         assert target_text
         assert isinstance(target_text, str)
 
 
-def test_utterances_are_immediately_after_the_text_action(
+@parametrize("unknown_visual_token_threshold", [0.5])
+def test_parsed_visual_tokens_are_not_all_unknown(
     teach_edh_dataset: TeachEdhDataset,
+    emma_tokenizer: EmmaTokenizer,
+    unknown_visual_token_threshold: float,
 ) -> None:
-    """Test the utterances are properly included within the input text.
+    total_num_instances = len(teach_edh_dataset.db)
 
-    This tests verifies the `_convert_actions_to_tokenizable_strings` private method, to verify
-    that when the action history from each is given, the utterances are also included within the
-    output.
-    """
-    with teach_edh_dataset.db:
-        instance_str: str = teach_edh_dataset.db[0]
-    instance = TeachEdhInstance.parse_raw(instance_str)
+    for idx in range(total_num_instances):
+        with teach_edh_dataset.db:
+            instance_str: str = teach_edh_dataset.db[idx]
 
-    # Verify that the driver has dialogue actions within this instance
-    assert instance._driver_dialog_history
+        instance = TeachEdhInstance.parse_raw(instance_str)
+        visual_features, _, _ = teach_edh_dataset._prepare_visual_input(instance)
 
-    input_actions_list = teach_edh_dataset._convert_actions_to_tokenizable_strings(
-        instance.extended_driver_action_history
-    )
+        # Checking the unknowns in the action history
+        input_text = teach_edh_dataset._get_input_text_from_instance(instance, visual_features)
+        target_text = teach_edh_dataset._get_target_text_from_instance(instance, visual_features)
 
-    utterance_counter = 0
-
-    for idx, action_string in enumerate(input_actions_list):
-
-        if action_string == "Text":
-            assert input_actions_list[idx + 1].startswith("<<")
-            assert input_actions_list[idx + 1].endswith(
-                instance._driver_dialog_history[utterance_counter]
+        all_interaction_actions = list(
+            filter(
+                lambda action: action.obj_interaction_action == 1,
+                itertools.chain(instance.driver_action_history, instance.driver_actions_future),
             )
+        )
 
-            utterance_counter += 1
+        # Get the maximum number of visual tokens
+        max_visual_token_count = len(all_interaction_actions)
+
+        parsed_unk_token_count = input_text.count(emma_tokenizer.unk_token) + target_text.count(
+            emma_tokenizer.unk_token
+        )
+
+        if parsed_unk_token_count > max_visual_token_count * unknown_visual_token_threshold:
+            raise AssertionError("The number of unknowns in the `input_text` is too high.")
 
 
 @parametrize(

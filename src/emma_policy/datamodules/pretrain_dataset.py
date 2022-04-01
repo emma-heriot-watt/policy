@@ -1,10 +1,10 @@
 import random
 from pathlib import Path
 from re import sub
-from typing import Callable, Optional
+from typing import Any, Callable, Literal, Optional
 
 import torch
-from emma_datasets.datamodels import DatasetMetadata, MediaType, Region
+from emma_datasets.datamodels import AlfredLowAction, DatasetMetadata, MediaType, Region
 from transformers import PreTrainedTokenizer
 
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
@@ -60,16 +60,16 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         tokenizer: PreTrainedTokenizer,
         mlm_probability: float = 0.3,
         max_frames: int = 0,
-        match_threshold: float = 0.5,
+        bbox_match_threshold: float = 0.5,
     ) -> None:
         super().__init__(
             dataset_db_path=dataset_db_path,
             tokenizer=tokenizer,
             max_frames=max_frames,
+            bbox_match_threshold=bbox_match_threshold,
         )
 
         self.mlm_probability = mlm_probability
-        self.match_threshold = match_threshold
 
         self.task_process_map: dict[
             Task, Callable[[PretrainInstance], Optional[EmmaDatasetItem]]
@@ -504,7 +504,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             features_path=instance.features_path, modality=instance.modality
         )
 
-        target_text = self._convert_trajectory_to_text(instance, visual_features)
+        target_text = self._convert_trajectory_to_text(
+            actions=instance.trajectory.low_level_actions,
+            feature_dicts=self._load_feature_dicts(instance.features_path, instance.modality),
+            visual_features=visual_features,
+        )
 
         target_encoding = self.tokenizer.encode_plus(
             target_text, return_tensors=self._return_tensor_type, truncation=False
@@ -561,8 +565,13 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                     features_path=other_instance.features_path, modality=other_instance.modality
                 )
                 other_action_trajectory = self._convert_trajectory_to_text(
-                    other_instance, other_visual_features
+                    actions=other_instance.trajectory.low_level_actions,
+                    feature_dicts=self._load_feature_dicts(
+                        other_instance.features_path, other_instance.modality
+                    ),
+                    visual_features=other_visual_features,
                 )
+
                 input_text_candidates = "{input_text} {sep_token} {action_trajectory}".format(
                     input_text=input_text_candidates,
                     sep_token=self.tokenizer.sep_token,
@@ -591,7 +600,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                 rand_idx = int(len(self.db) * random.random())
                 input_text = self.vtm_negative_candidate(rand_idx, dataset_id)
         elif instance.trajectory is not None:
-            action_trajectory = self._convert_trajectory_to_text(instance, visual_features)
+            action_trajectory = self._convert_trajectory_to_text(
+                actions=instance.trajectory.low_level_actions,
+                feature_dicts=self._load_feature_dicts(instance.features_path, instance.modality),
+                visual_features=visual_features,
+            )
             input_text = "{input_text} {sep_token} {action_trajectory}".format(
                 input_text=input_text,
                 sep_token=self.tokenizer.sep_token,
@@ -643,7 +656,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             ordered_features = self._load_visual_features(
                 features_path=instance.features_path, modality=instance.modality
             )
-            action_trajectory = self._convert_trajectory_to_text(instance, ordered_features)
+            action_trajectory = self._convert_trajectory_to_text(
+                actions=instance.trajectory.low_level_actions,
+                feature_dicts=self._load_feature_dicts(instance.features_path, instance.modality),
+                visual_features=ordered_features,
+            )
             input_text = "{input_text} {sep_token} {action_trajectory}".format(
                 input_text=input_text,
                 sep_token=self.tokenizer.sep_token,
@@ -728,19 +745,24 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         matched_index, gt_flags = self._best_match_features(
             ground_truth_bbox=torch.tensor(gt_bbox),
             object_coordinates_bbox=visual_features.object_coordinates,
-            threshold=self.match_threshold,
+            threshold=self.bbox_match_threshold,
         )
         return matched_index, gt_flags
 
     def _convert_trajectory_to_text(
-        self, instance: PretrainInstance, visual_features: EmmaVisualFeatures
+        self,
+        actions: list[AlfredLowAction],
+        feature_dicts: list[dict[str, Any]],
+        visual_features: EmmaVisualFeatures,
+        truncation_side: Literal["left", "right"] = "left",
     ) -> str:
         """Convert an Alfred trajectory to text.
 
         If an object is not found, the `<unk>` token is used.
         """
-        feature_dicts = torch.load(instance.features_path)["frames"][-self.max_frames :]
-        actions = instance.trajectory.low_level_actions[-self.max_frames :]
+        if self.max_frames:
+            feature_dicts = self._truncate_frames(feature_dicts, truncation_side=truncation_side)
+            actions = self._truncate_frames(actions, truncation_side=truncation_side)
 
         trajectory = []
         for action_idx, action in enumerate(actions):
@@ -753,10 +775,10 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                 bbox_coord = action.discrete_action.args["bbox"]  # noqa: WPS529
                 gt_bbox = torch.tensor(
                     [
-                        bbox_coord[0] / feature_dicts[action_idx]["features"]["width"],
-                        bbox_coord[1] / feature_dicts[action_idx]["features"]["height"],
-                        bbox_coord[2] / feature_dicts[action_idx]["features"]["width"],
-                        bbox_coord[3] / feature_dicts[action_idx]["features"]["height"],
+                        bbox_coord[0] / feature_dicts[action_idx]["width"],
+                        bbox_coord[1] / feature_dicts[action_idx]["height"],
+                        bbox_coord[2] / feature_dicts[action_idx]["width"],
+                        bbox_coord[3] / feature_dicts[action_idx]["height"],
                     ]
                 )
 
@@ -767,7 +789,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                 matched_index, gt_flags = self._best_match_features(
                     ground_truth_bbox=gt_bbox.unsqueeze(0),
                     object_coordinates_bbox=visual_features.object_coordinates[frame_objects],
-                    threshold=self.match_threshold,
+                    threshold=self.bbox_match_threshold,
                 )
 
                 found_matched_object = gt_flags[0]

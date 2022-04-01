@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Literal, Optional, TypeVar
 
 import torch
-from emma_datasets.datamodels import BaseInstance, MediaType
+from emma_datasets.datamodels import MediaType
 from emma_datasets.db import DatasetDb
 from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizer
@@ -41,11 +41,13 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         dataset_db_path: Path,
         tokenizer: PreTrainedTokenizer,
         max_frames: int = 0,
+        bbox_match_threshold: float = 0.5,
     ) -> None:
         self.db = DatasetDb(dataset_db_path)
 
         self.tokenizer = tokenizer
         self.max_frames = max_frames
+        self.bbox_match_threshold = bbox_match_threshold
 
     def __len__(self) -> int:
         """Return the total number of instances within the database."""
@@ -55,7 +57,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         """Get a single instance from the dataset."""
         raise NotImplementedError
 
-    def _load_visual_features(
+    def _load_visual_features(  # noqa: WPS210
         self,
         features_path: Path,
         modality: MediaType,
@@ -77,6 +79,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
             )
 
         object_features = []
+        object_classes = []
         object_coordinates = []
         vis_tokens = []
         obj_frame_tokens = []
@@ -93,6 +96,9 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
 
         for frame_idx, feature_dict in enumerate(feature_dicts):
             object_features.append(feature_dict["bbox_features"])
+            object_classes.append(
+                torch.tensor([torch.argmax(proba, -1) for proba in feature_dict["bbox_probas"]])
+            )
             image_coords = feature_dict["bbox_coords"]
 
             # normalized coordinates
@@ -131,6 +137,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         emma_visual_features = EmmaVisualFeatures(
             object_attention_mask=torch.cat(object_attention_mask),
             object_coordinates=torch.cat(object_coordinates),
+            object_classes=torch.cat(object_classes),
             object_features=torch.cat(object_features),
             object_frame_tokens=torch.cat(obj_frame_tokens),
             scene_attention_mask=scene_attention_mask,
@@ -224,7 +231,11 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         return EmmaVisualFeatures(**concat_features)
 
     def _convert_trajectory_to_text(
-        self, instance: BaseInstance, visual_features: EmmaVisualFeatures
+        self,
+        actions: list[Any],
+        feature_dicts: list[dict[str, Any]],
+        visual_features: EmmaVisualFeatures,
+        truncation_side: Literal["left", "right"],
     ) -> str:
         """Convert an action trajectory from an instance to a text representation."""
         raise NotImplementedError

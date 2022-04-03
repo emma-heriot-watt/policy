@@ -149,6 +149,8 @@ class TrainModel:
 
         log.info(f"Instantiating model <{config.model._target_}>")  # noqa: WPS437
         model: LightningModule = hydra.utils.instantiate(config.model)
+        if config.model.initialization_checkpoint is not None:
+            model = model.load_from_checkpoint(config.model.initialization_checkpoint)
 
         callbacks: list[Callback] = []
         if "callbacks" in config:

@@ -4,7 +4,14 @@ from re import sub
 from typing import Any, Callable, Literal, Optional
 
 import torch
-from emma_datasets.datamodels import AlfredLowAction, DatasetMetadata, MediaType, Region
+from emma_datasets.datamodels import (
+    AlfredHighAction,
+    AlfredLowAction,
+    DatasetMetadata,
+    GenericActionTrajectory,
+    MediaType,
+    Region,
+)
 from transformers import PreTrainedTokenizer
 
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
@@ -505,7 +512,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         )
 
         target_text = self._convert_trajectory_to_text(
-            actions=instance.trajectory.low_level_actions,
+            trajectory=instance.trajectory,
             feature_dicts=self._load_feature_dicts(instance.features_path, instance.modality),
             visual_features=visual_features,
         )
@@ -565,7 +572,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                     features_path=other_instance.features_path, modality=other_instance.modality
                 )
                 other_action_trajectory = self._convert_trajectory_to_text(
-                    actions=other_instance.trajectory.low_level_actions,
+                    trajectory=other_instance.trajectory,
                     feature_dicts=self._load_feature_dicts(
                         other_instance.features_path, other_instance.modality
                     ),
@@ -601,7 +608,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                 input_text = self.vtm_negative_candidate(rand_idx, dataset_id)
         elif instance.trajectory is not None:
             action_trajectory = self._convert_trajectory_to_text(
-                actions=instance.trajectory.low_level_actions,
+                trajectory=instance.trajectory,
                 feature_dicts=self._load_feature_dicts(instance.features_path, instance.modality),
                 visual_features=visual_features,
             )
@@ -657,7 +664,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                 features_path=instance.features_path, modality=instance.modality
             )
             action_trajectory = self._convert_trajectory_to_text(
-                actions=instance.trajectory.low_level_actions,
+                trajectory=instance.trajectory,
                 feature_dicts=self._load_feature_dicts(instance.features_path, instance.modality),
                 visual_features=ordered_features,
             )
@@ -749,9 +756,16 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         )
         return matched_index, gt_flags
 
+    def _get_object_class_from_high_action(self, high_action: AlfredHighAction) -> str:
+        """Returns the class of the object that the agent is manipulating."""
+        if high_action.discrete_action.action == "PutObject":
+            return high_action.discrete_action.args[1]
+
+        return high_action.discrete_action.args[0]
+
     def _convert_trajectory_to_text(
         self,
-        actions: list[AlfredLowAction],
+        trajectory: GenericActionTrajectory[AlfredLowAction, AlfredHighAction],
         feature_dicts: list[dict[str, Any]],
         visual_features: EmmaVisualFeatures,
         truncation_side: Literal["left", "right"] = "left",
@@ -760,13 +774,21 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
         If an object is not found, the `<unk>` token is used.
         """
+        low_level_actions: list[AlfredLowAction] = trajectory.low_level_actions
+        high_level_actions: list[AlfredHighAction] = trajectory.high_level_actions
+
         if self.max_frames:
             feature_dicts = self._truncate_frames(feature_dicts, truncation_side=truncation_side)
-            actions = self._truncate_frames(actions, truncation_side=truncation_side)
+            low_level_actions = self._truncate_frames(
+                low_level_actions, truncation_side=truncation_side
+            )
 
         trajectory = []
-        for action_idx, action in enumerate(actions):
-
+        for action_idx, action in enumerate(low_level_actions):
+            # We only have one high-level action for the current trajectory
+            # because in the pretraining we are splitting the trajectories by subgoal
+            # (i.e., only one high-level action associated with it).
+            high_action = high_level_actions[0]
             # Split a cama case action to words
             trajectory.extend(split_action_name(action.api_action.action))
             # Match the object to a predicted bounding box
@@ -792,6 +814,12 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                     threshold=self.bbox_match_threshold,
                 )
 
+                # we first add the class of the object we want to interact with
+                # reference object is always the first argument of a discrete action
+                object_class = self._get_object_class_from_high_action(high_action)
+                trajectory.append(object_class.lower())
+
+                # then if we have a matching bounding box, we add the visual token as well
                 found_matched_object = gt_flags[0]
                 if found_matched_object:
                     trajectory.append(
@@ -799,8 +827,6 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                             visual_features.visual_token_ids[frame_objects][matched_index[0]]
                         )
                     )
-                else:
-                    trajectory.append(self.tokenizer.unk_token)
 
             trajectory.append(self.tokenizer.sep_token)
 

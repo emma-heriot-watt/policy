@@ -441,21 +441,6 @@ python-versions = "*"
 test = ["flake8 (==3.7.8)", "hypothesis (==3.55.3)"]
 
 [[package]]
-name = "convert-case"
-version = "1.1.1"
-description = "Convert between string cases with built-in case inference."
-category = "main"
-optional = false
-python-versions = ">= 3.6"
-
-[package.extras]
-all = ["mypy", "pylint", "bandit", "autoflake", "black", "isort", "assertpy", "coverage", "freezegun", "mock", "pytest", "pytest-mocha", "pytest-sugar", "tox", "bump2version", "quickdocs", "twine", "wheel"]
-formatters = ["autoflake", "black", "isort"]
-linters = ["mypy", "pylint", "bandit"]
-release = ["bump2version", "quickdocs", "twine", "wheel"]
-tests = ["assertpy", "coverage", "freezegun", "mock", "pytest", "pytest-mocha", "pytest-sugar", "tox"]
-
-[[package]]
 name = "coverage"
 version = "6.3.2"
 description = "Code coverage measurement for Python"
@@ -3054,7 +3039,7 @@ vision = ["pillow"]
 
 [[package]]
 name = "types-mock"
-version = "4.0.12"
+version = "4.0.13"
 description = "Typing stubs for mock"
 category = "dev"
 optional = false
@@ -3328,7 +3313,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "f948ad923a293d004a79a76bb8b2752d732541042f256ca06eac2c4a149784af"
+content-hash = "5551afd5c6ca0556823c033d8b35d5526a82ec86f7e5177882493160e28c201b"
 
 [metadata.files]
 absl-py = [
@@ -3727,10 +3712,6 @@ colorlog = [
 commonmark = [
     {file = "commonmark-0.9.1-py2.py3-none-any.whl", hash = "sha256:da2f38c92590f83de410ba1a3cbceafbc74fee9def35f9251ba9a971d6d66fd9"},
     {file = "commonmark-0.9.1.tar.gz", hash = "sha256:452f9dc859be7f06631ddcb328b6919c67984aca654e5fefb3914d54691aed60"},
-]
-convert-case = [
-    {file = "convert-case-1.1.1.tar.gz", hash = "sha256:bb215e7bcca830713225f74945f157754fcac8c72cde92899958af9e03b21cbe"},
-    {file = "convert_case-1.1.1-py3-none-any.whl", hash = "sha256:30557b4d186e74e4e2ff23f96e986844d9798c19f684dd5a40313012725348af"},
 ]
 coverage = [
     {file = "coverage-6.3.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:9b27d894748475fa858f9597c0ee1d4829f44683f3813633aaf94b19cb5453cf"},
@@ -5657,8 +5638,8 @@ transformers = [
     {file = "transformers-4.17.0.tar.gz", hash = "sha256:986fd59255460555b893a2b1827b9b8dd4e5cd6343e4409d18539208f69fb51b"},
 ]
 types-mock = [
-    {file = "types-mock-4.0.12.tar.gz", hash = "sha256:f8b1dbe128dc2d5aa038876a8b497dfd1a9405210a5eb3dc4b4757c2e254627c"},
-    {file = "types_mock-4.0.12-py3-none-any.whl", hash = "sha256:81f98e66bddde1b2a8d96c15c084d5d3ed96cf6137bca9ba8aabc6b6865b9ca7"},
+    {file = "types-mock-4.0.13.tar.gz", hash = "sha256:82c819a5ba384c47a65c148df062138f38790b61d7e6b40eaeb8f2179f28f842"},
+    {file = "types_mock-4.0.13-py3-none-any.whl", hash = "sha256:7c1db9f937109d96da14e5ed95c89920c3e4913eeff44a4adfea38eb335d0c99"},
 ]
 types-requests = [
     {file = "types-requests-2.27.15.tar.gz", hash = "sha256:2d371183c535208d2cc8fe7473d9b49c344c7077eb70302eb708638fb86086a8"},

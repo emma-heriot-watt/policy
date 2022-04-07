@@ -150,9 +150,9 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
 
         all_db_file_names = [
             get_db_file_name(task, dataset_split)
-            for task, dataset_split in zip(
+            for task, dataset_split in itertools.product(
                 itertools.chain.from_iterable(self._enabled_tasks.values()),
-                itertools.cycle(PRETRAIN_DATASET_SPLITS),
+                PRETRAIN_DATASET_SPLITS,
             )
         ]
 

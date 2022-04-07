@@ -52,6 +52,3 @@ def test_pretrain_model_forward_works_on_train_data(
     # Verify the loss exists and is not nan
     assert output.loss is not None
     assert not torch.isnan(output.loss)
-
-    # Verify the loss is using cross-entropy
-    assert output.loss.grad_fn.name().lower().startswith("nllloss")

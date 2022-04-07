@@ -2,10 +2,11 @@ from typing import Any, Optional, Union
 
 import torch
 from overrides import overrides
-from torch.nn import CrossEntropyLoss, Embedding, Linear
+from torch.nn import Embedding, Linear
 
 from emma_policy.models.configuration_emma import EmmaConfig
 from emma_policy.models.encoder_decoder_emma import EmmaDecoder, EmmaEncoder
+from emma_policy.models.loss_utils import average_task_loss
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
 from emma_policy.models.modeling_emma import EmmaModel, shift_tokens_right
 from emma_policy.models.pretrained_emma import EmmaPreTrainedModel
@@ -127,15 +128,18 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
 
         masked_lm_loss = None
         if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            masked_lm_loss = loss_fct(lm_logits.view(-1, self.config.vocab_size), labels.view(-1))
+            masked_lm_loss = average_task_loss(
+                labels=labels,
+                lm_logits=lm_logits,
+                vocab_size=self.config.vocab_size,
+            )
 
         if not return_dict:
             output = (lm_logits,) + outputs[1:]
             return ((masked_lm_loss,) + output) if masked_lm_loss is not None else output
 
         return EmmaSeq2SeqLMOutput(
-            loss=masked_lm_loss,
+            loss=masked_lm_loss,  # type: ignore[arg-type]
             logits=lm_logits,
             past_key_values=outputs.past_key_values,
             decoder_hidden_states=outputs.decoder_hidden_states,

@@ -92,6 +92,11 @@ class EmmaEncoder(LEDEncoder):  # noqa: WPS230
         else:
             self.embed_tokens = Embedding(config.vocab_size, embed_dim, self.padding_idx)
 
+        self.embed_text_positions = LEDLearnedPositionalEmbedding(
+            config.max_encoder_position_embeddings,
+            embed_dim,
+        )
+
         self.embed_positions = LEDLearnedPositionalEmbedding(
             config.max_encoder_position_embeddings,
             embed_dim,
@@ -112,7 +117,7 @@ class EmmaEncoder(LEDEncoder):  # noqa: WPS230
         self, token_ids: torch.Tensor, past_key_values_length: int = 0
     ) -> torch.Tensor:
         """Returns textual embeddings for the given token ids."""
-        embed_pos = self.embed_positions(token_ids.size())
+        embed_pos = self.embed_text_positions(token_ids.size())
 
         inputs_embeds = self.embed_tokens(token_ids)
         hidden_states = inputs_embeds + embed_pos

@@ -174,8 +174,14 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
     def itm(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the ITM task."""
+        if instance.caption is None:
+            raise AssertionError(
+                "Captions for this instance must exist. Make sure this instance is connected to the right task!"
+            )
+
         input_text = instance.caption.text
         target_text = "true"
+
         if random.random() < 0.5:  # noqa: WPS459
             target_text = "false"
             img_names = set(instance.dataset.values())
@@ -329,9 +335,13 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
     def captioning(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the captioning task."""
+        if instance.caption is None:
+            raise AssertionError(
+                "Captions for this instance must exist. Make sure this instance is connected to the right task!"
+            )
+
         source_text = self._get_random_template_for_task(Task.captioning)
         target_text = instance.caption.text
-
         input_encoding = self.tokenizer.encode_plus(
             source_text, return_tensors=self._return_tensor_type, truncation=True
         )
@@ -362,8 +372,13 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
     def vqa(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the VQA task."""
-        input_text = instance.qa.question
-        target_text = instance.qa.answer
+        if instance.qa_pair is None:
+            raise AssertionError(
+                "QA pair for this instance must exist. Make sure this instance is connected to the right task!"
+            )
+
+        input_text = instance.qa_pair.question
+        target_text = instance.qa_pair.answer
 
         # formats the masked caption using the corresponding task template
         source_text = self._get_random_template_for_task(Task.vqa).format(
@@ -470,6 +485,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
     def instruction_prediction(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the instruction prediction task."""
+        if instance.caption is None:
+            raise AssertionError(
+                "Captions for this instance must exist. Make sure this instance is connected to the right task!"
+            )
+
         source_text = self._get_random_template_for_task(Task.instruction_prediction)
         input_encoding = self.tokenizer.encode_plus(
             source_text, return_tensors=self._return_tensor_type, truncation=True
@@ -500,6 +520,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
     def action_execution(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the action execution task."""
+        if instance.caption is None:
+            raise AssertionError(
+                "Captions for this instance must exist. Make sure this instance is connected to the right task!"
+            )
+
         source_text = self._get_random_template_for_task(Task.action_execution).format(
             instruction=instance.caption.text,
         )
@@ -591,8 +616,12 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
     def vtm(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the VTM task."""
-        input_text = instance.caption.text
+        if instance.caption is None:
+            raise AssertionError(
+                "Captions for this instance must exist. Make sure this instance is connected to the right task!"
+            )
 
+        input_text = instance.caption.text
         visual_features = self._load_visual_features(
             features_path=instance.features_path, modality=instance.modality
         )
@@ -653,6 +682,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
     def fom(self, instance: PretrainInstance) -> EmmaDatasetItem:
         """Process the instance for the FOM task."""
+        if instance.caption is None:
+            raise AssertionError(
+                "Captions for this instance must exist. Make sure this instance is connected to the right task!"
+            )
+
         visual_features = self._load_visual_features(
             features_path=instance.features_path, modality=instance.modality, shuffle_frames=True
         )

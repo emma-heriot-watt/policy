@@ -1,7 +1,7 @@
 import itertools
 from typing import Callable, Iterator, Optional
 
-from emma_datasets.datamodels import Instance, MediaType
+from emma_datasets.datamodels import Caption, Instance, MediaType
 from emma_datasets.datamodels.region import Region
 
 from emma_policy.datamodules.pretrain_instances.datamodels import (
@@ -87,29 +87,51 @@ class PretrainInstanceCreator:
     @image_task_check
     def mlm(self) -> Iterator[PretrainInstance]:
         """Get pretrain instances for the MLM task."""
-        if self.instance.caption is None or Task.mlm not in self.enabled_tasks:
+        if Task.mlm not in self.enabled_tasks:
             return []
 
-        yield PretrainInstance(
-            caption=self.instance.caption, dataset=self.instance.dataset, task=Task.mlm
-        )
+        all_captions: list[PretrainInstance] = []
+
+        if self.instance.captions:
+            all_captions.extend(
+                PretrainInstance(caption=caption, dataset=self.instance.dataset, task=Task.mlm)
+                for caption in self.instance.captions
+            )
+
+        if self.instance.regions:
+            # due to overlapping regions, we make sure that they are unique
+            unique_captions = set()
+
+            for region in self.instance.regions:
+                if region.caption not in unique_captions:
+                    unique_captions.add(region.caption)
+                    all_captions.append(
+                        PretrainInstance(
+                            caption=Caption(text=region.caption),
+                            dataset=self.instance.dataset,
+                            task=Task.mlm,
+                        )
+                    )
+
+        yield from all_captions
 
     @property  # type: ignore[misc]
     @image_task_check
     def itm(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the ITM task."""
-        if self.instance.caption is None or Task.itm not in self.enabled_tasks:
+        if not self.instance.captions or Task.itm not in self.enabled_tasks:
             return []
 
-        yield PretrainInstance(
-            caption=self.instance.caption, dataset=self.instance.dataset, task=Task.itm
+        yield from (
+            PretrainInstance(caption=caption, dataset=self.instance.dataset, task=Task.itm)
+            for caption in self.instance.captions
         )
 
     @property  # type: ignore[misc]
     @image_task_check
     def visual_grounding(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the visual grounding task."""
-        if self.instance.regions is None or Task.visual_grounding not in self.enabled_tasks:
+        if not self.instance.regions or Task.visual_grounding not in self.enabled_tasks:
             return []
 
         yield PretrainInstance(
@@ -122,7 +144,7 @@ class PretrainInstanceCreator:
     @image_task_check
     def dense_captioning(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the dense captioning task."""
-        if self.instance.regions is None or Task.dense_captioning not in self.enabled_tasks:
+        if not self.instance.regions or Task.dense_captioning not in self.enabled_tasks:
             return []
 
         yield PretrainInstance(
@@ -182,24 +204,28 @@ class PretrainInstanceCreator:
     @image_task_check
     def captioning(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the captioning task."""
-        if self.instance.caption is None or Task.captioning not in self.enabled_tasks:
+        if not self.instance.captions or Task.captioning not in self.enabled_tasks:
             return []
 
-        yield PretrainInstance(
-            caption=self.instance.caption, dataset=self.instance.dataset, task=Task.captioning
+        yield from (
+            PretrainInstance(caption=caption, dataset=self.instance.dataset, task=Task.captioning)
+            for caption in self.instance.captions
         )
 
     @property  # type: ignore[misc]
     @image_task_check
     def vqa(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the VQA task."""
-        if self.instance.qa is None or Task.vqa not in self.enabled_tasks:
+        if not self.instance.qa_pairs or Task.vqa not in self.enabled_tasks:
             return []
 
-        yield PretrainInstance(
-            qa=self.instance.qa,
-            dataset=self.instance.dataset,
-            task=Task.vqa,
+        yield from (
+            PretrainInstance(
+                qa_pair=qa_pair,
+                dataset=self.instance.dataset,
+                task=Task.vqa,
+            )
+            for qa_pair in self.instance.qa_pairs
         )
 
     @property  # type: ignore[misc]
@@ -208,17 +234,20 @@ class PretrainInstanceCreator:
         """Get the pretrain instance for the instruction prediction for a given subgoal."""
         skip_instance = (
             self.instance.trajectory is None
-            or self.instance.caption is None
+            or not self.instance.captions
             or Task.instruction_prediction not in self.enabled_tasks
         )
         if skip_instance:
             return []
 
-        yield PretrainInstance(
-            caption=self.instance.caption,
-            trajectory=self.instance.trajectory,
-            dataset=self.instance.dataset,
-            task=Task.instruction_prediction,
+        yield from (
+            PretrainInstance(
+                caption=caption,
+                trajectory=self.instance.trajectory,
+                dataset=self.instance.dataset,
+                task=Task.instruction_prediction,
+            )
+            for caption in self.instance.captions
         )
 
     @property  # type: ignore[misc]
@@ -227,45 +256,54 @@ class PretrainInstanceCreator:
         """Get the pretrain instance for the action execution task given a subgoal instruction."""
         skip_instance = (
             self.instance.trajectory is None
-            or self.instance.caption is None
+            or not self.instance.captions
             or Task.action_execution not in self.enabled_tasks
         )
         if skip_instance:
             return []
 
-        yield PretrainInstance(
-            caption=self.instance.caption,
-            trajectory=self.instance.trajectory,
-            dataset=self.instance.dataset,
-            task=Task.action_execution,
+        yield from (
+            PretrainInstance(
+                caption=caption,
+                trajectory=self.instance.trajectory,
+                dataset=self.instance.dataset,
+                task=Task.action_execution,
+            )
+            for caption in self.instance.captions
         )
 
     @property  # type: ignore[misc]
     @video_task_check
     def vtm(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instance for the video-text matching task given a subgoal."""
-        if self.instance.caption is None or Task.vtm not in self.enabled_tasks:
+        if not self.instance.captions or Task.vtm not in self.enabled_tasks:
             return []
 
-        yield PretrainInstance(
-            caption=self.instance.caption,
-            trajectory=self.instance.trajectory,
-            dataset=self.instance.dataset,
-            task=Task.vtm,
+        yield from (
+            PretrainInstance(
+                caption=caption,
+                trajectory=self.instance.trajectory,
+                dataset=self.instance.dataset,
+                task=Task.vtm,
+            )
+            for caption in self.instance.captions
         )
 
     @property  # type: ignore[misc]
     @video_task_check
     def fom(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instance for the feature order modeling task given a subgoal."""
-        if self.instance.caption is None or Task.fom not in self.enabled_tasks:
+        if not self.instance.captions or Task.fom not in self.enabled_tasks:
             return []
 
-        yield PretrainInstance(
-            caption=self.instance.caption,
-            trajectory=self.instance.trajectory,
-            dataset=self.instance.dataset,
-            task=Task.fom,
+        yield from (
+            PretrainInstance(
+                caption=caption,
+                trajectory=self.instance.trajectory,
+                dataset=self.instance.dataset,
+                task=Task.fom,
+            )
+            for caption in self.instance.captions
         )
 
 

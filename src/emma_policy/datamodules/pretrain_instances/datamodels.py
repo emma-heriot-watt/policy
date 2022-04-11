@@ -3,7 +3,8 @@ from enum import Enum
 from types import MappingProxyType
 from typing import Any, Iterator, Mapping, Optional, Union, cast
 
-from emma_datasets.datamodels import Instance, MediaType
+from emma_datasets.datamodels import Caption, MediaType, QuestionAnswerPair, Region
+from emma_datasets.datamodels.instance import ActionTrajectory, MultiSourceInstanceMixin
 
 from emma_policy.datamodules.relation import Relation
 
@@ -265,11 +266,12 @@ def extract_task_prefix_strings(templates_map: Mapping[Task, list[str]]) -> Iter
             yield template.format(**empty_params)
 
 
-class PretrainInstance(Instance):  # type: ignore[misc]
-    """Instance for the pretraining datamodule.
-
-    This inherits and adds more attributes to the Instance from the emma_datasets library.
-    """
+class PretrainInstance(MultiSourceInstanceMixin):  # type: ignore[misc]
+    """Instance for the pretraining datamodule."""
 
     task: Task
+    caption: Optional[Caption]
+    qa_pair: Optional[QuestionAnswerPair]
+    regions: Optional[list[Region]]
     relations: Optional[list[Relation]]
+    trajectory: Optional[ActionTrajectory]

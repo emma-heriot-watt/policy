@@ -3154,7 +3154,7 @@ testing = ["coverage (>=4)", "coverage-enable-subprocess (>=1)", "flaky (>=3)", 
 
 [[package]]
 name = "wandb"
-version = "0.12.12"
+version = "0.12.14"
 description = "A CLI and library for interacting with the Weights and Biases API."
 category = "main"
 optional = false
@@ -3290,7 +3290,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "49150a150f7bb8a99125cc6f1fb2badfbc20b84003d04ddadc0091cc6e9796e4"
+content-hash = "4965a8fe0c24c8de28a93f4f80c1dd0071c6ec32443a0b276f8ef59002ebb57b"
 
 [metadata.files]
 absl-py = [
@@ -5467,19 +5467,24 @@ tokenize-rt = [
 ]
 tokenizers = [
     {file = "tokenizers-0.11.6-cp310-cp310-macosx_10_11_x86_64.whl", hash = "sha256:c24f3e0e69edf015efab6bea0a24d45eb19f477106d00a739c19d2a02f6085fc"},
+    {file = "tokenizers-0.11.6-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:1c5a786fe12a4c1782337abc818fc48ca84e07f8cb0eeab263a27fcd30f7fc6f"},
     {file = "tokenizers-0.11.6-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:6f7b82aaedb24e0a4dcd8fe77a79de9a0acf43db8ae173cdb4eca1e767566b47"},
     {file = "tokenizers-0.11.6-cp310-cp310-win32.whl", hash = "sha256:6bc5cc6d5b17bf8222049a2c97bcc117974793e37fb2e42b8fb04b2ef984d165"},
     {file = "tokenizers-0.11.6-cp310-cp310-win_amd64.whl", hash = "sha256:3c1ad5d230bdd6a3f63bbffd16a9fdea6a049ceb6d225e4d70a2664853f40aaf"},
+    {file = "tokenizers-0.11.6-cp36-cp36m-macosx_12_0_arm64.whl", hash = "sha256:44697b08469dfe3265a851f87ad41c7f04efa511ada8182b6b08aa809765dcb8"},
     {file = "tokenizers-0.11.6-cp36-cp36m-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:0975b9f06f982580909f9fa769baf58b806ab2d099daccc43dc95d60bf56817a"},
     {file = "tokenizers-0.11.6-cp37-cp37m-macosx_10_11_x86_64.whl", hash = "sha256:c08d5745fb5852adeeffc6bfbe13b77cd95d3f49e7e6129537858c5fb9b7142c"},
     {file = "tokenizers-0.11.6-cp37-cp37m-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:820a4cc3ef39c556c6f9495ce7cbd169098ca352e073ed3b34d6b74b53df2fbb"},
     {file = "tokenizers-0.11.6-cp37-cp37m-win32.whl", hash = "sha256:7ed928ac19a3397af6fe3716b313fb13dcaf54978f0fc159eeabaff8e35e5c92"},
     {file = "tokenizers-0.11.6-cp37-cp37m-win_amd64.whl", hash = "sha256:6840554a8cac1196db627d42edbf77f4b5decf6ce6fa9ca073efaaa2cff887a6"},
     {file = "tokenizers-0.11.6-cp38-cp38-macosx_10_11_x86_64.whl", hash = "sha256:216745a6e92eb52d99b56123e6fece59e0dcf7bd1444f42bee09e1f02c89bbec"},
+    {file = "tokenizers-0.11.6-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:e6d02076160d60966d6b2b320744affe6b846ee10a37d1c0222b6ca9e640bdb8"},
     {file = "tokenizers-0.11.6-cp38-cp38-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:7074162348a7784faccbea18cf814138483ce0c47eb17dc482cbc4bbbde8a00c"},
     {file = "tokenizers-0.11.6-cp38-cp38-win32.whl", hash = "sha256:fd3fccc801b7621eca8dfd876494fad0b00bd43fc73afdc1c11d6be3c9136f78"},
     {file = "tokenizers-0.11.6-cp38-cp38-win_amd64.whl", hash = "sha256:3c1c6e10f655e0f57b9bb9a64ac4b7ea70d20a73f8013f8bd38d21d64d45d96a"},
     {file = "tokenizers-0.11.6-cp39-cp39-macosx_10_11_x86_64.whl", hash = "sha256:809b506a6e9f2f6cba86cfe642c1d1e82cbd758574bdc1207efe07229d6fa4d4"},
+    {file = "tokenizers-0.11.6-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:5b3829ad386747760e7d805c9ffd5cb5a9309679467029eea3162fb76c8c89dc"},
+    {file = "tokenizers-0.11.6-cp39-cp39-macosx_12_0_arm64.whl", hash = "sha256:b9a34bd33d866862f45bfc4a409563132a0b6af5951e08f3ccfde36152cd7683"},
     {file = "tokenizers-0.11.6-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:e75efa0275665ca30536c75dc5b4d33492fc40ae40c90d9085bdcdb99e060044"},
     {file = "tokenizers-0.11.6-cp39-cp39-win32.whl", hash = "sha256:468c3e3f414a532924fa277a58807e127a27d2a56b04113540ea755fc5ca9ba8"},
     {file = "tokenizers-0.11.6-cp39-cp39-win_amd64.whl", hash = "sha256:b28966c68a2cdecd5120f4becea159eebe0335b8202e21e292eb381031026edc"},
@@ -5637,8 +5642,8 @@ virtualenv = [
     {file = "virtualenv-20.14.0.tar.gz", hash = "sha256:8e5b402037287126e81ccde9432b95a8be5b19d36584f64957060a3488c11ca8"},
 ]
 wandb = [
-    {file = "wandb-0.12.12-py2.py3-none-any.whl", hash = "sha256:067803dddb6af20b7fbbb1484cb163f96f27ed8c88a15a4c30bdacc454d7d596"},
-    {file = "wandb-0.12.12.tar.gz", hash = "sha256:b34da2d0cff2a45f9d4dc242993b20b029f67caf906bca10f7f73fcacd572690"},
+    {file = "wandb-0.12.14-py2.py3-none-any.whl", hash = "sha256:2bc25af123d98279acd2cdecf1c2911b1d0f456393fc3eebb0e5c199607c7f9a"},
+    {file = "wandb-0.12.14.tar.gz", hash = "sha256:15a6da8739ed098841dff3074dc8edcb818e118e7ded1649c183d158e212fe2d"},
 ]
 wcwidth = [
     {file = "wcwidth-0.2.5-py2.py3-none-any.whl", hash = "sha256:beb4802a9cebb9144e99086eff703a642a13d6a0052920003a230f3294bbe784"},

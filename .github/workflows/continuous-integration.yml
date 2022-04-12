@@ -2,6 +2,10 @@ name: Continuous Integration
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: [WIP]
+    types: [completed]
+    branches-ignore: [main]
   pull_request:
     branches:
       - main

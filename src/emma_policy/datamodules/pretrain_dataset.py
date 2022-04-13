@@ -33,7 +33,7 @@ def apply_token_masking(input_text: str, mlm_probability: float = 0.3) -> tuple[
 
     if masked_indices.sum() == 0:
         # Ensure at least one token is masked
-        masked_indices = torch.randint(low=0, high=len(tokens), size=(1,))
+        masked_indices[torch.randint(low=0, high=len(tokens), size=(1,))] = 1
 
     for idx, is_masked in enumerate(masked_indices.tolist()):
         if is_masked:

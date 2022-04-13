@@ -6,6 +6,7 @@ from emma_datasets.db import DatasetDb
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
 from emma_policy.datamodules.pretrain_datamodule import EmmaPretrainDataModule
+from emma_policy.datamodules.pretrain_dataset import apply_token_masking
 from emma_policy.datamodules.pretrain_instances import (
     PretrainInstance,
     convert_instance_to_pretrain_instances,
@@ -55,3 +56,24 @@ def test_dataloader_creates_batches(emma_pretrain_datamodule: EmmaPretrainDataMo
 
     for batch in dataloader_iterator:
         assert isinstance(batch, EmmaDatasetBatch)
+
+
+def masked_tokens_check(input_text: str, mask_token: str = "<mask>") -> None:  # noqa: S107
+    """Check that the number of tokens does not change and that at least one token is masked."""
+    masked_text, _ = apply_token_masking(input_text)
+    assert len(masked_text.split()) == len(input_text.split())
+    num_masked = sum(1 for token in masked_text.split() if token == mask_token)
+    assert num_masked > 0
+
+
+def test_apply_token_masking(instances_db_path: Path) -> None:
+    """Ensure that at least one token is masked for both image-level and region captions."""
+    with DatasetDb(instances_db_path) as db:
+        for _, _, instance_str in db:
+            instance = Instance.parse_raw(instance_str)
+            if instance.captions is not None:
+                for caption in instance.captions:
+                    masked_tokens_check(caption.text)
+            if instance.regions is not None:
+                for region in instance.regions:
+                    masked_tokens_check(region.caption)

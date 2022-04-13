@@ -32,7 +32,8 @@ def apply_token_masking(input_text: str, mlm_probability: float = 0.3) -> tuple[
     masked_indices = torch.bernoulli(torch.full((len(tokens),), mlm_probability)).long()
 
     if masked_indices.sum() == 0:
-        return input_text, input_text
+        # Ensure at least one token is masked
+        masked_indices = torch.randint(low=0, high=len(tokens), size=(1,))
 
     for idx, is_masked in enumerate(masked_indices.tolist()):
         if is_masked:

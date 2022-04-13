@@ -27,10 +27,12 @@ log = get_logger(__name__)
 
 def apply_token_masking(input_text: str, mlm_probability: float = 0.3) -> tuple[str, str]:
     """Applies token masking considering whole words instead of wordpieces."""
+    if len(input_text) < 2:
+        return "", ""
+
     tokens = input_text.split()
 
     masked_indices = torch.bernoulli(torch.full((len(tokens),), mlm_probability)).long()
-
     if masked_indices.sum() == 0:
         # Ensure at least one token is masked
         masked_indices[torch.randint(low=0, high=len(tokens), size=(1,))] = 1
@@ -103,7 +105,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
         return self.task_process_map[instance.task](instance)
 
-    def mlm(self, instance: PretrainInstance) -> EmmaDatasetItem:
+    def mlm(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
         """Process the instance for the MLM task."""
         # applies the token masking on the original caption text
         if instance.caption is not None:
@@ -114,6 +116,8 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             )
 
         source_text, target_text = apply_token_masking(input_text, self.mlm_probability)
+        if not source_text:
+            return None
         # formats the masked caption using the corresponding task template
         source_text = self._get_random_template_for_task(Task.mlm).format(caption=source_text)
 
@@ -238,8 +242,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         matched_index, gt_flags = self._region_mapping(
             regions=instance.regions, visual_features=visual_features, width=width, height=height
         )
-
-        gt_filtered = [reg for idx, reg in enumerate(instance.regions) if gt_flags[idx]]
+        gt_filtered = [
+            reg
+            for idx, reg in enumerate(instance.regions)
+            if gt_flags[idx] and len(reg.caption) > 1
+        ]
         if not gt_filtered:
             return None
         rand_index = random.randint(0, len(gt_filtered) - 1)
@@ -294,7 +301,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         matched_index, gt_flags = self._region_mapping(
             regions=instance.regions, visual_features=visual_features, width=width, height=height
         )
-        gt_filtered = [reg for idx, reg in enumerate(instance.regions) if gt_flags[idx]]
+        gt_filtered = [
+            reg
+            for idx, reg in enumerate(instance.regions)
+            if gt_flags[idx] and len(reg.caption) > 1
+        ]
         if not gt_filtered:
             return None
         rand_index = random.randint(0, len(gt_filtered) - 1)

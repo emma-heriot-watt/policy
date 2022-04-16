@@ -27,10 +27,9 @@ log = get_logger(__name__)
 
 def apply_token_masking(input_text: str, mlm_probability: float = 0.3) -> tuple[str, str]:
     """Applies token masking considering whole words instead of wordpieces."""
-    if len(input_text) < 2:
-        return "", ""
-
     tokens = input_text.split()
+    if len(input_text) < 2 or not len(tokens):
+        return "", ""
 
     masked_indices = torch.bernoulli(torch.full((len(tokens),), mlm_probability)).long()
     if masked_indices.sum() == 0:

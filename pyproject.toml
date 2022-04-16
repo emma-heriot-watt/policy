@@ -60,7 +60,7 @@ rich = "^12.2.0"
 overrides = "^6.1.0"
 numpy = "^1.22.2"
 emma-datasets = { git = "https://github.com/emma-simbot/datasets", rev = "main" }
-gradio = "^2.9.1"
+gradio = "^2.9.4"
 
 
 [tool.poetry.dev-dependencies]

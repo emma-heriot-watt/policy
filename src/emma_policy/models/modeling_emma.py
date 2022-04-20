@@ -5,16 +5,13 @@ from overrides import overrides
 from torch.nn import Embedding
 
 from emma_policy.models.configuration_emma import EmmaConfig
+from emma_policy.models.decoder_emma import EmmaDecoder
 from emma_policy.models.embeddings_emma import (
     EmmaImagePositionEmbeddings,
     EmmaObjectEmbeddings,
     EmmaSceneEmbeddings,
 )
-from emma_policy.models.encoder_decoder_emma import (
-    EmmaDecoder,
-    EmmaEncoder,
-    EmmaEncoderBaseModelOutput,
-)
+from emma_policy.models.encoder_emma import EmmaEncoder, EmmaEncoderBaseModelOutput
 from emma_policy.models.model_output_emma import EmmaSeq2SeqModelOutput
 from emma_policy.models.pretrained_emma import EmmaPreTrainedModel
 
@@ -121,6 +118,7 @@ class EmmaModel(EmmaPreTrainedModel):
         attention_mask: Optional[torch.Tensor] = None,
         decoder_input_ids: Optional[torch.Tensor] = None,
         decoder_attention_mask: Optional[torch.LongTensor] = None,
+        decoder_encoder_attention_mask: Optional[torch.Tensor] = None,
         global_attention_mask: Optional[torch.FloatTensor] = None,
         head_mask: Optional[torch.Tensor] = None,
         decoder_head_mask: Optional[torch.Tensor] = None,
@@ -157,6 +155,11 @@ class EmmaModel(EmmaPreTrainedModel):
         )
         use_cache = use_cache if use_cache is not None else self.config.use_cache
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        decoder_encoder_attention_mask = (
+            attention_mask
+            if decoder_encoder_attention_mask is None
+            else decoder_encoder_attention_mask
+        )
 
         # Using this like Bart, as LED is derived from it. So far
         # No checkpoint on the hub exists that uses that in practice.
@@ -191,7 +194,7 @@ class EmmaModel(EmmaPreTrainedModel):
             input_ids=decoder_input_ids,
             attention_mask=decoder_attention_mask,
             encoder_hidden_states=encoder_outputs[0],
-            encoder_attention_mask=attention_mask,
+            encoder_attention_mask=decoder_encoder_attention_mask,
             head_mask=decoder_head_mask,
             cross_attn_head_mask=cross_attn_head_mask,
             past_key_values=past_key_values,

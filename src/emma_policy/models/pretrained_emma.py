@@ -5,7 +5,8 @@ from torch.nn import Embedding, Linear
 from transformers import PreTrainedModel
 
 from emma_policy.models.configuration_emma import EmmaConfig
-from emma_policy.models.encoder_decoder_emma import EmmaDecoder, EmmaEncoder
+from emma_policy.models.decoder_emma import EmmaDecoder
+from emma_policy.models.encoder_emma import EmmaEncoder
 
 
 class EmmaPreTrainedModel(PreTrainedModel):

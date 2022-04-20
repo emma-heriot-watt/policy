@@ -43,6 +43,7 @@ def test_pretrain_model_forward_works_on_train_data(
         # =batch.text_attention_mask
         labels=batch.target_token_ids,
         decoder_attention_mask=batch.decoder_attention_mask,
+        decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
         # =batch.object_attention_mask,
         # =batch.scene_attention_mask,
     )

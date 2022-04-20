@@ -155,6 +155,7 @@ class EmmaPolicy(pl.LightningModule):
             global_attention_mask=batch.global_attention_mask,
             labels=batch.target_token_ids,
             decoder_attention_mask=batch.decoder_attention_mask,
+            decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
         )
 
         self.log("train_loss", output.loss)
@@ -177,6 +178,7 @@ class EmmaPolicy(pl.LightningModule):
             global_attention_mask=batch.global_attention_mask,
             labels=batch.target_token_ids,
             decoder_attention_mask=batch.decoder_attention_mask,
+            decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
         )
 
         self.log("valid_loss", output.loss, sync_dist=True)
@@ -216,6 +218,7 @@ class EmmaPolicy(pl.LightningModule):
             inputs_embeds=inputs_embeds,
             attention_mask=batch.attention_mask,
             global_attention_mask=batch.global_attention_mask,
+            decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
         )
 
         return outputs

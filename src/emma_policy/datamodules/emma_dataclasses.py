@@ -89,7 +89,7 @@ class EmmaDatasetBatch:
     task: torch.Tensor
     attention_mask: torch.Tensor
     global_attention_mask: torch.Tensor
-    encoder_decoder_mask: Optional[torch.Tensor] = None
+    decoder_encoder_attention_mask: Optional[torch.Tensor] = None
 
     def __len__(self) -> int:
         """Returns the batch size."""

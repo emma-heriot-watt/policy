@@ -69,12 +69,18 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
             return_tensors=self._return_tensor_type,
         )
 
+        visual_features, scene_temporal_ids, object_temporal_ids = self._prepare_visual_input(
+            instance
+        )
+
+        target_temporal_ids = self._make_target_temporal_ids(target_encoding.input_ids.squeeze(0))
         return EmmaDatasetItem(
             # Language
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
             target_token_ids=target_encoding.input_ids.squeeze(0),
             decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
+            target_temporal_ids=target_temporal_ids,
             # Visual features
             object_attention_mask=visual_features.object_attention_mask,
             object_coordinates=visual_features.object_coordinates,

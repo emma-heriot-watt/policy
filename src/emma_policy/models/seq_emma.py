@@ -5,7 +5,8 @@ from overrides import overrides
 from torch.nn import Embedding, Linear
 
 from emma_policy.models.configuration_emma import EmmaConfig
-from emma_policy.models.encoder_decoder_emma import EmmaDecoder, EmmaEncoder
+from emma_policy.models.decoder_emma import EmmaDecoder
+from emma_policy.models.encoder_emma import EmmaEncoder
 from emma_policy.models.loss_utils import average_task_loss
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
 from emma_policy.models.modeling_emma import EmmaModel, shift_tokens_right
@@ -72,6 +73,7 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
         labels: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         decoder_input_ids: Optional[torch.Tensor] = None,
+        decoder_encoder_attention_mask: Optional[torch.Tensor] = None,
         decoder_attention_mask: Optional[torch.LongTensor] = None,
         global_attention_mask: Optional[torch.FloatTensor] = None,
         head_mask: Optional[torch.Tensor] = None,
@@ -110,6 +112,7 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
             language_token_ids=language_token_ids,
             attention_mask=attention_mask,
             decoder_input_ids=decoder_input_ids,
+            decoder_encoder_attention_mask=decoder_encoder_attention_mask,
             decoder_attention_mask=decoder_attention_mask,
             encoder_outputs=encoder_outputs,
             global_attention_mask=global_attention_mask,
@@ -163,6 +166,7 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
         decoder_input_ids: torch.Tensor,
         past: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
+        decoder_encoder_attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
         decoder_head_mask: Optional[torch.Tensor] = None,
         cross_attn_head_mask: Optional[torch.Tensor] = None,
@@ -174,7 +178,10 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
         # cut decoder_input_ids if past is used
         if past is not None:
             decoder_input_ids = decoder_input_ids[:, -1:]
-
+        if decoder_encoder_attention_mask is not None:
+            decoder_encoder_attention_mask = decoder_encoder_attention_mask[
+                :, : decoder_input_ids.shape[-1], :
+            ]
         return {
             "scene_features": None,  # encoder_outputs is defined.
             "scene_coordinates": None,
@@ -187,6 +194,7 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
             "encoder_outputs": encoder_outputs,
             "past_key_values": past,
             "decoder_input_ids": decoder_input_ids,
+            "decoder_encoder_attention_mask": decoder_encoder_attention_mask,
             "attention_mask": attention_mask,
             "head_mask": head_mask,
             "decoder_head_mask": decoder_head_mask,

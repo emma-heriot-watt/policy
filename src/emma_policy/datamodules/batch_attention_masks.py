@@ -42,14 +42,6 @@ def make_mask_from_temporal_ids(
 
 def make_batch_attention_masks(raw_batch: dict[str, torch.Tensor], padding_value: int) -> None:
     """Make local and global attention masks."""
-    raw_batch["attention_mask"] = torch.cat(
-        [
-            raw_batch["scene_attention_mask"],
-            raw_batch["object_attention_mask"],
-            raw_batch["text_attention_mask"],
-        ],
-        dim=-1,
-    )
     got_scene_ids = (
         raw_batch["scene_temporal_ids"].shape[-1] == raw_batch["scene_attention_mask"].shape[-1]
     )
@@ -60,26 +52,34 @@ def make_batch_attention_masks(raw_batch: dict[str, torch.Tensor], padding_value
         text_temporal_ids = torch.zeros_like(raw_batch["text_attention_mask"])
         text_temporal_ids.masked_fill_(raw_batch["text_attention_mask"] == 1, -1)
 
-        # TODO: Use this once the model is fixed
-        # input_temporal_ids = torch.cat(
-        #     [raw_batch["scene_temporal_ids"], raw_batch["object_temporal_ids"], text_temporal_ids],
-        #     dim=1,
-        # )
+        input_temporal_ids = torch.cat(
+            [raw_batch["scene_temporal_ids"], raw_batch["object_temporal_ids"], text_temporal_ids],
+            dim=1,
+        )
         # Create a 2D attention mask that masks future and padding tokens
-        # raw_batch["attention_mask"] = make_mask_from_temporal_ids(
-        #     source_temporal_ids=input_temporal_ids,
-        #     target_temporal_ids=input_temporal_ids,
-        #     dtype=raw_batch["text_attention_mask"].dtype,
-        #     padding_value=padding_value,
-        # )
+        raw_batch["attention_mask"] = make_mask_from_temporal_ids(
+            source_temporal_ids=input_temporal_ids,
+            target_temporal_ids=input_temporal_ids,
+            dtype=raw_batch["text_attention_mask"].dtype,
+            padding_value=padding_value,
+        )
 
         # Masks the attention from decoder to future tokens
-        # raw_batch["encoder_decoder_attention_mask"] = make_mask_from_temporal_ids(
-        #     source_temporal_ids=input_temporal_ids,
-        #     target_temporal_ids=raw_batch["target_temporal_ids"],
-        #     dtype=raw_batch["text_attention_mask"].dtype,
-        #     padding_value=padding_value,
-        # )
+        raw_batch["decoder_encoder_attention_mask"] = make_mask_from_temporal_ids(
+            source_temporal_ids=input_temporal_ids,
+            target_temporal_ids=raw_batch["target_temporal_ids"],
+            dtype=raw_batch["text_attention_mask"].dtype,
+            padding_value=padding_value,
+        )
+    else:
+        raw_batch["attention_mask"] = torch.cat(
+            [
+                raw_batch["scene_attention_mask"],
+                raw_batch["object_attention_mask"],
+                raw_batch["text_attention_mask"],
+            ],
+            dim=-1,
+        )
 
     raw_batch["global_attention_mask"] = make_text_history_global_pattern(
         total_seq_len=raw_batch["attention_mask"].shape[-1],

@@ -70,12 +70,14 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         mlm_probability: float = 0.3,
         max_frames: int = 0,
         bbox_match_threshold: float = 0.5,
+        shuffle_frames_perc: float = 0.3,
     ) -> None:
         super().__init__(
             dataset_db_path=dataset_db_path,
             tokenizer=tokenizer,
             max_frames=max_frames,
             bbox_match_threshold=bbox_match_threshold,
+            shuffle_frames_perc=shuffle_frames_perc,
         )
 
         self.mlm_probability = mlm_probability

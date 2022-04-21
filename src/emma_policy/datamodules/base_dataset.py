@@ -19,6 +19,36 @@ DatasetReturn_Co = TypeVar(
 )
 
 
+def apply_frame_shuffling(
+    feature_dicts: list[dict[str, torch.Tensor]],
+    fom_probability: float = 0.3,
+) -> tuple[list[dict[str, torch.Tensor]], torch.Tensor]:
+    """Applies frame shuffling."""
+    shuffled_indices = torch.bernoulli(torch.full((len(feature_dicts),), fom_probability)).long()
+
+    # Ensure at least two frames swap orders
+    if shuffled_indices.sum() < 2:
+        shuffled_indices[torch.randperm(shuffled_indices.shape[-1])[:2]] = 1
+
+    # Get and shuffle the positions of the shuffled indices
+    shuffled_pos = torch.where(shuffled_indices == 1)[0]
+    target_shuffled_pos = shuffled_pos[torch.randperm(shuffled_pos.shape[-1])]
+    # Make sure the frames are shuffled
+    while torch.all(target_shuffled_pos == shuffled_pos):
+        target_shuffled_pos = shuffled_pos[torch.randperm(shuffled_pos.shape[-1])]
+
+    # Get the final frame order
+    original_frame_order = torch.arange(len(feature_dicts))
+    shuffled_pos_idx = 0
+    for idx, is_shuffled in enumerate(shuffled_indices.tolist()):
+        if is_shuffled:
+            original_frame_order[idx] = target_shuffled_pos[shuffled_pos_idx]
+            shuffled_pos_idx += 1
+
+    feature_dicts = [feature_dicts[j] for j in original_frame_order.tolist()]
+    return feature_dicts, original_frame_order
+
+
 class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
     """Common torch Dataset for easily getting dataset from DatasetDb files for modelling.
 
@@ -42,12 +72,14 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         tokenizer: PreTrainedTokenizer,
         max_frames: int = 0,
         bbox_match_threshold: float = 0.5,
+        shuffle_frames_perc: float = 0.3,
     ) -> None:
         self.db = DatasetDb(dataset_db_path)
 
         self.tokenizer = tokenizer
         self.max_frames = max_frames
         self.bbox_match_threshold = bbox_match_threshold
+        self.shuffle_frames_prec = shuffle_frames_perc
 
     def __len__(self) -> int:
         """Return the total number of instances within the database."""
@@ -91,8 +123,9 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         original_frame_order = torch.arange(num_features)
         # shuffling
         if shuffle_frames:
-            original_frame_order = torch.randperm(num_features)
-            feature_dicts = [feature_dicts[j] for j in original_frame_order.tolist()]
+            feature_dicts, original_frame_order = apply_frame_shuffling(
+                feature_dicts=feature_dicts, fom_probability=self.shuffle_frames_prec
+            )
 
         for frame_idx, feature_dict in enumerate(feature_dicts):
             object_features.append(feature_dict["bbox_features"])

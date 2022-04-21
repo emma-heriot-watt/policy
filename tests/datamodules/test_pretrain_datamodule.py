@@ -1,9 +1,11 @@
 import itertools
 from pathlib import Path
 
-from emma_datasets.datamodels import Instance
+import torch
+from emma_datasets.datamodels import Instance, MediaType
 from emma_datasets.db import DatasetDb
 
+from emma_policy.datamodules.base_dataset import apply_frame_shuffling
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
 from emma_policy.datamodules.pretrain_datamodule import EmmaPretrainDataModule
 from emma_policy.datamodules.pretrain_dataset import apply_token_masking
@@ -77,3 +79,19 @@ def test_apply_token_masking(instances_db_path: Path) -> None:
             if instance.regions is not None:
                 for region in instance.regions:
                     masked_tokens_check(region.caption)
+
+
+def test_apply_frame_shuffling(instances_db_path: Path) -> None:
+    """Ensure that all frame indices are kept and frames are shuffled."""
+    with DatasetDb(instances_db_path) as db:
+        for _, _, instance_str in db:
+            instance = Instance.parse_raw(instance_str)
+            if instance.modality == MediaType.video:
+                feature_dicts = [
+                    feature_dict["features"]
+                    for feature_dict in torch.load(instance.features_path)["frames"]
+                ]
+                _, original_frame_order = apply_frame_shuffling(feature_dicts)
+                ordered_indices = torch.arange(len(feature_dicts))
+                assert torch.any(original_frame_order != ordered_indices)
+                assert torch.all(torch.sort(original_frame_order)[0] == ordered_indices)

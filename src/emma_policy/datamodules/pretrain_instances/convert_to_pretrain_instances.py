@@ -66,6 +66,7 @@ class PretrainInstanceCreator:
             Task.relation_detection: self.relation_detection,
             Task.instruction_prediction: self.instruction_prediction,
             Task.action_execution: self.action_execution,
+            Task.vmlm: self.vmlm,
             Task.vtm: self.vtm,
             Task.fom: self.fom,
         }
@@ -302,6 +303,23 @@ class PretrainInstanceCreator:
                 trajectory=self.instance.trajectory,
                 dataset=self.instance.dataset,
                 task=Task.fom,
+            )
+            for caption in self.instance.captions
+        )
+
+    @property  # type: ignore[misc]
+    @video_task_check
+    def vmlm(self) -> Iterator[PretrainInstance]:
+        """Get pretrain instances for the video MLM task."""
+        if not self.instance.captions or Task.vmlm not in self.enabled_tasks:
+            return []
+
+        yield from (
+            PretrainInstance(
+                caption=caption,
+                trajectory=self.instance.trajectory,
+                dataset=self.instance.dataset,
+                task=Task.vmlm,
             )
             for caption in self.instance.captions
         )

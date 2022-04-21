@@ -23,6 +23,7 @@ class Task(Enum):
     action_execution = "Action execution in embodied environment"
     # TODO: check whether we can put together the entire trajectory
     # goal_prediction = "Goal prediction for an action trajectory"
+    vmlm = "Video Masked Language Modelling"
     vtm = "Video-Text Matching"
     fom = "Frame Order Modeling"
 

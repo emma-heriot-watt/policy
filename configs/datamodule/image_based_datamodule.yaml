@@ -13,18 +13,10 @@ enabled_tasks:
     # - dense_captioning
     - captioning
     - vqa
-    # - instruction_prediction
-    # - action_execution
-    # - vtm
     # - relation_detection
   video:
-    # - mlm
-    # - itm
-    # - visual_grounding
-    # - dense_captioning
-    # - captioning
-    # - vqa
     # - instruction_prediction
     # - action_execution
     # - vtm
+    # - vmlm
 # pin_memory: False

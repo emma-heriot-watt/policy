@@ -94,6 +94,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             Task.action_execution: self.action_execution,
             Task.vtm: self.vtm,
             Task.fom: self.fom,
+            Task.vmlm: self.mlm,
         }
 
     def __getitem__(self, index: int) -> Optional[EmmaDatasetItem]:
@@ -101,7 +102,6 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         with self.db:
             instance_str = self.db[index]
             instance = PretrainInstance.parse_raw(instance_str)
-
         return self.task_process_map[instance.task](instance)
 
     def mlm(self, instance: PretrainInstance) -> Optional[EmmaDatasetItem]:
@@ -112,6 +112,22 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         else:
             raise AssertionError(
                 "Captions for this instance must exist. Make sure this instance is connected to the right task!"
+            )
+
+        visual_features = self._load_visual_features(
+            features_path=instance.features_path, modality=instance.modality
+        )
+
+        if instance.trajectory is not None:
+            action_trajectory = self._convert_trajectory_to_text(
+                trajectory=instance.trajectory,
+                feature_dicts=self._load_feature_dicts(instance.features_path, instance.modality),
+                visual_features=visual_features,
+            )
+            input_text = "{input_text} {sep_token} {action_trajectory}".format(
+                input_text=input_text,
+                sep_token=self.tokenizer.sep_token,
+                action_trajectory=action_trajectory,
             )
 
         source_text, target_text = apply_token_masking(input_text, self.mlm_probability)
@@ -125,10 +141,6 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         )
         target_encoding = self.tokenizer.encode_plus(
             target_text, return_tensors=self._return_tensor_type, truncation=True
-        )
-
-        visual_features = self._load_visual_features(
-            features_path=instance.features_path, modality=instance.modality
         )
 
         return EmmaDatasetItem(
@@ -659,7 +671,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             )
 
         source_text = self._get_random_template_for_task(task=Task.vtm).format(
-            statement=input_text.strip("."),
+            statement=input_text,
         )
 
         input_encoding = self.tokenizer.encode_plus(
@@ -673,7 +685,6 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         target_encoding = self.tokenizer.encode_plus(
             target_text, return_tensors=self._return_tensor_type, truncation=True
         )
-
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
@@ -729,7 +740,6 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         target_encoding = self.tokenizer.encode_plus(
             target_text, return_tensors=self._return_tensor_type, truncation=True
         )
-
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),

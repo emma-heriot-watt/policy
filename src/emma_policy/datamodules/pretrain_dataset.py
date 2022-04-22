@@ -116,6 +116,9 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                 "Captions for this instance must exist. Make sure this instance is connected to the right task!"
             )
 
+        if instance.task == Task.vmlm:
+            input_text = self._refine_instruction_text(input_text)
+
         visual_features = self._load_visual_features(
             features_path=instance.features_path, modality=instance.modality
         )
@@ -522,8 +525,11 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         visual_features = self._load_visual_features(
             features_path=instance.features_path, modality=instance.modality
         )
+
+        target_text = self._refine_instruction_text(instance.caption.text)
+
         target_encoding = self.tokenizer.encode_plus(
-            instance.caption.text, return_tensors=self._return_tensor_type, truncation=True
+            target_text, return_tensors=self._return_tensor_type, truncation=True
         )
 
         return EmmaDatasetItem(
@@ -551,7 +557,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             )
 
         source_text = self._get_random_template_for_task(Task.action_execution).format(
-            instruction=instance.caption.text,
+            instruction=self._refine_instruction_text(instance.caption.text),
         )
         input_encoding = self.tokenizer.encode_plus(
             source_text, return_tensors=self._return_tensor_type, truncation=True
@@ -611,11 +617,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             return None
 
         if other_instance.caption is not None:
-            input_text_candidates = (
-                other_instance.caption.text
-                if other_instance.caption.text[-1] == "."
-                else f"{other_instance.caption.text}."
-            )
+            input_text_candidates = self._refine_instruction_text(other_instance.caption.text)
 
             if other_instance.trajectory is not None:
                 other_visual_features = self._load_visual_features(
@@ -646,7 +648,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                 "Captions for this instance must exist. Make sure this instance is connected to the right task!"
             )
 
-        input_text = instance.caption.text
+        input_text = self._refine_instruction_text(instance.caption.text)
         visual_features = self._load_visual_features(
             features_path=instance.features_path, modality=instance.modality
         )
@@ -715,7 +717,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             features_path=instance.features_path, modality=instance.modality, shuffle_frames=True
         )
         original_order = visual_features.original_frame_order
-        input_text = instance.caption.text
+        input_text = self._refine_instruction_text(instance.caption.text)
 
         if instance.trajectory is not None:
             ordered_features = self._load_visual_features(
@@ -782,6 +784,15 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         target_text = f"{subject_attr} {subject_type} {predicate} {object_attr} {object_type}"
         target_text = target_text.strip().replace("  ", " ")
         return target_text
+
+    def _refine_instruction_text(self, raw_instruction_text: str) -> Optional[str]:
+        """Makes sure that each instruction doesn't end with a fullstop."""
+        if raw_instruction_text.endswith("."):
+            refined_text = raw_instruction_text.replace(".", "")
+        else:
+            refined_text = raw_instruction_text
+
+        return refined_text
 
     def _region_mapping(
         self,

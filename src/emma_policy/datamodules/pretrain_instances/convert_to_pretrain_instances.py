@@ -234,9 +234,7 @@ class PretrainInstanceCreator:
     def instruction_prediction(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instance for the instruction prediction for a given subgoal."""
         skip_instance = (
-            self.instance.trajectory is None
-            or not self.instance.captions
-            or Task.instruction_prediction not in self.enabled_tasks
+            not self.instance.captions or Task.instruction_prediction not in self.enabled_tasks
         )
         if skip_instance:
             return []

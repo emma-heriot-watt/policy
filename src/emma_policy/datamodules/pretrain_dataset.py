@@ -785,15 +785,6 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         target_text = target_text.strip().replace("  ", " ")
         return target_text
 
-    def _refine_instruction_text(self, raw_instruction_text: str) -> Optional[str]:
-        """Makes sure that each instruction doesn't end with a fullstop."""
-        if raw_instruction_text.endswith("."):
-            refined_text = raw_instruction_text.replace(".", "")
-        else:
-            refined_text = raw_instruction_text
-
-        return refined_text
-
     def _region_mapping(
         self,
         regions: list[Region],

@@ -272,3 +272,12 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
     ) -> str:
         """Convert an action trajectory from an instance to a text representation."""
         raise NotImplementedError
+
+    def _refine_instruction_text(self, raw_instruction_text: str) -> Optional[str]:
+        """Makes sure that each instruction doesn't end with a fullstop."""
+        if raw_instruction_text.endswith("."):
+            refined_text = raw_instruction_text.replace(".", "")
+        else:
+            refined_text = raw_instruction_text
+
+        return refined_text

@@ -64,13 +64,10 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
             return_tensors=self._return_tensor_type,
             truncation=True,
         )
+
         target_encoding = self.tokenizer(
             self._get_target_text_from_instance(instance, visual_features),
             return_tensors=self._return_tensor_type,
-        )
-
-        visual_features, scene_temporal_ids, object_temporal_ids = self._prepare_visual_input(
-            instance
         )
 
         target_temporal_ids = self._make_target_temporal_ids(target_encoding.input_ids.squeeze(0))
@@ -101,7 +98,7 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
         self, instance: TeachEdhInstance, visual_features: EmmaVisualFeatures
     ) -> str:
         """Get the input text from a TEACh EDH instance."""
-        dialog_history = self._get_concatenated_dialog_history(instance)
+        input_text = self._get_concatenated_dialog_history(instance)
 
         actions = self._convert_trajectory_to_text(
             actions=instance.extended_driver_action_history,
@@ -112,7 +109,12 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
             truncation_side="left",  # keep most recent actions
         )
 
-        input_text = dialog_history + actions
+        if actions:
+            input_text = "{input_text} {sep_token} {action_trajectory}".format(
+                input_text=input_text,
+                sep_token=self.tokenizer.sep_token,
+                action_trajectory=actions,
+            )
 
         #  Add action execution task prefix
         input_text = self._get_random_template_for_task(Task.action_execution).format(
@@ -147,7 +149,7 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
             for utterance in dialog_history
             if utterance.utterance
         ]
-        concat_dialog_history.append(self.tokenizer.sep_token)
+        concat_dialog_history[-1] = self._refine_instruction_text(concat_dialog_history[-1])  # type: ignore[assignment]
         return " ".join(concat_dialog_history)
 
     def _convert_trajectory_to_text(

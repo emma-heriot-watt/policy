@@ -147,7 +147,7 @@ class FixturesDbCreator:
         """
         dirname = Path(*instance.features_path.parts[2:])
 
-        instance_dict = json.loads(instance.json())
+        instance_dict = json.loads(instance.json(by_alias=True))
         for _, dataset in instance_dict["dataset"].items():
             dataset["features_path"] = self._fixtures_datasets_path.joinpath(dirname).as_posix()
 

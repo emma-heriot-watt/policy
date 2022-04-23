@@ -824,12 +824,16 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         )
         return matched_index, gt_flags
 
-    def _get_object_class_from_high_action(self, high_action: AlfredHighAction) -> str:
-        """Returns the class of the object that the agent is manipulating."""
-        if high_action.discrete_action.action == "PutObject":
-            return high_action.discrete_action.args[1]
+    def _get_object_class_from_action(self, low_action: AlfredLowAction) -> str:
+        """Returns the class of the object that the agent is manipulating.
 
-        return high_action.discrete_action.args[0]
+        We assume that a manipulation action will have a field `object_id` that indicates the
+        object we're manipulating. The behaviour of the action `PutObject` is a bit
+        counterintuitive because we don't have to specify the receptacle (i.e., where you want to
+        place the object that the robot is holding). See the AI2Thor documentation for more
+        details: https://ai2thor.allenai.org/ithor/documentation/interactive-physics/#sub-put-object
+        """
+        return low_action.api_action.object_id.split("|", 1)[0]
 
     def _convert_trajectory_to_text(
         self,
@@ -843,7 +847,6 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         If an object is not found, the `<unk>` token is used.
         """
         low_level_actions: list[AlfredLowAction] = trajectory.low_level_actions
-        high_level_actions: list[AlfredHighAction] = trajectory.high_level_actions
 
         if self.max_frames:
             feature_dicts = self._truncate_frames(feature_dicts, truncation_side=truncation_side)
@@ -853,10 +856,6 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
         trajectory = []
         for action_idx, action in enumerate(low_level_actions):
-            # We only have one high-level action for the current trajectory
-            # because in the pretraining we are splitting the trajectories by subgoal
-            # (i.e., only one high-level action associated with it).
-            high_action = high_level_actions[0]
             # Split a cama case action to words
             trajectory.extend(split_action_name(action.api_action.action))
             # Match the object to a predicted bounding box
@@ -884,7 +883,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
                 # we first add the class of the object we want to interact with
                 # reference object is always the first argument of a discrete action
-                object_class = self._get_object_class_from_high_action(high_action)
+                object_class = self._get_object_class_from_action(action)
                 trajectory.append(object_class.lower())
 
                 # then if we have a matching bounding box, we add the visual token as well

@@ -824,6 +824,8 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         place the object that the robot is holding). See the AI2Thor documentation for more
         details: https://ai2thor.allenai.org/ithor/documentation/interactive-physics/#sub-put-object
         """
+        if low_action.api_action.action == "PutObject":
+            return low_action.api_action.receptacle_object_id.split("|", 1)[0]
         return low_action.api_action.object_id.split("|", 1)[0]
 
     def _convert_trajectory_to_text(
@@ -845,10 +847,10 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                 low_level_actions, truncation_side=truncation_side
             )
 
-        trajectory = []
+        trajectory_text = []
         for action_idx, action in enumerate(low_level_actions):
             # Split a cama case action to words
-            trajectory.extend(split_action_name(action.api_action.action))
+            trajectory_text.extend(split_action_name(action.api_action.action))
             # Match the object to a predicted bounding box
             if "bbox" in action.discrete_action.args:
 
@@ -875,17 +877,17 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                 # we first add the class of the object we want to interact with
                 # reference object is always the first argument of a discrete action
                 object_class = self._get_object_class_from_action(action)
-                trajectory.append(object_class.lower())
+                trajectory_text.append(object_class.lower())
 
                 # then if we have a matching bounding box, we add the visual token as well
                 found_matched_object = gt_flags[0]
                 if found_matched_object:
-                    trajectory.append(
+                    trajectory_text.append(
                         self.tokenizer.decode(
                             visual_features.visual_token_ids[frame_objects][matched_index[0]]
                         )
                     )
 
-            trajectory.append(self.tokenizer.sep_token)
+            trajectory_text.append(self.tokenizer.sep_token)
 
-        return " ".join(trajectory)
+        return " ".join(trajectory_text)

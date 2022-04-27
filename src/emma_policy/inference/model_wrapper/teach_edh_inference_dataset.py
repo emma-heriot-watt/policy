@@ -32,7 +32,7 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
         self.max_frames = max_frames
         self.previous_frame: Optional[Image] = None
 
-        self._client = FeatureClient(feature_extractor_settings=feature_extractor_settings)
+        self.client = FeatureClient(feature_extractor_settings=feature_extractor_settings)
 
         self._trajectory_visual_features: list[EmmaVisualFeatures] = []
         self._history_visual_features: EmmaVisualFeatures
@@ -124,7 +124,7 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
         for idx, edh_history_image in enumerate(edh_history_images):
             logger.debug(f"Requesting features for image {idx}/{len(edh_history_images)}")
 
-            feature_response = self._client.post_request(edh_history_image)
+            feature_response = self.client.post_request(edh_history_image)
             feature_dicts.append(asdict(feature_response))
 
         self._current_bbox_probas = feature_dicts[-1]["bbox_probas"]

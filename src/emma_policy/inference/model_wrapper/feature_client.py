@@ -33,6 +33,23 @@ class FeatureClient:
 
         self._single_feature_endpoint = self._feature_extractor_settings.get_single_feature_url()
         self._batch_features_endpoint = self._feature_extractor_settings.get_batch_features_url()
+        self._update_model_device_endpoint = (
+            self._feature_extractor_settings.get_update_model_device_url()
+        )
+
+    def update_device(self, device: torch.device) -> None:
+        """Update the device used by the feature extractor."""
+        logger.info(f"Asking Feature Extractor to move to device: `{device}`")
+
+        response = requests.post(self._update_model_device_endpoint, json={"device": str(device)})
+
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            logger.info(f"Feature extractor model not moved to device `{device}`")
+
+        if response.status_code == requests.codes.ok:
+            logger.info(f"Feature extractor model moved to device `{device}`")
 
     def post_request(self, image: Image.Image) -> FeatureResponse:
         """Posts a request to the feature extraction server and receive results."""

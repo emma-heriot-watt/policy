@@ -11,6 +11,7 @@ class FeatureExtractorSettings(BaseModel):
     port: int = 5500
     single_feature: str = "features"
     batch_features: str = "batch_features"
+    update_model_device: str = "update_model_device"
 
     @property
     def endpoint(self) -> str:
@@ -24,6 +25,10 @@ class FeatureExtractorSettings(BaseModel):
     def get_batch_features_url(self) -> str:
         """Get the URL to extract features from a batch of images."""
         return f"{self.endpoint}/{self.batch_features}"
+
+    def get_update_model_device_url(self) -> str:
+        """Get the URL to update the model device for the feature extractor."""
+        return f"{self.endpoint}/{self.update_model_device}"
 
 
 class ApiSettings(BaseSettings):

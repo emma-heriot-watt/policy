@@ -47,9 +47,7 @@ class PolicyModelWrapper(BaseModelWrapper):
         generation_num_beams: int = 1,
     ) -> None:
 
-        self._device = torch.device(
-            f"cuda:{device_id}" if torch.cuda.is_available() and device_id > -1 else "cpu"
-        )
+        self._device = self._get_device(process_index, device_id)
         self._model_name = model_name
         self._model = self._setup_model(model_checkpoint_path)
 
@@ -84,6 +82,9 @@ class PolicyModelWrapper(BaseModelWrapper):
             ]
         )
         self._generation_num_beams = generation_num_beams
+
+        # Update the torch device used by the Perception API to ensure they're the same
+        self._teach_edh_inference_dataset.client.update_device(self._device)
 
     @classmethod
     def from_argparse(
@@ -256,6 +257,25 @@ class PolicyModelWrapper(BaseModelWrapper):
         model.eval()
 
         return model
+
+    def _get_device(self, process_index: int, device_id: int = -1) -> torch.device:
+        """Get the device for the model.
+
+        This does it the exact same way they did it for ET, provided the device_id is not greater
+        than -1.
+        """
+        if not torch.cuda.is_available():
+            return torch.device("cpu")
+
+        gpu_count = torch.cuda.device_count()
+        logger.info(f"{gpu_count} GPUs detected")
+
+        model_device_id = device_id if device_id > -1 else process_index % gpu_count
+
+        device = torch.device(f"cuda:{model_device_id}")
+        logger.info(f"Device used: {device}")
+
+        return device
 
     def _convert_edh_to_dataset_instance(self, current_frame: Image.Image) -> EmmaDatasetItem:
         """Convert the TEACh EDH instance to the EmmaDatasetItem for the model."""

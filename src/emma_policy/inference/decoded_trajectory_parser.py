@@ -63,20 +63,20 @@ class DecodedTrajectoryParser:
         """
         action_name = None
 
-        index = 0
-        while index < len(action_tokens):
-            action_name = " ".join(action_tokens[: index + 1])
+        index = len(action_tokens)
+        while index > 0:
+            action_name = " ".join(action_tokens[:index])
 
             if action_name in self._synonym_to_action_map:
                 break
 
-            index += 1
+            index -= 1
 
         if action_name is None:
             # edge case: we were not able to map the current action, just return an empty action
             return "", action_tokens
 
-        return self._synonym_to_action_map[action_name], action_tokens[index + 1 :]
+        return self._synonym_to_action_map[action_name], action_tokens[index:]
 
     def _convert_action_to_executable_form(self, action_str: str) -> AgentAction:
         """Convert the decoded action string into an executable form.

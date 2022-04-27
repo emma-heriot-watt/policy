@@ -36,9 +36,9 @@ class EmmaDatasetItem:
     object_attention_mask: torch.Tensor
     input_token_ids: torch.Tensor
     text_attention_mask: torch.Tensor
-    target_token_ids: torch.Tensor
-    decoder_attention_mask: torch.Tensor
     task: torch.Tensor
+    decoder_attention_mask: Optional[torch.Tensor] = None
+    target_token_ids: Optional[torch.Tensor] = None
     scene_temporal_ids: Optional[torch.Tensor] = None
     object_temporal_ids: Optional[torch.Tensor] = None
     target_temporal_ids: Optional[torch.Tensor] = None

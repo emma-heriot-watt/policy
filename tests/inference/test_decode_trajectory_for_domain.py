@@ -18,57 +18,54 @@ def action_delimiter(emma_tokenizer: EmmaTokenizer) -> str:
 class DecodedTeachTrajectories:
     """Various cases to ensure the TEACh trajectories are parsed correctly."""
 
-    def case_forward(self) -> tuple[str, list[AgentAction]]:
-        trajectory = "forward . move ahead . turn left ."
-        api_actions = [
-            AgentAction("Forward"),
-            AgentAction("Forward"),
-            AgentAction("Turn Left"),
-        ]
-        return trajectory, api_actions
+    def case_forward(self) -> tuple[str, AgentAction]:
+        trajectory = "forward ."
+        api_action = AgentAction("Forward")
 
-    def case_interaction_object_and_vis_token(self) -> tuple[str, list[AgentAction]]:
-        trajectory = "forward . move ahead . turn left . pick up mug <vis_token_3> ."
-        api_actions = [
-            AgentAction("Forward"),
-            AgentAction("Forward"),
-            AgentAction("Turn Left"),
-            AgentAction(  # noqa: S106
-                "Pickup", object_label="mug", object_visual_token="<vis_token_3>"
-            ),
-        ]
-        return trajectory, api_actions
+        return trajectory, api_action
 
-    def case_interaction_object_and_no_vis_token(self) -> tuple[str, list[AgentAction]]:
-        trajectory = "forward . move ahead . turn left . pick up mug ."
-        api_actions = [
-            AgentAction("Forward"),
-            AgentAction("Forward"),
-            AgentAction("Turn Left"),
-            AgentAction("Pickup", object_label="mug", object_visual_token=None),
-        ]
-        return trajectory, api_actions
+    def case_move_ahead(self) -> tuple[str, AgentAction]:
+        trajectory = "move ahead ."
+        api_action = AgentAction("Forward")
+
+        return trajectory, api_action
+
+    def case_stop_token(self) -> tuple[str, AgentAction]:
+        trajectory = "</s>"
+        api_action = AgentAction("Stop")
+
+        return trajectory, api_action
+
+    def case_interaction_object_and_vis_token(self) -> tuple[str, AgentAction]:
+        trajectory = "pick up mug <vis_token_3> ."
+        api_action = AgentAction(  # noqa: S106
+            "Pickup", object_label="Mug", object_visual_token="<vis_token_3>"
+        )
+
+        return trajectory, api_action
+
+    def case_interaction_object_and_no_vis_token(self) -> tuple[str, AgentAction]:
+        trajectory = "pick up mug ."
+        api_action = AgentAction("Pickup", object_label="Mug", object_visual_token=None)
+
+        return trajectory, api_action
 
     @pytest.mark.skip(reason="We assume that this case is not possible.")
-    def case_only_interaction_visual_token(self) -> tuple[str, list[AgentAction]]:
-        trajectory = "forward . move ahead . turn left . pick up <vis_token_3> ."
-        api_actions = [
-            AgentAction("Forward"),
-            AgentAction("Forward"),
-            AgentAction("Turn Left"),
-            AgentAction(  # noqa: S106
-                "Pickup", object_label=None, object_visual_token="<vis_token_3>"
-            ),
-        ]
-        return trajectory, api_actions
+    def case_only_interaction_visual_token(self) -> tuple[str, AgentAction]:
+        trajectory = "pick up <vis_token_3> ."
+        api_action = AgentAction(  # noqa: S106
+            "Pickup", object_label=None, object_visual_token="<vis_token_3>"
+        )
+
+        return trajectory, api_action
 
 
 @parametrize_with_cases("decoded_actions,expected_output", cases=DecodedTeachTrajectories)
 def test_decoded_action_trajectories_are_converted_properly(
-    decoded_actions: str, expected_output: list[AgentAction], action_delimiter: str
+    decoded_actions: str, expected_output: AgentAction, action_delimiter: str
 ) -> None:
-    trajectory_parser = DecodedTrajectoryParser(
-        execution_domain="TEACh", action_delimiter=action_delimiter
+    trajectory_parser = DecodedTrajectoryParser(  # noqa: S106
+        execution_domain="TEACh", action_delimiter=action_delimiter, eos_token="</s>"
     )
     parsed_trajectory = trajectory_parser(decoded_actions)
 

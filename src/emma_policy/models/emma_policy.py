@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import pytorch_lightning as pl
 import torch
@@ -7,6 +7,7 @@ from overrides import overrides
 from torch.nn import CrossEntropyLoss
 from torch.optim import AdamW
 from transformers import AutoConfig, get_linear_schedule_with_warmup
+from transformers.generation_stopping_criteria import StoppingCriteriaList
 from transformers.generation_utils import (
     BeamSampleOutput,
     BeamSearchOutput,
@@ -221,4 +222,49 @@ class EmmaPolicy(pl.LightningModule):
             decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
         )
 
+        return outputs
+
+    def inference_step(
+        self,
+        batch: EmmaDatasetBatch,
+        decoder_input_ids: torch.Tensor,
+        max_length_per_action_sequence: int = 10,
+        action_stop: Optional[StoppingCriteriaList] = None,
+        num_beams: int = 1,
+    ) -> PredictType:
+        """Teach Inference step."""
+        inputs_embeds = self.emma.emma.embed_inputs(
+            scene_features=batch.scene_features,
+            scene_coordinates=batch.scene_coordinates,
+            scene_frame_tokens=batch.scene_frame_tokens,
+            object_features=batch.object_features,
+            object_coordinates=batch.object_coordinates,
+            object_frame_tokens=batch.object_frame_tokens,
+            visual_token_ids=batch.visual_token_ids,
+            language_token_ids=batch.input_token_ids,
+        )
+
+        # If decoder_input_ids is empty (first prediction),
+        # do not pass it as a keyword arg!
+        if decoder_input_ids.shape[-1] > 0:
+            outputs = self.emma.generate(
+                inputs_embeds=inputs_embeds,
+                attention_mask=batch.attention_mask,
+                global_attention_mask=batch.global_attention_mask,
+                decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
+                max_length=max_length_per_action_sequence,
+                decoder_input_ids=decoder_input_ids,
+                stopping_criteria=action_stop,
+                num_beams=num_beams,
+            )
+        else:
+            outputs = self.emma.generate(
+                inputs_embeds=inputs_embeds,
+                attention_mask=batch.attention_mask,
+                global_attention_mask=batch.global_attention_mask,
+                decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
+                max_length=max_length_per_action_sequence,
+                stopping_criteria=action_stop,
+                num_beams=num_beams,
+            )
         return outputs

@@ -271,5 +271,4 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
             feature_len_future=len_future,
             object_frame_tokens=visual_features.object_frame_tokens,
         )
-
         return visual_features, scene_temporal_ids, object_temporal_ids

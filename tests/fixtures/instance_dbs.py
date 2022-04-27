@@ -113,9 +113,9 @@ def teach_edh_instances_db(
                 instance_creator = TeachEdhInstanceCreator(progress)
 
                 instance_iterator = instance_creator(
-                    input_data=fixtures_root.joinpath("teach_edh", dataset_split.name).glob(
-                        "*.json"
-                    ),
+                    input_data=fixtures_root.joinpath(
+                        "teach_edh", "edh_instances", dataset_split.name
+                    ).glob("*.json"),
                     progress=progress,
                 )
                 db = DatasetDb(db_path, readonly=False)

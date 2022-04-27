@@ -89,7 +89,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         """Get a single instance from the dataset."""
         raise NotImplementedError
 
-    def _load_visual_features(  # noqa: WPS210
+    def _load_visual_features(
         self,
         features_path: Path,
         modality: MediaType,
@@ -109,7 +109,17 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
             return EmmaVisualFeatures(
                 **{field.name: torch.empty(0) for field in dataclasses.fields(EmmaVisualFeatures)},
             )
+        return self._prepare_emma_visual_features(
+            feature_dicts=feature_dicts, start_offset=start_offset, shuffle_frames=shuffle_frames
+        )
 
+    def _prepare_emma_visual_features(  # noqa: WPS210
+        self,
+        feature_dicts: list[dict[str, torch.Tensor]],
+        start_offset: int = 0,
+        shuffle_frames: bool = False,
+    ) -> EmmaVisualFeatures:
+        """Prepare an EmmaVisualFeatures object."""
         object_features = []
         object_classes = []
         object_coordinates = []

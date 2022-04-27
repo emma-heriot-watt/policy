@@ -10,3 +10,9 @@ endif
 .PHONY : increase-open-file-limit
 increase-open-file-limit :
 	ulimit -S -n unlimited
+
+
+# Download the necessary checkpoints and build the image that will get submitted to eval.ai
+.PHONY : build-teach-inference-image
+build-teach-inference-image :
+	docker build -t policy-teach-inference-api:latest -f docker/teach-inference.Dockerfile

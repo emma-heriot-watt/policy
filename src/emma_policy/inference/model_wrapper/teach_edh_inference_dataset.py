@@ -40,6 +40,7 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
         self._feature_dicts: list[dict[str, Any]] = []
         self._input_encoding: BatchEncoding
         self._current_bbox_probas: Optional[torch.Tensor]
+        self._current_coordinates: Optional[torch.Tensor]
 
     @classmethod
     def from_model_name(
@@ -92,6 +93,7 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
             truncation=True,
         )
         self._current_bbox_probas = None
+        self._current_coordinates = None
         self.previous_frame = edh_history_images[-1]
 
         logger.debug(f"Model prepared `{edh_instance.instance_id}`")
@@ -109,6 +111,14 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
             )
 
         return self._current_bbox_probas
+
+    def get_current_coordinates(self) -> torch.Tensor:  # noqa: WPS615
+        """Return the bbox coordinates from the current egocentric view."""
+        if self._current_coordinates is None:
+            raise AssertionError(
+                "Do not try to get current object probabilities before calling `get_next_dataset_instance`"
+            )
+        return self._current_coordinates
 
     def prepare_visual_features(
         self, edh_history_images: list[Image], start_offset: int = 0
@@ -128,6 +138,7 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
             feature_dicts.append(asdict(feature_response))
 
         self._current_bbox_probas = feature_dicts[-1]["bbox_probas"]
+        self._current_coordinates = feature_dicts[-1]["bbox_coords"]
 
         logging.debug("Converting feature dicts to `EmmaVisualFeatures` object")
         return self._prepare_emma_visual_features(

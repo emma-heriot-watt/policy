@@ -251,7 +251,7 @@ class PolicyModelWrapper(BaseModelWrapper):
         """
         x_center = ((bbox_coordinates[0] + bbox_coordinates[2]) / 2).item()
         y_center = ((bbox_coordinates[1] + bbox_coordinates[3]) / 2).item()
-        return (x_center, y_center)
+        return (y_center, x_center)
 
     def _setup_model(self, model_checkpoint_path: Path) -> LightningModule:
         """Setup the model from the checkpoint."""
@@ -373,21 +373,25 @@ class PolicyModelWrapper(BaseModelWrapper):
                 indicated by the coordinate if the desired action can be performed on it, and
                 executes the action in AI2-THOR.
         """
-        object_index = action.get_object_index_from_visual_token()
-
-        # Attempt to index the visual token
-        if object_index is not None:
-            return self._compute_center_from_bbox(
-                bbox_coordinates=teach_item.object_coordinates[object_index]
-            )
-
         # Attempt to index the object label
         object_index = action.get_object_index_from_label(
             bbox_probas=self._teach_edh_inference_dataset.get_current_object_probas()
         )
         if object_index is not None:
             return self._compute_center_from_bbox(
-                bbox_coordinates=teach_item.object_coordinates[object_index]
+                bbox_coordinates=self._teach_edh_inference_dataset.get_current_coordinates()[
+                    object_index
+                ]
+            )
+
+        # Attempt to index the visual token
+        object_index = action.get_object_index_from_visual_token()
+
+        if object_index is not None:
+            return self._compute_center_from_bbox(
+                bbox_coordinates=self._teach_edh_inference_dataset.get_current_coordinates()[
+                    object_index
+                ]
             )
 
         # Attempt to get an object with the most similar label
@@ -410,5 +414,7 @@ class PolicyModelWrapper(BaseModelWrapper):
             object_index = randint(0, len(teach_item.object_coordinates) - 1)
 
         return self._compute_center_from_bbox(
-            bbox_coordinates=teach_item.object_coordinates[object_index]
+            bbox_coordinates=self._teach_edh_inference_dataset.get_current_coordinates()[
+                object_index
+            ],
         )

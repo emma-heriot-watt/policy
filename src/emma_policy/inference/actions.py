@@ -41,6 +41,7 @@ TEACH_ACTION_TO_SYNONYMS: Mapping[str, set[str]] = MappingProxyType(
 
 AI2THOR_CLASS_DICT_FILE = Settings().paths.constants.joinpath("ai2thor_labels.json")
 AI2THOR_VECTORS_DICT_FILE = Settings().paths.constants.joinpath("ai2thor_vectors.pt")
+TEACH_ACTION_DEFINITIONS = Settings().paths.constants.joinpath("teach_default_definitions.json")
 
 
 @lru_cache(maxsize=1)
@@ -78,6 +79,17 @@ def prepare_ai2thor_object_and_similarity() -> tuple[spacy.Language, dict[str, t
         exclude=["tagger", "attribute_ruler", "parser", "senter", "lemmatizer", "ner"],
     )
     return text_processing, torch.load(AI2THOR_VECTORS_DICT_FILE)
+
+
+@lru_cache(maxsize=1)
+def teach_action_types() -> dict[str, str]:
+    """Load action types mapping for teach actions."""
+    with open(TEACH_ACTION_DEFINITIONS) as in_file:
+        action_definitions = json.load(in_file)["definitions"]["actions"]
+        action_types = {
+            action["action_name"]: action["action_type"] for action in action_definitions
+        }
+        return action_types
 
 
 @dataclass

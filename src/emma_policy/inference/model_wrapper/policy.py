@@ -18,7 +18,7 @@ from emma_policy.datamodules.emma_dataclasses import (
     EmmaDatasetItem,
     EmmaDatasetPadding,
 )
-from emma_policy.inference.actions import AgentAction
+from emma_policy.inference.actions import AgentAction, teach_action_types
 from emma_policy.inference.api.settings import ApiSettings
 from emma_policy.inference.decoded_trajectory_parser import DecodedTrajectoryParser
 from emma_policy.inference.model_wrapper.base import BaseModelWrapper, SimulatorAction
@@ -89,6 +89,7 @@ class PolicyModelWrapper(BaseModelWrapper):
 
         # Update the torch device used by the Perception API to ensure they're the same
         self._teach_edh_inference_dataset.client.update_device(self._device)
+        self._action_types = teach_action_types()
 
     @classmethod
     def from_argparse(
@@ -373,6 +374,10 @@ class PolicyModelWrapper(BaseModelWrapper):
                 indicated by the coordinate if the desired action can be performed on it, and
                 executes the action in AI2-THOR.
         """
+        action_type = self._action_types.get(action.action)
+        if action_type is not None and action_type != "ObjectInteraction":
+            return None
+
         # Attempt to index the object label
         object_index = action.get_object_index_from_label(
             bbox_probas=self._teach_edh_inference_dataset.get_current_object_probas()

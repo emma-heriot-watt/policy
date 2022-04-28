@@ -2,6 +2,7 @@ import dataclasses
 import logging
 from argparse import ArgumentParser
 from pathlib import Path
+from random import randint
 from typing import Optional
 
 import torch
@@ -385,4 +386,25 @@ class PolicyModelWrapper(BaseModelWrapper):
                 bbox_coordinates=teach_item.object_coordinates[object_index]
             )
 
-        return None
+        # Attempt to get an object with the most similar label
+        object_index = action.get_similarity_based_object_index(
+            bbox_probas=self._teach_edh_inference_dataset.get_current_object_probas()
+        )
+
+        if object_index is not None:
+            return self._compute_center_from_bbox(
+                bbox_coordinates=teach_item.object_coordinates[object_index]
+            )
+
+        # Attempt to get an object with the most similar name that was not an AI2THOR label
+        object_index = action.get_similarity_based_raw_object_index(
+            bbox_probas=self._teach_edh_inference_dataset.get_current_object_probas()
+        )
+
+        # Pick a random object
+        if object_index is None:
+            object_index = randint(0, len(teach_item.object_coordinates) - 1)
+
+        return self._compute_center_from_bbox(
+            bbox_coordinates=teach_item.object_coordinates[object_index]
+        )

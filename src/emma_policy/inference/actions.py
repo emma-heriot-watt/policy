@@ -4,7 +4,9 @@ from functools import lru_cache
 from types import MappingProxyType
 from typing import Mapping, Optional
 
+import spacy
 import torch
+from scipy.spatial.distance import cdist
 
 from emma_policy.common.settings import Settings
 
@@ -38,6 +40,7 @@ TEACH_ACTION_TO_SYNONYMS: Mapping[str, set[str]] = MappingProxyType(
 )
 
 AI2THOR_CLASS_DICT_FILE = Settings().paths.constants.joinpath("ai2thor_labels.json")
+AI2THOR_VECTORS_DICT_FILE = Settings().paths.constants.joinpath("ai2thor_vectors.pt")
 
 
 @lru_cache(maxsize=1)
@@ -67,14 +70,26 @@ def get_lowercase_to_teach_object_map() -> dict[str, str]:
     return lower_case_map
 
 
+@lru_cache(maxsize=1)
+def prepare_ai2thor_object_and_similarity() -> tuple[spacy.Language, dict[str, torch.Tensor]]:
+    """Get vectors and similarities of teach objects."""
+    text_processing = spacy.load(
+        "en_core_web_lg",
+        exclude=["tagger", "attribute_ruler", "parser", "senter", "lemmatizer", "ner"],
+    )
+    return text_processing, torch.load(AI2THOR_VECTORS_DICT_FILE)
+
+
 @dataclass
 class AgentAction:
     """A class that represents a robot action performed in the environment."""
 
     action: str
     object_label: Optional[str] = None
+    raw_object_label: Optional[str] = None
     object_visual_token: Optional[str] = None
     object_to_index = load_teach_objects_to_indices_map()
+    text_processing, object_similarities = prepare_ai2thor_object_and_similarity()
 
     def get_object_index_from_visual_token(self) -> Optional[int]:
         """Get the index of the object - bounding box that matches the visual token.
@@ -96,7 +111,6 @@ class AgentAction:
 
         bbox_labels = torch.argmax(bbox_probas, -1)
 
-        # TODO(george): check for lowercase in decoding
         object_index = self.object_to_index[self.object_label]
         object_index_in_bbox = torch.where(bbox_labels == object_index)[0]
 
@@ -106,3 +120,30 @@ class AgentAction:
             return int(object_index_in_bbox[most_confident_object_index].item())
 
         return int(object_index_in_bbox[0].item())
+
+    def get_similarity_based_object_index(self, bbox_probas: torch.Tensor) -> Optional[int]:
+        """Get the index of the object bounding box that has the most similar the object label."""
+        if self.object_label is None:
+            return None
+
+        bbox_label_indices = torch.argmax(bbox_probas, -1)
+        object_index = self.object_to_index[self.object_label]
+        similarities = self.object_similarities["similarities"][object_index, bbox_label_indices]
+        object_index_in_bbox = torch.argmax(similarities)
+
+        return int(object_index_in_bbox.item())
+
+    def get_similarity_based_raw_object_index(self, bbox_probas: torch.Tensor) -> Optional[int]:
+        """Get the index of the object bounding box based on similarity with a raw object name."""
+        if self.raw_object_label is None:
+            return None
+        bbox_label_indices = torch.argmax(bbox_probas, -1)
+        object_vector = torch.tensor(self.text_processing(self.raw_object_label).vector).unsqueeze(
+            0
+        )
+        vectors = self.object_similarities["vectors"][bbox_label_indices]
+        similarities = torch.tensor(1 - cdist(object_vector, vectors, "cosine"))
+
+        object_index_in_bbox = torch.argmax(similarities)
+
+        return int(object_index_in_bbox.item())

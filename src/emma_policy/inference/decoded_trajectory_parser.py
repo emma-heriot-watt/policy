@@ -94,18 +94,23 @@ class DecodedTrajectoryParser:
 
         object_label = None
         object_visual_token = None
+        raw_object_label = None
 
         for action_param in teach_action_params:
             action_param = action_param.strip()
 
             if action_param.startswith("<") and action_param.endswith(">"):
                 object_visual_token = action_param.strip()
-            obj_label = self.lowercase_to_teach_objects.get(action_param)
-            if obj_label is not None:
-                object_label = self.lowercase_to_teach_objects[action_param]
+            else:
+                obj_label = self.lowercase_to_teach_objects.get(action_param)
+                if obj_label is not None:
+                    object_label = self.lowercase_to_teach_objects[action_param]
+                else:
+                    raw_object_label = action_param
 
         return AgentAction(
             action=teach_action,
             object_label=object_label,
+            raw_object_label=raw_object_label,
             object_visual_token=object_visual_token,
         )

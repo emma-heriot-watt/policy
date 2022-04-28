@@ -50,6 +50,17 @@ class DecodedTeachTrajectories:
 
         return trajectory, api_action
 
+    def case_interaction_invalid_object_and_vis_token(self) -> tuple[str, AgentAction]:
+        trajectory = "pick up mugs <vis_token_3> ."
+        api_action = AgentAction(  # noqa: S106
+            "Pickup",
+            object_label=None,
+            object_visual_token="<vis_token_3>",
+            raw_object_label="mugs",
+        )
+
+        return trajectory, api_action
+
     @pytest.mark.skip(reason="We assume that this case is not possible.")
     def case_only_interaction_visual_token(self) -> tuple[str, AgentAction]:
         trajectory = "pick up <vis_token_3> ."

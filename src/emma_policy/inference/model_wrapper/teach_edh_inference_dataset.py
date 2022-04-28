@@ -200,7 +200,7 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
         self, instance: TeachEdhInstance, visual_features: EmmaVisualFeatures
     ) -> str:
         """Get the input text from a TEACh EDH instance."""
-        dialog_history = self._get_concatenated_dialog_history(instance)
+        input_text = self._get_concatenated_dialog_history(instance)
 
         actions = self._convert_trajectory_to_text(
             actions=instance.extended_driver_action_history,
@@ -209,7 +209,12 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
             truncation_side="left",  # keep most recent actions
         )
 
-        input_text = dialog_history + actions
+        if actions:
+            input_text = "{input_text} {sep_token} {action_trajectory}".format(
+                input_text=input_text,
+                sep_token=self.tokenizer.sep_token,
+                action_trajectory=actions,
+            )
 
         #  Add action execution task prefix
         input_text = self._get_random_template_for_task(Task.action_execution).format(

@@ -81,7 +81,7 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
 
         self._history_visual_features = self.prepare_visual_features(edh_history_images)
         self._trajectory_visual_features = []
-        self._original_history_length = len(edh_history_images)
+        self._original_history_length = max(self.max_frames, len(edh_history_images))
         self._feature_dicts = [
             {"width": image.size[0], "height": image.size[1]} for image in edh_history_images
         ]

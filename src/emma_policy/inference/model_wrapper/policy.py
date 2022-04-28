@@ -190,6 +190,10 @@ class PolicyModelWrapper(BaseModelWrapper):
         self._edh_instance_state.update_state(
             instance=dataset_instance, output_token_ids=output_token_ids
         )
+
+        # Update the previous frame
+        self._teach_edh_inference_dataset.previous_frame = img
+
         return next_action.action, self._get_object_relative_coordinates_from_action(
             next_action, dataset_instance
         )

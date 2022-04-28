@@ -167,7 +167,6 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
             feature_len_future=len(self._trajectory_visual_features),
             object_frame_tokens=visual_features.object_frame_tokens,
         )
-        self.previous_frame = current_frame
         return visual_features, scene_temporal_ids, object_temporal_ids
 
     def _convert_instance_to_emma_dataset_item(self, current_frame: Image) -> EmmaDatasetItem:

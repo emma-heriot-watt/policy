@@ -5,9 +5,10 @@ from pathlib import Path
 from random import randint
 from typing import Optional
 
+import numpy as np
 import torch
 from emma_datasets.datamodels import TeachEdhInstance
-from PIL import Image, ImageChops
+from PIL import Image
 from pytorch_lightning import LightningModule
 from transformers.generation_stopping_criteria import StoppingCriteriaList
 
@@ -30,6 +31,8 @@ from emma_policy.models.emma_policy import EmmaPolicy
 
 
 logger = logging.getLogger(__name__)
+
+IMAGE_SIMILARITY_ABSOLUTE_THRESHOLD = 1e-5
 
 
 class PolicyModelWrapper(BaseModelWrapper):
@@ -221,20 +224,17 @@ class PolicyModelWrapper(BaseModelWrapper):
             - Does the previous frame match the current frame?
             - Did the agent predict `Forward` again?
         """
-        is_agent_predicting_forwards_again = (
-            previous_action is not None
-            and previous_action.action == "Forward"
-            and next_action.action == "Forward"
+        is_agent_predicting_the_same_action = (
+            previous_action is not None and previous_action.action == next_action.action
         )
 
-        is_images_identical = (
-            ImageChops.difference(
-                self._teach_edh_inference_dataset.previous_frame, current_frame
-            ).getbbox()
-            is None
+        is_images_identical = np.allclose(
+            np.asarray(self._teach_edh_inference_dataset.previous_frame),
+            np.asarray(current_frame),
+            atol=IMAGE_SIMILARITY_ABSOLUTE_THRESHOLD,
         )
 
-        return is_agent_predicting_forwards_again and is_images_identical
+        return is_agent_predicting_the_same_action and bool(is_images_identical)
 
     def _compute_center_from_bbox(self, bbox_coordinates: torch.Tensor) -> tuple[float, float]:
         """Compute the centroid of a given bounding box.

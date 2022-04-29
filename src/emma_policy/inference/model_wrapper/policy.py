@@ -49,6 +49,7 @@ class PolicyModelWrapper(BaseModelWrapper):
         max_lang_tokens: Optional[int] = None,
         device_id: int = -1,
         generation_num_beams: int = 1,
+        no_repeat_ngram_size: int = 0,
     ) -> None:
 
         self._device = self._get_device(process_index, device_id)
@@ -131,6 +132,12 @@ class PolicyModelWrapper(BaseModelWrapper):
             default=14,  # noqa: WPS432
             help="Set the max target tokens for each decoding step.",
         )
+        arg_parser.add_argument(
+            "--no_repeat_ngram_size",
+            type=int,
+            default=0,
+            help="if > 0 all ngrams of that size can occur only once.",
+        )
         parsed_model_args = arg_parser.parse_args(model_args)
 
         logger.debug(parsed_model_args)
@@ -144,6 +151,7 @@ class PolicyModelWrapper(BaseModelWrapper):
             generation_num_beams=parsed_model_args.generation_num_beams,
             max_frames=parsed_model_args.max_frames,
             max_target_len=parsed_model_args.max_target_len,
+            no_repeat_ngram_size=parsed_model_args.no_repeat_ngram_size,
         )
 
     def start_new_edh_instance(
@@ -357,6 +365,7 @@ class PolicyModelWrapper(BaseModelWrapper):
                 max_length_per_action_sequence=self._edh_instance_state.total_max_target_length,
                 action_stop=self.action_stop,
                 num_beams=self._generation_num_beams,
+                no_repeat_ngram_size=self.no_repeat_ngram_size,
             )[0]
 
         return output_token_ids

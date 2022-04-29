@@ -231,6 +231,7 @@ class EmmaPolicy(pl.LightningModule):
         max_length_per_action_sequence: int = 10,
         action_stop: Optional[StoppingCriteriaList] = None,
         num_beams: int = 1,
+        no_repeat_ngram_size: int = 0,
     ) -> PredictType:
         """Teach Inference step."""
         inputs_embeds = self.emma.emma.embed_inputs(
@@ -256,6 +257,7 @@ class EmmaPolicy(pl.LightningModule):
                 decoder_input_ids=decoder_input_ids,
                 stopping_criteria=action_stop,
                 num_beams=num_beams,
+                no_repeat_ngram_size=no_repeat_ngram_size,
             )
         else:
             outputs = self.emma.generate(
@@ -266,5 +268,6 @@ class EmmaPolicy(pl.LightningModule):
                 max_length=max_length_per_action_sequence,
                 stopping_criteria=action_stop,
                 num_beams=num_beams,
+                no_repeat_ngram_size=no_repeat_ngram_size,
             )
         return outputs

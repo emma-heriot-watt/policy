@@ -258,10 +258,14 @@ class PolicyModelWrapper(BaseModelWrapper):
         is_agent_predicting_the_same_action = (
             previous_action is not None and previous_action.action == next_action.action
         )
+        prev_frame = np.asarray(self._teach_edh_inference_dataset.previous_frame)
+        current_frame = np.array(current_frame)
+        if prev_frame.shape != prev_frame.shape:
+            return False
 
         is_images_identical = np.allclose(
-            np.asarray(self._teach_edh_inference_dataset.previous_frame),
-            np.asarray(current_frame),
+            prev_frame,
+            current_frame,
             atol=IMAGE_SIMILARITY_ABSOLUTE_THRESHOLD,
         )
 

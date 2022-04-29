@@ -119,7 +119,15 @@ class PolicyModelWrapper(BaseModelWrapper):
             default=1,
             help="Number of beams for beam search. 1 means no beam search.",
         )
+        arg_parser.add_argument(
+            "--max_frames",
+            type=int,
+            default=32,  # noqa: WPS432
+            help="Set max number of frames for the model to decode for.",
+        )
         parsed_model_args = arg_parser.parse_args(model_args)
+
+        logger.debug(parsed_model_args)
 
         return cls(
             process_index=process_index,
@@ -128,6 +136,7 @@ class PolicyModelWrapper(BaseModelWrapper):
             model_name=parsed_model_args.model_name,
             device_id=parsed_model_args.device_id,
             generation_num_beams=parsed_model_args.generation_num_beams,
+            max_frames=parsed_model_args.max_frames,
         )
 
     def start_new_edh_instance(

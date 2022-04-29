@@ -87,6 +87,7 @@ class PolicyModelWrapper(BaseModelWrapper):
             ]
         )
         self._generation_num_beams = generation_num_beams
+        self.no_repeat_ngram_size = no_repeat_ngram_size
 
         # Update the torch device used by the Perception API to ensure they're the same
         self._teach_edh_inference_dataset.client.update_device(self._device)

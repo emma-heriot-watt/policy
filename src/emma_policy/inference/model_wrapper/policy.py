@@ -125,6 +125,12 @@ class PolicyModelWrapper(BaseModelWrapper):
             default=32,  # noqa: WPS432
             help="Set max number of frames for the model to decode for.",
         )
+        arg_parser.add_argument(
+            "--max_target_len",
+            type=int,
+            default=14,  # noqa: WPS432
+            help="Set the max target tokens for each decoding step.",
+        )
         parsed_model_args = arg_parser.parse_args(model_args)
 
         logger.debug(parsed_model_args)
@@ -137,6 +143,7 @@ class PolicyModelWrapper(BaseModelWrapper):
             device_id=parsed_model_args.device_id,
             generation_num_beams=parsed_model_args.generation_num_beams,
             max_frames=parsed_model_args.max_frames,
+            max_target_len=parsed_model_args.max_target_len,
         )
 
     def start_new_edh_instance(

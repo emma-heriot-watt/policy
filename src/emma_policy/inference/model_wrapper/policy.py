@@ -191,6 +191,7 @@ class PolicyModelWrapper(BaseModelWrapper):
         )
 
         if is_agent_stuck:
+            logger.debug(f"Agent is stuck: Previous `{prev_action}` -> Next `{next_action}`")
             next_action, output_token_ids = self.handle_repeatedly_walking_into_obstruction(
                 model_input_batch
             )

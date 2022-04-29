@@ -127,11 +127,16 @@ class AgentAction:
         object_index_in_bbox = torch.where(bbox_labels == object_index)[0]
 
         if len(object_index_in_bbox) > 1:
+            # if we have multiple objects with the same label, select the one with the highest
+            # confidence score
             object_probas = bbox_probas[object_index_in_bbox]
             most_confident_object_index = object_probas[:, object_index].argmax()
             return int(object_index_in_bbox[most_confident_object_index].item())
 
-        return int(object_index_in_bbox[0].item())
+        if len(object_index_in_bbox) == 1:
+            return int(object_index_in_bbox[0].item())
+
+        return None
 
     def get_similarity_based_object_index(self, bbox_probas: torch.Tensor) -> Optional[int]:
         """Get the index of the object bounding box that has the most similar the object label."""

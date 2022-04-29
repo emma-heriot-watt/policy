@@ -392,6 +392,7 @@ class PolicyModelWrapper(BaseModelWrapper):
             bbox_probas=self._teach_edh_inference_dataset.get_current_object_probas()
         )
         if object_index is not None:
+            logger.debug(f"Attempt to get object index from [b]label[/]: IDX `{object_index}`")
             return self._compute_center_from_bbox(
                 bbox_coordinates=self._teach_edh_inference_dataset.get_current_coordinates()[
                     object_index
@@ -400,8 +401,10 @@ class PolicyModelWrapper(BaseModelWrapper):
 
         # Attempt to index the visual token
         object_index = action.get_object_index_from_visual_token()
-
         if object_index is not None:
+            logger.debug(
+                f"Attempt to get object index from [b]visual token[/]: IDX `{object_index}`"
+            )
             return self._compute_center_from_bbox(
                 bbox_coordinates=self._teach_edh_inference_dataset.get_current_coordinates()[
                     object_index
@@ -412,8 +415,10 @@ class PolicyModelWrapper(BaseModelWrapper):
         object_index = action.get_similarity_based_object_index(
             bbox_probas=self._teach_edh_inference_dataset.get_current_object_probas()
         )
-
         if object_index is not None:
+            logger.debug(
+                f"Attempt to get object index with [b]most similar visual token[/]: IDX `{object_index}`"
+            )
             return self._compute_center_from_bbox(
                 bbox_coordinates=teach_item.object_coordinates[object_index]
             )
@@ -422,10 +427,14 @@ class PolicyModelWrapper(BaseModelWrapper):
         object_index = action.get_similarity_based_raw_object_index(
             bbox_probas=self._teach_edh_inference_dataset.get_current_object_probas()
         )
+        logger.debug(
+            f"Attempt to get object with [b]most similar name that is not an AI2THOR label[/]: IDX `{object_index}`"
+        )
 
         # Pick a random object
         if object_index is None:
             object_index = randint(0, len(teach_item.object_coordinates) - 1)
+            logger.debug(f"Get [b]random object[/]: IDX `{object_index}`")
 
         return self._compute_center_from_bbox(
             bbox_coordinates=self._teach_edh_inference_dataset.get_current_coordinates()[

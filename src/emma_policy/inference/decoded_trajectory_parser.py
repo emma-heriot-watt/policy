@@ -34,10 +34,13 @@ class DecodedTrajectoryParser:
         """Converts a sequence of tokens into a list of executable actions."""
         logger.debug(f"Decoded trajectory: `{decoded_trajectory}`")
 
-        if decoded_trajectory.endswith(self.eos_token):
+        decoded_actions_list = self._separate_decoded_trajectory(decoded_trajectory)
+
+        if not decoded_actions_list or decoded_actions_list[0].endswith(self.eos_token):
+            # if the list is empty it means that we generated only the actio delimiter
+            # or if we have an action that ends with EOS
             return AgentAction(action="Stop")
 
-        decoded_actions_list = self._separate_decoded_trajectory(decoded_trajectory)
         return self._convert_action_to_executable_form(decoded_actions_list[0])
 
     def _separate_decoded_trajectory(self, decoded_trajectory: str) -> list[str]:

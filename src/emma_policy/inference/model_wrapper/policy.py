@@ -434,7 +434,9 @@ class PolicyModelWrapper(BaseModelWrapper):
 
         # Pick a random object
         if object_index is None:
-            object_index = randint(0, len(teach_item.object_coordinates) - 1)
+            object_index = randint(
+                0, len(self._teach_edh_inference_dataset.get_current_coordinates()) - 1
+            )
             logger.debug(f"Get [b]random object[/]: IDX `{object_index}`")
 
         return self._compute_center_from_bbox(

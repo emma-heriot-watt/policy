@@ -13,6 +13,7 @@ updates:
   - package-ecosystem: pip
     directory: "/"
     insecure-external-code-execution: allow
+    versioning-strategy: lockfile-only
     registries:
       - github-emma
     schedule:

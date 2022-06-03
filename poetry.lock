@@ -1452,7 +1452,7 @@ test = ["coverage", "pytest (>=6.0)", "pytest-cov", "pytest-mock", "pytest-timeo
 
 [[package]]
 name = "jupyterlab"
-version = "3.3.4"
+version = "3.4.2"
 description = "JupyterLab computational environment"
 category = "dev"
 optional = false
@@ -1462,7 +1462,7 @@ python-versions = ">=3.7"
 ipython = "*"
 jinja2 = ">=2.1"
 jupyter-core = "*"
-jupyter-server = ">=1.4,<2.0"
+jupyter-server = ">=1.16,<2.0"
 jupyterlab-server = ">=2.10,<3.0"
 nbclassic = ">=0.2,<1.0"
 packaging = "*"
@@ -4652,8 +4652,8 @@ jupyter-server = [
     {file = "jupyter_server-1.16.0.tar.gz", hash = "sha256:c756f87ad64b84e2aa522ef482445e1a93f7fe4a5fc78358f4636e53c9a0463a"},
 ]
 jupyterlab = [
-    {file = "jupyterlab-3.3.4-py3-none-any.whl", hash = "sha256:87121636963027a0477e50ea8f366acf1ab06bb05d7e581cd2ec8c00f6e741a5"},
-    {file = "jupyterlab-3.3.4.tar.gz", hash = "sha256:e04355848b3d91ac4d95c2e3846a0429b33e9c2edc79668fb4fc4d212f1e5107"},
+    {file = "jupyterlab-3.4.2-py3-none-any.whl", hash = "sha256:f749fff221e12fe384dd91e6f8c004e6a59cd3bf4271208002ab02cb4218618c"},
+    {file = "jupyterlab-3.4.2.tar.gz", hash = "sha256:38abd3a4f83a8f97e3f15bebbcc0825903c15519809eedfaa41340d260be2160"},
 ]
 jupyterlab-pygments = [
     {file = "jupyterlab_pygments-0.1.2-py2.py3-none-any.whl", hash = "sha256:abfb880fd1561987efaefcb2d2ac75145d2a5d0139b1876d5be806e32f630008"},

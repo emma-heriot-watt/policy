@@ -5,9 +5,9 @@ from unittest.mock import PropertyMock
 
 from emma_datasets.common import get_progress
 from emma_datasets.datamodels import DatasetSplit
-from emma_datasets.datamodels.datasets.teach import TeachEdhInstance
+from emma_datasets.datamodels.datasets import TeachEdhInstance
 from emma_datasets.db import DatasetDb
-from emma_datasets.parsers.instance_creators import TeachEdhInstanceCreator
+from emma_datasets.parsers.instance_creators import DownstreamInstanceCreator
 from filelock import FileLock
 from pytest_cases import fixture
 from pytest_mock import MockerFixture
@@ -110,7 +110,7 @@ def teach_edh_instances_db(
         for dataset_split, db_path in all_instance_dbs.items():
             if not db_path.exists():
                 progress = get_progress()
-                instance_creator = TeachEdhInstanceCreator(progress)
+                instance_creator = DownstreamInstanceCreator(TeachEdhInstance, progress)
 
                 instance_iterator = instance_creator(
                     input_data=fixtures_root.joinpath(

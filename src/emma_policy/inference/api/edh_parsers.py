@@ -2,7 +2,7 @@ import logging
 from io import BytesIO
 from pathlib import Path
 
-from emma_datasets.datamodels import TeachEdhInstance
+from emma_datasets.datamodels.datasets import TeachEdhInstance
 from fastapi import HTTPException, status
 from PIL import Image
 

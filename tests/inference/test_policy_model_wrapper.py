@@ -1,5 +1,5 @@
 import pytest
-from emma_datasets.datamodels import TeachEdhInstance
+from emma_datasets.datamodels.datasets import TeachEdhInstance
 from PIL import Image
 
 from emma_policy.inference.model_wrapper import PolicyModelWrapper

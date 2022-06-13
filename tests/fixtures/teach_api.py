@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Generator
 from unittest.mock import patch
 
-from emma_datasets.datamodels import TeachEdhInstance
+from emma_datasets.datamodels.datasets import TeachEdhInstance
 from fastapi.testclient import TestClient
 from PIL import Image
 from pytest_cases import fixture

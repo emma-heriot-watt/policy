@@ -4,14 +4,8 @@ from re import sub
 from typing import Any, Callable, Literal, Optional
 
 import torch
-from emma_datasets.datamodels import (
-    AlfredHighAction,
-    AlfredLowAction,
-    DatasetMetadata,
-    GenericActionTrajectory,
-    MediaType,
-    Region,
-)
+from emma_datasets.datamodels import ActionTrajectory, DatasetMetadata, MediaType, Region
+from emma_datasets.datamodels.datasets import AlfredLowAction
 from transformers import PreTrainedTokenizer
 
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
@@ -830,7 +824,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
     def _convert_trajectory_to_text(
         self,
-        trajectory: GenericActionTrajectory[AlfredLowAction, AlfredHighAction],
+        trajectory: ActionTrajectory,
         feature_dicts: list[dict[str, Any]],
         visual_features: EmmaVisualFeatures,
         truncation_side: Literal["left", "right"] = "left",
@@ -839,7 +833,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
         If an object is not found, the `<unk>` token is used.
         """
-        low_level_actions: list[AlfredLowAction] = trajectory.low_level_actions
+        low_level_actions = trajectory.low_level_actions
 
         if self.max_frames:
             feature_dicts = self._truncate_frames(feature_dicts, truncation_side=truncation_side)

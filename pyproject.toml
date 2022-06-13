@@ -11,44 +11,44 @@ packages = [{ include = "emma_policy", from = "src" }]
 [tool.poe]
 envfile = ".env"
 
-[tool.poe.tasks]
+	[tool.poe.tasks]
 
-[tool.poe.tasks.format]
-help = "Format using the pre-commit hooks"
-cmd = "pre-commit run --all-files"
+		[tool.poe.tasks.format]
+		help = "Format using the pre-commit hooks"
+		cmd = "pre-commit run --all-files"
 
-[tool.poe.tasks.typecheck]
-help = "Check types with mypy"
-cmd = "mypy ."
+		[tool.poe.tasks.typecheck]
+		help = "Check types with mypy"
+		cmd = "mypy ."
 
-[tool.poe.tasks.lint]
-help = "Lint with flake8"
-cmd = "flake8 ."
+		[tool.poe.tasks.lint]
+		help = "Lint with flake8"
+		cmd = "flake8 ."
 
-[tool.poe.tasks.test]
-help = "Run the fast Python tests"
-cmd = "pytest --cov=src -m 'not slow'"
+		[tool.poe.tasks.test]
+		help = "Run the fast Python tests"
+		cmd = "pytest --cov=src -m 'not slow'"
 
-[tool.poe.tasks.test-everything]
-help = "Run all the tests and get the coverage"
-cmd = "pytest -v --durations=40 --color=yes --junitxml=pytest.xml --cov=src -m 'not slow' -n 2"
+		[tool.poe.tasks.test-everything]
+		help = "Run all the tests and get the coverage"
+		cmd = "pytest -v --durations=40 --color=yes --junitxml=pytest.xml --cov=src -m 'not slow' -n 2"
 
-[tool.poe.tasks.update-torch-cuda]
-## See https://github.com/python-poetry/poetry/issues/2543
-help = "Update torch to use the latest CUDA version"
-shell = "python scripts/update_torch_cuda.py"
+		[tool.poe.tasks.update-torch-cuda]
+		## See https://github.com/python-poetry/poetry/issues/2543
+		help = "Update torch to use the latest CUDA version"
+		shell = "python scripts/update_torch_cuda.py"
 
-[tool.poe.tasks.outdated]
-help = 'Show all outdated top-level dependencies'
-shell = """
+		[tool.poe.tasks.outdated]
+		help = 'Show all outdated top-level dependencies'
+		shell = """
 			poetry show --outdated | grep --file=<(poetry show --tree | grep '^\\w' | sed 's/^\\([^ ]*\\).*/^\\1\\\\s/')
 		"""
-interpreter = "bash"
+		interpreter = "bash"
 
-[tool.poe.tasks.install-everything-else]
-help = 'Download the spacy pipeline'
-shell = """python -m spacy download en_core_web_lg"""
-interpreter = "bash"
+		[tool.poe.tasks.install-everything-else]
+		help = 'Download the spacy pipeline'
+		shell = """python -m spacy download en_core_web_lg"""
+		interpreter = "bash"
 
 [tool.poetry.dependencies]
 python = "~3.9"
@@ -59,9 +59,9 @@ wandb = "^0.12.17"
 torchmetrics = "^0.7.3"
 hydra-core = "^1.1.2"
 hydra-colorlog = "^1.1.0"
-transformers = "^4.18.0"
-pydantic = {version = "~1.8", extras = ["dotenv"]}
-rich = "^12.2.0"
+transformers = "~4.18.0"
+pydantic = { version = "~1.8", extras = ["dotenv"] }
+rich = "~12.2.0"
 overrides = "^6.1.0"
 numpy = "^1.22.2"
 emma-datasets = { git = "https://github.com/emma-simbot/datasets", rev = "main" }

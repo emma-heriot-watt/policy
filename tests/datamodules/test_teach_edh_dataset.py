@@ -2,7 +2,8 @@ import itertools
 from pathlib import Path
 
 import torch
-from emma_datasets.datamodels import DatasetSplit, TeachEdhInstance
+from emma_datasets.datamodels import DatasetSplit
+from emma_datasets.datamodels.datasets import TeachEdhInstance
 from emma_datasets.db import DatasetDb
 from filelock import FileLock
 from pytest_cases import fixture, parametrize

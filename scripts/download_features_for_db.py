@@ -6,7 +6,8 @@ from typing import Literal
 import boto3
 import botocore
 from emma_datasets.common import get_progress
-from emma_datasets.datamodels import BaseInstance, Instance, TeachEdhInstance
+from emma_datasets.datamodels import BaseInstance, Instance
+from emma_datasets.datamodels.datasets import TeachEdhInstance
 from emma_datasets.db import DatasetDb
 
 from emma_policy.utils import get_logger

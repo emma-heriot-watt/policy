@@ -7,7 +7,7 @@ from typing import Optional
 
 import numpy as np
 import torch
-from emma_datasets.datamodels import TeachEdhInstance
+from emma_datasets.datamodels.datasets import TeachEdhInstance
 from PIL import Image
 from pytorch_lightning import LightningModule
 from transformers.generation_stopping_criteria import StoppingCriteriaList

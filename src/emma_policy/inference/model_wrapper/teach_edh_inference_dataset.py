@@ -3,7 +3,7 @@ from dataclasses import asdict
 from typing import Any, Optional
 
 import torch
-from emma_datasets.datamodels import TeachEdhInstance
+from emma_datasets.datamodels.datasets import TeachEdhInstance
 from overrides import overrides
 from PIL.Image import Image
 from transformers import AutoTokenizer, BatchEncoding, PreTrainedTokenizer

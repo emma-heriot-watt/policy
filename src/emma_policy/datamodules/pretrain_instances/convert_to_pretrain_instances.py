@@ -1,8 +1,7 @@
 import itertools
 from typing import Callable, Iterator, Optional
 
-from emma_datasets.datamodels import Caption, Instance, MediaType
-from emma_datasets.datamodels.region import Region
+from emma_datasets.datamodels import Caption, Instance, MediaType, Region
 
 from emma_policy.datamodules.pretrain_instances.datamodels import (
     EnabledTasksHandler,

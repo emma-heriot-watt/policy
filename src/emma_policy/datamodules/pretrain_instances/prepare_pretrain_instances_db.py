@@ -21,7 +21,10 @@ from emma_policy.common import (
 )
 from emma_policy.datamodules.pretrain_instances import convert_instance_to_pretrain_instances
 from emma_policy.datamodules.pretrain_instances.datamodels import EnabledTasksHandler, Task
-from emma_policy.datamodules.pretrain_instances.is_train_instance import is_train_instance
+from emma_policy.datamodules.pretrain_instances.is_train_instance import (
+    is_train_instance,
+    should_keep_instance,
+)
 
 
 PRETRAIN_DATASET_SPLITS = (DatasetSplit.train, DatasetSplit.valid)
@@ -87,6 +90,9 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
             data = self.db[data_idx]
 
             instance = Instance.parse_raw(data)
+            keep_instance = should_keep_instance(instance)
+            if not keep_instance:
+                continue
             is_train = is_train_instance(instance)
 
             pretrain_instance_iterator = convert_instance_to_pretrain_instances(

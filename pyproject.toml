@@ -50,6 +50,11 @@ envfile = ".env"
 		shell = """python -m spacy download en_core_web_lg"""
 		interpreter = "bash"
 
+		[tool.poe.tasks.download-coco-resplit-train]
+		help = "Download mscoco_resplit_train.json"
+		shell = "wget -O storage/constants/mscoco_resplit_train.json https://www.dropbox.com/sh/m26a281y97ok6wm/AAA-97WOmyvcWLaaf2jFRrT8a/mscoco_resplit_train.json\\?dl\\=0"
+		interpreter = "bash"
+
 [tool.poetry.dependencies]
 python = "~3.9"
 torch = "^1.11.0"

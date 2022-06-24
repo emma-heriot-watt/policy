@@ -57,6 +57,7 @@ jobs:
         run: |
           poetry install
           poetry run poe install-everything-else
+          poetry run poe download-coco-resplit-train
 
       - name: Run test suite
         run: |

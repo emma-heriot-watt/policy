@@ -65,6 +65,7 @@ class PretrainInstanceCreator:
             Task.relation_detection: self.relation_detection,
             Task.instruction_prediction: self.instruction_prediction,
             Task.action_execution: self.action_execution,
+            Task.goal_prediction: self.goal_prediction,
             Task.vmlm: self.vmlm,
             Task.vtm: self.vtm,
             Task.fom: self.fom,
@@ -250,6 +251,28 @@ class PretrainInstanceCreator:
 
     @property  # type: ignore[misc]
     @video_task_check
+    def goal_prediction(self) -> Iterator[PretrainInstance]:
+        """Get the pretrain instance for the goal prediction for a given trajectory."""
+        skip_instance = (
+            not self.instance.is_full_trajectory
+            or Task.goal_prediction not in self.enabled_tasks
+            or not self.instance.task_description
+        )
+        if skip_instance:
+            return []
+
+        yield from (
+            PretrainInstance(
+                task_description=task_description,
+                trajectory=self.instance.trajectory,
+                dataset=self.instance.dataset,
+                task=Task.goal_prediction,
+            )
+            for task_description in self.instance.task_description
+        )
+
+    @property  # type: ignore[misc]
+    @video_task_check
     def action_execution(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instance for the action execution task given a subgoal instruction."""
         skip_instance = (
@@ -274,7 +297,12 @@ class PretrainInstanceCreator:
     @video_task_check
     def vtm(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instance for the video-text matching task given a subgoal."""
-        if not self.instance.captions or Task.vtm not in self.enabled_tasks:
+        skip_instance = (
+            not self.instance.captions
+            or Task.vtm not in self.enabled_tasks
+            or self.instance.is_full_trajectory  # Do not apply VTM to trajectory data
+        )
+        if skip_instance:
             return []
 
         yield from (
@@ -291,7 +319,8 @@ class PretrainInstanceCreator:
     @video_task_check
     def fom(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instance for the feature order modeling task given a subgoal."""
-        if not self.instance.captions or Task.fom not in self.enabled_tasks:
+        skip_instance = not self.instance.captions or Task.fom not in self.enabled_tasks
+        if skip_instance:
             return []
 
         yield from (

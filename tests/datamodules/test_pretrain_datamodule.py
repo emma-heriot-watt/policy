@@ -86,7 +86,7 @@ def test_apply_frame_shuffling(instances_db_path: Path) -> None:
     with DatasetDb(instances_db_path) as db:
         for _, _, instance_str in db:
             instance = Instance.parse_raw(instance_str)
-            if instance.modality == MediaType.video:
+            if instance.modality == MediaType.video and not instance.is_full_trajectory:
                 feature_dicts = [
                     feature_dict["features"]
                     for feature_dict in torch.load(instance.features_path)["frames"]

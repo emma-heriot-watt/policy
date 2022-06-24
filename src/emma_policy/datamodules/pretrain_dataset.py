@@ -87,6 +87,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             Task.captioning: self.captioning,
             Task.vqa: self.vqa,
             Task.instruction_prediction: self.instruction_prediction,
+            Task.goal_prediction: self.goal_prediction,
             Task.action_execution: self.action_execution,
             Task.vtm: self.vtm,
             Task.fom: self.fom,
@@ -524,6 +525,44 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
 
         target_encoding = self.tokenizer.encode_plus(
             target_text, return_tensors=self._return_tensor_type, truncation=True
+        )
+
+        return EmmaDatasetItem(
+            input_token_ids=input_encoding.input_ids.squeeze(0),
+            text_attention_mask=input_encoding.attention_mask.squeeze(0),
+            target_token_ids=target_encoding.input_ids.squeeze(0),
+            decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
+            object_attention_mask=visual_features.object_attention_mask,
+            object_coordinates=visual_features.object_coordinates,
+            object_features=visual_features.object_features,
+            object_frame_tokens=visual_features.object_frame_tokens,
+            scene_attention_mask=visual_features.scene_attention_mask,
+            scene_coordinates=visual_features.scene_coordinates,
+            scene_features=visual_features.scene_features,
+            scene_frame_tokens=visual_features.scene_frame_tokens,
+            visual_token_ids=visual_features.visual_token_ids,
+            task=self._get_task_as_tensor(Task.instruction_prediction),
+        )
+
+    def goal_prediction(self, instance: PretrainInstance) -> EmmaDatasetItem:
+        """Process the instance for the instruction prediction task."""
+        if instance.task_description is None:
+            raise AssertionError(
+                "Task description for this instance must exist. Make sure this instance is connected to the right task!"
+            )
+
+        source_text = self._get_random_template_for_task(Task.goal_prediction)
+        input_encoding = self.tokenizer.encode_plus(
+            source_text, return_tensors=self._return_tensor_type, truncation=True
+        )
+        visual_features = self._load_visual_features(
+            features_path=instance.features_path, modality=instance.modality
+        )
+
+        target_encoding = self.tokenizer.encode_plus(
+            instance.task_description.text,
+            return_tensors=self._return_tensor_type,
+            truncation=True,
         )
 
         return EmmaDatasetItem(

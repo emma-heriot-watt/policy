@@ -3,7 +3,13 @@ from enum import Enum
 from types import MappingProxyType
 from typing import Any, Iterator, Mapping, Optional, Union, cast
 
-from emma_datasets.datamodels import Caption, MediaType, QuestionAnswerPair, Region
+from emma_datasets.datamodels import (
+    Caption,
+    MediaType,
+    QuestionAnswerPair,
+    Region,
+    TaskDescription,
+)
 from emma_datasets.datamodels.instance import ActionTrajectory, MultiSourceInstanceMixin
 
 from emma_policy.datamodules.relation import Relation
@@ -21,8 +27,7 @@ class Task(Enum):
     relation_detection = "Relationship detection"
     instruction_prediction = "Instruction prediction for trajectory"
     action_execution = "Action execution in embodied environment"
-    # TODO: check whether we can put together the entire trajectory
-    # goal_prediction = "Goal prediction for an action trajectory"
+    goal_prediction = "Goal prediction for an action trajectory"
     vmlm = "Video Masked Language Modelling"
     vtm = "Video-Text Matching"
     fom = "Frame Order Modeling"
@@ -80,6 +85,11 @@ TASK_TEMPLATES_MAP: Mapping[Task, list[str]] = MappingProxyType(
             "Explain how {subject} relates to {object}",
             "Describe the relationship between {subject} and {object}",
             "Describe how {subject} relates to {object}",
+        ],
+        Task.goal_prediction: [
+            "Predict the goal",
+            "Descibe the goal",
+            "Provide a goal description",
         ],
         Task.instruction_prediction: [
             "Predict an instruction",
@@ -197,3 +207,4 @@ class PretrainInstance(MultiSourceInstanceMixin):  # type: ignore[misc]
     regions: Optional[list[Region]]
     relations: Optional[list[Relation]]
     trajectory: Optional[ActionTrajectory]
+    task_description: Optional[TaskDescription]

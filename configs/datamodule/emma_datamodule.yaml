@@ -23,4 +23,5 @@ enabled_tasks:
     # - vtm
     # - vmlm
     # - fom
+    # - goal_prediction
 # pin_memory: False

@@ -23,6 +23,7 @@ def emma_pretrain_datamodule(
         model_name=model_metadata_path,
         load_valid_data=True,
         enabled_tasks=enabled_tasks_per_modality,
+        max_frames=10,
     )
     dm.prepare_data()
     dm.setup()

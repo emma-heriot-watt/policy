@@ -26,7 +26,7 @@ class FixtureDownload:
     """Downloads the features for all instances given a db."""
 
     def __init__(
-        self, input_db_path: Path, instance_type: Literal["default", "teach_edh"] = "default"
+        self, input_db_path: Path, instance_type: Literal["pretrain", "teach_edh"] = "pretrain"
     ) -> None:
         self._db = DatasetDb(input_db_path)
 
@@ -47,24 +47,36 @@ class FixtureDownload:
         with self._progress, self._db:  # noqa: WPS316
             for _, _, data in self._db:
                 instance = self._instance_model.parse_raw(data)
-                local_feature_path = instance.features_path
-
-                local_feature_path.parent.mkdir(parents=True, exist_ok=True)
-
-                if "alfred" in local_feature_path.parts:
-                    s3_path = self._get_paths_for_alfred(local_feature_path)
+                if instance.is_full_trajectory:
+                    local_feature_paths = instance.features_path
                 else:
-                    s3_path = self._get_paths(local_feature_path)
-
-                self._download_file(s3_path, local_feature_path)
-
-                if self.instance_type == "teach_edh":
-                    local_feature_path = instance.future_features_path
-                    local_feature_path.parent.mkdir(parents=True, exist_ok=True)
-                    s3_path = self._get_paths(local_feature_path)
-                    self._download_file(s3_path, local_feature_path)
-
+                    local_feature_paths = [instance.features_path]
+                self._dowload_feature_files(
+                    instance=instance, local_feature_paths=local_feature_paths
+                )
                 self._progress.advance(self._task_id)
+
+    def _dowload_feature_files(
+        self,
+        instance: BaseInstance,
+        local_feature_paths: list[Path],
+    ) -> None:
+        """Download the feature files."""
+        for local_feature_path in local_feature_paths:
+            local_feature_path.parent.mkdir(parents=True, exist_ok=True)
+
+            if "alfred" in local_feature_path.parts:
+                s3_path = self._get_paths_for_alfred(local_feature_path)
+            else:
+                s3_path = self._get_paths(local_feature_path)
+
+            self._download_file(s3_path, local_feature_path)
+
+            if self.instance_type == "teach_edh":
+                local_future_feature_path = instance.future_features_path
+                local_future_feature_path.parent.mkdir(parents=True, exist_ok=True)
+                s3_path = self._get_paths(local_future_feature_path)
+                self._download_file(s3_path, local_future_feature_path)
 
     def _download_file(self, s3_path: Path, local_path: Path) -> None:
         try:
@@ -101,8 +113,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--instance_type",
         help="Type of instance model used within the DatasetDb",
-        choices=["default", "teach_edh"],
-        default="default",
+        choices=["pretrain", "teach_edh"],
+        default="pretrain",
     )
 
     args = parser.parse_args()

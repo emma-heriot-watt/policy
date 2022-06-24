@@ -1,7 +1,7 @@
 import dataclasses
 import random
 from pathlib import Path
-from typing import Any, Literal, Optional, TypeVar
+from typing import Any, Literal, Optional, TypeVar, Union
 
 import torch
 from emma_datasets.datamodels import MediaType
@@ -91,7 +91,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
 
     def _load_visual_features(
         self,
-        features_path: Path,
+        features_path: Union[Path, list[Path]],
         modality: MediaType,
         truncation_side: Literal["left", "right"] = "left",
         start_offset: int = 0,
@@ -236,12 +236,32 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
 
     def _load_feature_dicts(
         self,
-        features_path: Path,
+        features_path: Union[Path, list[Path]],
         modality: MediaType,
         truncation_side: Literal["left", "right"] = "left",
         allow_empty: bool = False,
     ) -> list[dict[str, torch.Tensor]]:
-        """Load the visual features from file and truncate them to max_frames."""
+        """Load the visual features from file(s) and truncate them to max_frames."""
+        if isinstance(features_path, Path):
+            feature_dicts = self._load_feature_dicts_from_path(
+                features_path=features_path, modality=modality
+            )
+        else:
+            feature_dicts = self._load_feature_dicts_from_path_list(
+                features_path=features_path, modality=modality
+            )
+
+        if not feature_dicts and not allow_empty:
+            raise AssertionError("No dict of features have been loaded.")
+
+        if self.max_frames:
+            feature_dicts = self._truncate_frames(feature_dicts, truncation_side=truncation_side)
+        return feature_dicts
+
+    def _load_feature_dicts_from_path(
+        self, features_path: Path, modality: MediaType
+    ) -> list[dict[str, torch.Tensor]]:
+        """Load the visual features from a single file."""
         if not features_path.exists():
             raise AssertionError("Provided features path does not exist.")
 
@@ -249,15 +269,18 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
             feature_dicts = [
                 feature_dict["features"] for feature_dict in torch.load(features_path)["frames"]
             ]
-
         elif modality == MediaType.image:
             feature_dicts = [torch.load(features_path)]
+        return feature_dicts
 
-        if not feature_dicts and not allow_empty:
-            raise AssertionError("No dict of features have been loaded.")
+    def _load_feature_dicts_from_path_list(
+        self, features_path: list[Path], modality: MediaType
+    ) -> list[dict[str, torch.Tensor]]:
+        """Load the visual features from a list of files."""
+        feature_dicts = []
+        for fpath in features_path:
+            feature_dicts.extend(self._load_feature_dicts_from_path(fpath, modality))
 
-        if self.max_frames:
-            feature_dicts = self._truncate_frames(feature_dicts, truncation_side=truncation_side)
         return feature_dicts
 
     def _concat_visual_features(

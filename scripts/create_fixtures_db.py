@@ -2,7 +2,7 @@ import json
 import random
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Union
 
 from emma_datasets.common.progress import BatchesProcessedColumn, ProcessingSpeedColumn
 from emma_datasets.datamodels import Instance
@@ -145,16 +145,41 @@ class FixturesDbCreator:
         Workaround on immutable objects, change the feature path from the string rather than the
         instance value. Does not affect the path to the image files.
         """
-        dirname = Path(*instance.features_path.parts[2:])
-
+        dirname = self._get_features_dirname(instance)
         instance_dict = json.loads(instance.json(by_alias=True))
         for _, dataset in instance_dict["dataset"].items():
-            dataset["features_path"] = self._fixtures_datasets_path.joinpath(dirname).as_posix()
+            dataset["features_path"] = self._update_features_path(
+                instance=instance, dirname=dirname
+            )
 
         instance_dict = json.dumps(instance_dict)
         instance_dict = instance_dict.replace("None", "null")
-
         return Instance.parse_raw(instance_dict)
+
+    def _get_features_dirname(self, instance: Instance) -> Union[Path, list[Path]]:
+        """Get the name of the features file."""
+        dirname: Union[Path, list[Path]]
+        if instance.is_full_trajectory:
+            dirname = [Path(*features_path.parts[2:]) for features_path in instance.features_path]
+        else:
+            dirname = Path(*instance.features_path.parts[2:])
+
+        return dirname
+
+    def _update_features_path(
+        self, instance: Instance, dirname: Union[Path, list[Path]]
+    ) -> Union[str, list[str]]:
+        """Update the features path for the fixtures."""
+        features_path: Union[str, list[str]]
+        if instance.is_full_trajectory and isinstance(dirname, list):
+            features_path = [
+                self._fixtures_datasets_path.joinpath(features_name).as_posix()
+                for features_name in dirname
+            ]
+        elif isinstance(dirname, Path):
+            features_path = self._fixtures_datasets_path.joinpath(dirname).as_posix()
+
+        return features_path
 
     def _is_valid_instance(self, tasks: list[Task]) -> bool:
         """Check whether the tasks given are acceptable for the validation set or not."""

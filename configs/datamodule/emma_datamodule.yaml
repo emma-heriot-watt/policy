@@ -5,9 +5,10 @@ pretrain_db_dir_path: ${work_dir}/storage/db/
 batch_size: 100
 load_valid_data: True
 num_workers: 12
-max_lang_tokens: 20
+max_lang_tokens: 512
 max_frames: 100
 tokenizer_truncation_side: right
+balance_datasets: False
 enabled_tasks:
   image:
     - mlm

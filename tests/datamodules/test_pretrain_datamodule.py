@@ -60,6 +60,35 @@ def test_dataloader_creates_batches(emma_pretrain_datamodule: EmmaPretrainDataMo
         assert isinstance(batch, EmmaDatasetBatch)
 
 
+def test_prepare_balanced_datasets(
+    pretrain_db_dir_path: Path, enabled_tasks_per_modality: dict[str, list[str]]
+) -> None:
+    """Ensure that when balance_datasets is True, a dataset with the correct number of samples is
+    created.
+
+    The final dataset used by the dataloader should have as many samples as the total number of
+    tasks multiplied with the balanced number of samples per task.
+    """
+    dm = EmmaPretrainDataModule(
+        pretrain_db_dir_path,
+        load_valid_data=True,
+        enabled_tasks=enabled_tasks_per_modality,
+        balance_datasets=True,
+    )
+
+    dm.prepare_data()
+    dm.setup()
+    if dm.balance_datasets:
+        total_tasks = sum(
+            len(set(modality_tasks)) for modality_tasks in enabled_tasks_per_modality.values()
+        )
+        for enabled_tasks in enabled_tasks_per_modality.values():
+            if "mlm" in enabled_tasks:
+                total_tasks += dm.mlm_balancing_ratio - 1
+
+        assert len(dm.train_dataloader().dataset) == total_tasks * dm.balanced_num_samples  # type: ignore[arg-type]
+
+
 def masked_tokens_check(input_text: str, mask_token: str = "<mask>") -> None:  # noqa: S107
     """Check that the number of tokens does not change and that at least one token is masked."""
     masked_text, _ = apply_token_masking(input_text)

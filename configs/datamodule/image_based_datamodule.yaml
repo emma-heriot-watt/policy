@@ -5,6 +5,7 @@ pretrain_db_dir_path: ${work_dir}/storage/db/
 batch_size: 32
 load_valid_data: True
 num_workers: 4
+balance_datasets: False
 enabled_tasks:
   image:
     - mlm

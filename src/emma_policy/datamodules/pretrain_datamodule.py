@@ -3,10 +3,12 @@ import os
 from pathlib import Path
 from typing import Optional, Union
 
+import torch
 from emma_datasets.common import Downloader, Settings
 from emma_datasets.datamodels import DatasetSplit
+from emma_datasets.db import DatasetDb
 from pytorch_lightning import LightningDataModule
-from torch.utils.data import ConcatDataset, DataLoader
+from torch.utils.data import ConcatDataset, DataLoader, Subset
 from transformers import AutoTokenizer
 
 from emma_policy.datamodules.collate import collate_fn
@@ -16,6 +18,7 @@ from emma_policy.datamodules.pretrain_instances import (
     PRETRAIN_DATASET_SPLITS,
     EnabledTasksHandler,
     EnabledTasksPerModality,
+    Task,
     get_db_file_name,
 )
 
@@ -39,6 +42,8 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         max_frames: int = 0,
         enabled_tasks: Optional[EnabledTasksPerModality] = None,
         tokenizer_truncation_side: str = "right",
+        balance_datasets: bool = False,
+        mlm_balancing_ratio: int = 4,
     ) -> None:
         super().__init__()
         self.model_name = model_name
@@ -65,6 +70,9 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         self.max_lang_tokens = max_lang_tokens
         self.max_frames = max_frames
         self.tokenizer_truncation_side = tokenizer_truncation_side
+        self.balance_datasets = self._verify_balance_datasets(balance_datasets)
+        self.balanced_num_samples = -1
+        self.mlm_balancing_ratio = mlm_balancing_ratio
 
     def prepare_data(self) -> None:
         """Download the pretrain DBs if necessary.
@@ -92,14 +100,22 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
             self.tokenizer.model_max_length = self.max_lang_tokens
 
         self._train_dataset = self._get_dataset_from_tasks(DatasetSplit.train)
+        if self.balance_datasets:
+            self.balanced_num_samples = self._get_balanced_dataset_length(DatasetSplit.train)
 
         if self.load_valid_data:
             self._val_dataset = self._get_dataset_from_tasks(DatasetSplit.valid)
 
     def train_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
         """Generate train dataloader."""
+        if self.balance_datasets:
+            # Resample at the beginning of each epoch.
+            train_dataset = self._get_dataset_from_tasks(DatasetSplit.train)
+        else:
+            train_dataset = self._train_dataset
+
         return DataLoader(
-            self._train_dataset,  # type: ignore[arg-type]
+            train_dataset,  # type: ignore[arg-type]
             batch_size=self._batch_size,
             num_workers=self._num_workers,
             collate_fn=collate_fn,
@@ -132,9 +148,38 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
                 mlm_probability=self.mlm_probability,
                 max_frames=self.max_frames,
             )
+            if self.balance_datasets and dataset_split == DatasetSplit.train:
+                if task == Task.mlm:
+                    indices = torch.randperm(len(dataset))[
+                        : self.mlm_balancing_ratio * self.balanced_num_samples
+                    ]
+                else:
+                    indices = torch.randperm(len(dataset))[: self.balanced_num_samples]
+                dataset = Subset(dataset, indices.tolist())  # type: ignore[assignment]
+
             all_datasets.append(dataset)
 
         return ConcatDataset(all_datasets)
+
+    def _get_balanced_dataset_length(self, dataset_split: DatasetSplit) -> int:
+        """Balance the number of samples from datasets of different tasks."""
+        if dataset_split != DatasetSplit.train:
+            raise AssertionError("Balancing only supported for training datasets.")
+        dataset_lengths: list[int] = []
+        for task in itertools.chain.from_iterable(self._enabled_tasks.values()):
+            task_db_name = get_db_file_name(task, dataset_split)
+            dataset_db_path = self._pretrain_db_dir_path.joinpath(task_db_name)
+
+            dataset_lengths.append(len(DatasetDb(dataset_db_path)))
+
+        return min(dataset_lengths)
+
+    def _verify_balance_datasets(self, balance_datasets: bool) -> bool:
+        """Make sure that at least two tasks are enabled for balancing."""
+        tasks = set(itertools.chain.from_iterable(self._enabled_tasks.values()))
+        if len(tasks) == 1:
+            balance_datasets = False
+        return balance_datasets
 
     def _download_pretrain_dbs(self) -> None:
         """Download all the pretrain DBs from S3.

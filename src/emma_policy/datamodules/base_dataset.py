@@ -21,7 +21,7 @@ DatasetReturn_Co = TypeVar(
 
 def apply_frame_shuffling(
     feature_dicts: list[dict[str, torch.Tensor]],
-    fom_probability: float = 0.3,
+    fom_probability: float = 0.4,
 ) -> tuple[list[dict[str, torch.Tensor]], torch.Tensor]:
     """Applies frame shuffling."""
     shuffled_indices = torch.bernoulli(torch.full((len(feature_dicts),), fom_probability)).long()

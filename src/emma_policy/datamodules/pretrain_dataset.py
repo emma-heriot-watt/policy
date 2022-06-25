@@ -9,7 +9,11 @@ from emma_datasets.datamodels.datasets import AlfredLowAction
 from transformers import PreTrainedTokenizer
 
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
-from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
+from emma_policy.datamodules.emma_dataclasses import (
+    EmmaDatasetItem,
+    EmmaDatasetPadding,
+    EmmaVisualFeatures,
+)
 from emma_policy.datamodules.pretrain_instances import PretrainInstance, Task
 from emma_policy.datamodules.relation import Relation
 from emma_policy.utils import get_logger
@@ -64,7 +68,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         mlm_probability: float = 0.3,
         max_frames: int = 0,
         bbox_match_threshold: float = 0.5,
-        shuffle_frames_perc: float = 0.3,
+        shuffle_frames_perc: float = 0.4,
     ) -> None:
         super().__init__(
             dataset_db_path=dataset_db_path,
@@ -93,6 +97,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             Task.fom: self.fom,
             Task.vmlm: self.mlm,
         }
+        self._target_padding_values = EmmaDatasetPadding().target_token_ids
 
     def __getitem__(self, index: int) -> Optional[EmmaDatasetItem]:
         """Get a single instance from the dataset."""
@@ -771,17 +776,15 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             source_text, return_tensors=self._return_tensor_type, truncation=True
         )
 
-        sequence_order = torch.argsort(original_order)
-        order_encoded = visual_features.scene_frame_tokens.squeeze(0)[sequence_order]
-        target_text = " ".join([self.tokenizer.decode(i) for i in order_encoded])
-        target_encoding = self.tokenizer.encode_plus(
-            target_text, return_tensors=self._return_tensor_type, truncation=True
+        target_token_ids, decoder_attention_mask = self._create_masked_fom_targets(
+            original_order=original_order,
+            frame_tokens=visual_features.scene_frame_tokens.squeeze(0),
         )
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
-            target_token_ids=target_encoding.input_ids.squeeze(0),
-            decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
+            target_token_ids=target_token_ids,
+            decoder_attention_mask=decoder_attention_mask,
             scene_features=visual_features.scene_features,
             scene_coordinates=visual_features.scene_coordinates,
             object_features=visual_features.object_features,
@@ -924,3 +927,25 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             trajectory_text.append(self.tokenizer.sep_token)
 
         return " ".join(trajectory_text)
+
+    def _create_masked_fom_targets(
+        self,
+        original_order: torch.Tensor,
+        frame_tokens: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Create masked fom targets.
+
+        Mask tokens where the original frame order matches the shuffled one.
+        """
+        sequence_order = torch.argsort(original_order)
+        order_encoded = frame_tokens[sequence_order]
+        target_text = "".join([self.tokenizer.decode(i) for i in order_encoded])
+        target_encoding = self.tokenizer.encode_plus(
+            target_text, return_tensors=self._return_tensor_type, truncation=True
+        )
+        target_token_ids = target_encoding.input_ids.squeeze(0)
+        decoder_attention_mask = target_encoding.attention_mask.squeeze(0)
+        # Add +1 because tokenizer.encode_plus has added the sos token
+        mask_inidices = torch.where(original_order == sequence_order)[0] + 1
+        target_token_ids[mask_inidices] = self._target_padding_values
+        return target_token_ids, decoder_attention_mask

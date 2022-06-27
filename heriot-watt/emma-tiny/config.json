@@ -4,7 +4,7 @@
 	"activation_function": "gelu",
 	"architectures": ["EmmaForConditionalGeneration"],
 	"attention_dropout": 0.0,
-	"attention_window": [32, 32, 32],
+	"attention_window": [128, 128, 128],
 	"bos_token_id": 0,
 	"classif_dropout": 0.0,
 	"classifier_dropout": 0.0,

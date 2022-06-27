@@ -98,7 +98,7 @@ python run.py experiment=experiment_name.yaml
 You can override any parameter from command line like this
 
 ```bash
-python run.py trainer.max_epochs=20 datamodule.batch_size=64
+python run.py trainer.max_epochs=20 datamodule.train_batch_size=64
 ```
 
 Especially when you're trying to specify extra parameters for the class `Trainer` from
@@ -106,7 +106,7 @@ Especially when you're trying to specify extra parameters for the class `Trainer
 you might run into trouble when running a command like the following:
 
 ```bash
-python run.py trainer.precision=16 datamodule.batch_size=64
+python run.py trainer.precision=16 datamodule.train_batch_size=64
 ```
 
 This is because Hydra allows you to modify only parameters specified in the configuration file. So
@@ -114,7 +114,7 @@ if you don't have `precision` among them, Hydra will complain. If you're sure th
 is allowed, just change the previous command as follows:
 
 ```bash
-python run.py +trainer.precision=16 datamodule.batch_size=64
+python run.py +trainer.precision=16 datamodule.train_batch_size=64
 ```
 
 In this way, Hydra will automatically _append_ the new parameter to the configuration dictionary of

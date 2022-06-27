@@ -35,7 +35,8 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         remote_pretrain_db_dir: str = "s3://emma-simbot/db/",
         load_valid_data: bool = False,
         num_workers: int = 0,
-        batch_size: int = 8,
+        train_batch_size: int = 8,
+        val_batch_size: int = 8,
         model_name: str = "heriot-watt/emma-base",
         mlm_probability: float = 0.3,
         max_lang_tokens: Optional[int] = None,
@@ -64,7 +65,8 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         self._pretrain_db_dir_path = pretrain_db_dir_path
         self._remote_pretrain_db_dir = remote_pretrain_db_dir
 
-        self._batch_size = batch_size
+        self._train_batch_size = train_batch_size
+        self._val_batch_size = val_batch_size
         self._num_workers = num_workers
         self.load_valid_data = load_valid_data
         self.max_lang_tokens = max_lang_tokens
@@ -116,7 +118,7 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
 
         return DataLoader(
             train_dataset,  # type: ignore[arg-type]
-            batch_size=self._batch_size,
+            batch_size=self._train_batch_size,
             num_workers=self._num_workers,
             collate_fn=collate_fn,
             shuffle=True,
@@ -127,7 +129,7 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         """Generate val dataloader."""
         return DataLoader(
             self._val_dataset,  # type: ignore[arg-type]
-            batch_size=self._batch_size,
+            batch_size=self._val_batch_size,
             num_workers=self._num_workers,
             collate_fn=collate_fn,
             shuffle=False,

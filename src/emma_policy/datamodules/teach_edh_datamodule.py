@@ -19,7 +19,8 @@ class TeachEdhDataModule(LightningDataModule):
         teach_edh_valid_seen_db_file: Union[str, Path],
         teach_edh_valid_unseen_db_file: Union[str, Path],
         load_valid_data_split: Optional[Literal["seen", "unseen", "both"]] = None,
-        batch_size: int = 8,
+        train_batch_size: int = 8,
+        val_batch_size: int = 8,
         num_workers: int = 0,
         model_name: str = "heriot-watt/emma-base",
         max_lang_tokens: Optional[int] = None,
@@ -46,7 +47,8 @@ class TeachEdhDataModule(LightningDataModule):
         self._max_frames = max_frames
         self._tokenizer_truncation_side = tokenizer_truncation_side
         self._num_workers = num_workers
-        self._batch_size = batch_size
+        self._train_batch_size = train_batch_size
+        self._val_batch_size = val_batch_size
 
         # Model
         self._model_name = model_name
@@ -87,7 +89,7 @@ class TeachEdhDataModule(LightningDataModule):
         """Generate train dataloader for TEACh EDH instances."""
         return DataLoader(
             self._train_dataset,  # type: ignore[arg-type]
-            batch_size=self._batch_size,
+            batch_size=self._train_batch_size,
             num_workers=self._num_workers,
             collate_fn=collate_fn,
             shuffle=True,
@@ -103,7 +105,7 @@ class TeachEdhDataModule(LightningDataModule):
         if self._load_valid_data_split == "unseen":
             return DataLoader(
                 self._valid_unseen_dataset,  # type: ignore[arg-type]
-                batch_size=self._batch_size,
+                batch_size=self._val_batch_size,
                 num_workers=self._num_workers,
                 collate_fn=collate_fn,
                 shuffle=False,
@@ -112,7 +114,7 @@ class TeachEdhDataModule(LightningDataModule):
         if self._load_valid_data_split == "both":
             return DataLoader(
                 ConcatDataset([self._valid_seen_dataset, self._valid_unseen_dataset]),
-                batch_size=self._batch_size,
+                batch_size=self._val_batch_size,
                 num_workers=self._num_workers,
                 collate_fn=collate_fn,
                 shuffle=False,
@@ -120,7 +122,7 @@ class TeachEdhDataModule(LightningDataModule):
 
         return DataLoader(
             self._valid_seen_dataset,  # type: ignore[arg-type]
-            batch_size=self._batch_size,
+            batch_size=self._val_batch_size,
             num_workers=self._num_workers,
             collate_fn=collate_fn,
             shuffle=False,

@@ -2,7 +2,8 @@ _target_: emma_policy.datamodules.pretrain_datamodule.EmmaPretrainDataModule
 
 model_name: heriot-watt/emma-small
 pretrain_db_dir_path: ${work_dir}/storage/db/
-batch_size: 100
+train_batch_size: 100
+val_batch_size: 128
 load_valid_data: True
 num_workers: 12
 max_lang_tokens: 512

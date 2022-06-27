@@ -1,4 +1,5 @@
 import itertools
+from random import shuffle
 from typing import Callable, Iterator, Optional
 
 from emma_datasets.datamodels import Caption, Instance, MediaType, Region
@@ -8,6 +9,7 @@ from emma_policy.datamodules.pretrain_instances.datamodels import (
     PretrainInstance,
     Task,
 )
+from emma_policy.datamodules.pretrain_instances.is_train_instance import is_train_instance
 from emma_policy.datamodules.relation import Relation
 
 
@@ -46,7 +48,12 @@ class PretrainInstanceCreator:
     task. This will then be ignored when iterating over all the properties.
     """
 
-    def __init__(self, instance: Instance, enabled_tasks: Optional[set[Task]] = None) -> None:
+    def __init__(
+        self,
+        instance: Instance,
+        enabled_tasks: Optional[set[Task]] = None,
+        max_mlm_valid_regions: int = 5,
+    ) -> None:
         self.instance = instance
 
         self.enabled_tasks = (
@@ -54,6 +61,7 @@ class PretrainInstanceCreator:
             if enabled_tasks is not None
             else EnabledTasksHandler.get_default_enabled_tasks()
         )
+        self._max_mlm_valid_regions = max_mlm_valid_regions
 
         self.instance_task_map: dict[Task, Iterator[PretrainInstance]] = {
             Task.mlm: self.mlm,
@@ -86,7 +94,7 @@ class PretrainInstanceCreator:
 
     @property  # type: ignore[misc]
     @image_task_check
-    def mlm(self) -> Iterator[PretrainInstance]:
+    def mlm(self) -> Iterator[PretrainInstance]:  # noqa: WPS231
         """Get pretrain instances for the MLM task."""
         if Task.mlm not in self.enabled_tasks:
             return []
@@ -102,6 +110,9 @@ class PretrainInstanceCreator:
         if self.instance.regions:
             # due to overlapping regions, we make sure that they are unique
             unique_captions = set()
+            is_train = is_train_instance(self.instance)
+            if not is_train:
+                shuffle(self.instance.regions)
 
             for region in self.instance.regions:
                 if region.caption not in unique_captions:
@@ -113,6 +124,8 @@ class PretrainInstanceCreator:
                             task=Task.mlm,
                         )
                     )
+                if not is_train and len(unique_captions) == self._max_mlm_valid_regions:
+                    break
 
         yield from all_captions
 
@@ -352,8 +365,14 @@ class PretrainInstanceCreator:
 
 
 def convert_instance_to_pretrain_instances(
-    instance: Instance, enabled_tasks: Optional[set[Task]] = None
+    instance: Instance,
+    enabled_tasks: Optional[set[Task]] = None,
+    max_mlm_valid_regions: int = 5,
 ) -> Iterator[PretrainInstance]:
     """Convert an instance to all possible pretrain instances."""
-    pretrain_instance_creator = PretrainInstanceCreator(instance, enabled_tasks=enabled_tasks)
+    pretrain_instance_creator = PretrainInstanceCreator(
+        instance,
+        enabled_tasks=enabled_tasks,
+        max_mlm_valid_regions=max_mlm_valid_regions,
+    )
     yield from pretrain_instance_creator.get_all_pretrain_instances()

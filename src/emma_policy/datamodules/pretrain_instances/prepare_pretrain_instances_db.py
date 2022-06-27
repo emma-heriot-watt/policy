@@ -54,6 +54,7 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
         self,
         db_path: Path,
         enabled_tasks: dict[MediaType, set[Task]],
+        max_mlm_valid_regions: int = 5,
     ) -> None:
         db = DatasetDb(db_path, readonly=True)
 
@@ -64,6 +65,7 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
 
         self._storage = JsonStorage()
         self._enabled_tasks = enabled_tasks
+        self._max_mlm_valid_regions = max_mlm_valid_regions
 
     def __iter__(self) -> Iterator[DatasetDbReaderReturn]:
         """Iterate over the entire DatasetDb.
@@ -98,6 +100,7 @@ class IterableDatasetDbReader(IterableDataset[DatasetDbReaderReturn]):
             pretrain_instance_iterator = convert_instance_to_pretrain_instances(
                 instance=instance,
                 enabled_tasks=self._enabled_tasks[instance.modality],
+                max_mlm_valid_regions=self._max_mlm_valid_regions,
             )
 
             yield from (
@@ -144,12 +147,14 @@ class PreparePretrainInstancesDb:
         output_dir_path: Path,
         loader_num_workers: int = 0,
         loader_batch_size_per_worker: int = 5,
+        max_mlm_valid_regions: int = 5,
         write_db_batch_size: int = 300000,
         example_id_prefix: str = "pretrain_",
     ) -> None:
         self._dataset = IterableDatasetDbReader(
             instances_db_file_path,
             enabled_tasks=EnabledTasksHandler.get_default_enabled_tasks_per_modality(),
+            max_mlm_valid_regions=max_mlm_valid_regions,
         )
 
         self._loader = DataLoader(

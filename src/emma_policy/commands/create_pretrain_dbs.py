@@ -17,6 +17,7 @@ def create_pretrain_dbs(
     output_dir_path: Path,
     num_workers: int = 0,
     batch_size_per_worker: int = 5,
+    max_mlm_valid_regions: int = 5,
 ) -> None:
     """Create all the pretrain instances DBs for every task in advance."""
     preparer = PreparePretrainInstancesDb(
@@ -24,6 +25,7 @@ def create_pretrain_dbs(
         output_dir_path,
         loader_num_workers=num_workers,
         loader_batch_size_per_worker=batch_size_per_worker,
+        max_mlm_valid_regions=max_mlm_valid_regions,
     )
 
     preparer.run()
@@ -62,6 +64,13 @@ if __name__ == "__main__":
         help="Batch size per worker. If too large, then you will likely run out of memory.",
     )
 
+    parser.add_argument(
+        "--max-mlm-valid-regions",
+        type=int,
+        default=5,
+        help="Number of maximum region captions used for validation mlm.",
+    )
+
     args = parser.parse_args()
 
     create_pretrain_dbs(
@@ -69,4 +78,5 @@ if __name__ == "__main__":
         args.output_dir_path,
         args.num_workers,
         args.batch_size_per_worker,
+        args.max_mlm_valid_regions,
     )

@@ -2,6 +2,7 @@ defaults:
   - default.yaml
 
 gpus: 4
+num_nodes: 1
 strategy: ddp_find_unused_parameters_false
 precision: 16
 accumulate_grad_batches: 1

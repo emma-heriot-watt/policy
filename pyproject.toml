@@ -99,6 +99,7 @@ types-mock = "^4.0.13"
 flake8-pytest-style = "^1.6.0"
 pytest-xdist = "^2.5.0"
 filelock = "^3.6.0"
+requests-mock = "^1.9.3"
 
 [tool.black]
 line-length = 99

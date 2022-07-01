@@ -352,9 +352,10 @@ logs/
 *.wmv
 *.webm
 
+# End of https://www.toptal.com/developers/gitignore/api/data,images,video
+
 # Ignoring storage folder
 storage/*
-!storage/fixtures/
 !storage/constants/
-
-# End of https://www.toptal.com/developers/gitignore/api/data,images,video
+!storage/fixtures/
+!storage/fixtures/**/*.jpeg

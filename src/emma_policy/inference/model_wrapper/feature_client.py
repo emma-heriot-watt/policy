@@ -20,7 +20,8 @@ class FeatureResponse:
     bbox_coords: torch.Tensor
     bbox_probas: torch.Tensor
     cnn_features: torch.Tensor
-    class_labels: list[str]
+    # TODO(amit): Uncomment when stored features contain this property
+    # class_labels: list[str]
     width: int
     height: int
 
@@ -68,7 +69,8 @@ class FeatureClient:
             bbox_coords=torch.tensor(data["bbox_coords"]),
             bbox_probas=torch.tensor(data["bbox_probas"]),
             cnn_features=torch.tensor(data["cnn_features"]),
-            class_labels=data["class_labels"],
+            # TODO(amit): Uncomment when stored features contain this property
+            # class_labels=data["class_labels"],
             width=image.size[0],
             height=image.size[1],
         )

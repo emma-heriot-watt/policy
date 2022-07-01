@@ -8,9 +8,16 @@ from emma_datasets.datamodels.datasets import TeachEdhInstance
 from fastapi.testclient import TestClient
 from PIL import Image
 from pytest_cases import fixture
+from pytest_mock import MockerFixture
+from requests_mock import Mocker
 
 from emma_policy.commands.run_teach_api import app
+from emma_policy.inference.api.settings import FeatureExtractorSettings
 from emma_policy.inference.model_wrapper import PolicyModelWrapper
+from tests.fixtures.instance_dbs import (
+    TeachEdhInstanceFeaturesPathPropertyMock,
+    TeachEdhInstanceFutureFeaturesPathPropertyMock,
+)
 
 
 @fixture(scope="module")
@@ -28,8 +35,20 @@ def inference_images_path(fixtures_root: Path) -> Path:
 
 
 @fixture(scope="module")
-def teach_edh_instance(edh_instance_path: Path) -> TeachEdhInstance:
+def teach_edh_instance(edh_instance_path: Path, session_mocker: MockerFixture) -> TeachEdhInstance:
     """Get the TEACh EDH Instance used for the tests."""
+    session_mocker.patch.object(
+        TeachEdhInstance,
+        "features_path",
+        new_callable=TeachEdhInstanceFeaturesPathPropertyMock,
+    )
+
+    session_mocker.patch.object(
+        TeachEdhInstance,
+        "future_features_path",
+        new_callable=TeachEdhInstanceFutureFeaturesPathPropertyMock,
+    )
+
     return TeachEdhInstance.parse_file(edh_instance_path)
 
 
@@ -58,16 +77,38 @@ def teach_edh_instance_history_images(
     for image_file_name in teach_edh_instance.driver_image_history:
         image_path = inference_images_path.joinpath(image_file_name)
         original_image = Image.open(image_path)
-        images.append(original_image.copy())
-        original_image.close()
+        images.append(original_image)
+
+    return images
+
+
+@fixture(scope="module")
+def teach_edh_instance_future_images(
+    teach_edh_instance: TeachEdhInstance, inference_images_path: Path
+) -> list[Image.Image]:
+    """Convert the driver future images into a list of PIL images.
+
+    Note: InferenceRunner provides a list of `PIL.Image.Image`
+    """
+    images = []
+
+    for image_file_name in teach_edh_instance.driver_images_future:
+        image_path = inference_images_path.joinpath(image_file_name)
+        original_image = Image.open(image_path)
+        images.append(original_image)
 
     return images
 
 
 @fixture
-def policy_model_wrapper(fixtures_root: Path) -> PolicyModelWrapper:
+def policy_model_wrapper(fixtures_root: Path, requests_mock: Mocker) -> PolicyModelWrapper:
     """Create a policy model wrapper so no need to keep repeating the args."""
     model_checkpoint_path = fixtures_root.joinpath("teach_tiny.ckpt")
+
+    perception_update_device_path = FeatureExtractorSettings().get_update_model_device_url()
+
+    requests_mock.post(perception_update_device_path)
+
     model_wrapper = PolicyModelWrapper(
         process_index=1,
         num_processes=1,
@@ -75,7 +116,7 @@ def policy_model_wrapper(fixtures_root: Path) -> PolicyModelWrapper:
         model_name="heriot-watt/emma-tiny",
     )
 
-    return model_wrapper
+    yield model_wrapper
 
 
 @fixture(scope="module")

@@ -7,6 +7,7 @@ from emma_policy.models import (
     EmmaTokenizer,
     EmmaTokenizerFast,
 )
+from emma_policy.test import test_model
 from emma_policy.train import train_model
 
 

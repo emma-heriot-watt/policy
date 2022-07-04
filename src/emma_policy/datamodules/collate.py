@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Optional
+from typing import Any, Optional
 
 import torch
 from torch.nn.utils.rnn import pad_sequence
@@ -10,6 +10,9 @@ from emma_policy.datamodules.emma_dataclasses import (
     EmmaDatasetItem,
     EmmaDatasetPadding,
 )
+
+
+RAW_FIELDS = ("target_text",)
 
 
 def _pad_sequence(seq: list[torch.Tensor], padding_value: int) -> torch.Tensor:
@@ -23,16 +26,22 @@ def collate_fn(batch: list[Optional[EmmaDatasetItem]]) -> EmmaDatasetBatch:
     fields = dataclasses.fields(EmmaDatasetItem)
     padding = EmmaDatasetPadding()
 
-    raw_batch = {
-        field.name: _pad_sequence(
-            [
+    raw_batch: dict[Any, Any] = {}
+    for field in fields:
+        if field.name in RAW_FIELDS:
+            raw_batch[field.name] = [
                 getattr(sample, field.name)
                 for sample in batch
                 if sample is not None and getattr(sample, field.name) is not None
-            ],
-            padding_value=getattr(padding, field.name),
-        )
-        for field in fields
-    }
+            ]
+        else:
+            raw_batch[field.name] = _pad_sequence(
+                [
+                    getattr(sample, field.name)
+                    for sample in batch
+                    if sample is not None and getattr(sample, field.name) is not None
+                ],
+                padding_value=getattr(padding, field.name),
+            )
     make_batch_attention_masks(raw_batch, padding_value=padding.attention_mask)
     return EmmaDatasetBatch(**raw_batch)

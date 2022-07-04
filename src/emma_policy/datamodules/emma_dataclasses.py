@@ -42,6 +42,7 @@ class EmmaDatasetItem:
     scene_temporal_ids: Optional[torch.Tensor] = None
     object_temporal_ids: Optional[torch.Tensor] = None
     target_temporal_ids: Optional[torch.Tensor] = None
+    target_text: Optional[list[str]] = None
 
 
 @dataclass
@@ -90,6 +91,7 @@ class EmmaDatasetBatch:
     attention_mask: torch.Tensor
     global_attention_mask: torch.Tensor
     decoder_encoder_attention_mask: Optional[torch.Tensor] = None
+    target_text: Optional[list[str]] = None
 
     def __len__(self) -> int:
         """Returns the batch size."""

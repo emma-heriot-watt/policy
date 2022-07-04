@@ -84,33 +84,14 @@ class COCOCaptioningEmmaPolicy(EmmaPolicy):
     @overrides(check_signature=False)
     def validation_step(self, batch: EmmaDatasetBatch, batch_idx: int) -> EmmaSeq2SeqLMOutput:
         """Validation step."""
-        # Teacher forcing for computing the validation loss
-        output = self.emma(
-            scene_features=batch.scene_features,
-            scene_coordinates=batch.scene_coordinates,
-            scene_frame_tokens=batch.scene_frame_tokens,
-            object_features=batch.object_features,
-            object_coordinates=batch.object_coordinates,
-            object_frame_tokens=batch.object_frame_tokens,
-            visual_token_ids=batch.visual_token_ids,
-            language_token_ids=batch.input_token_ids,
-            attention_mask=batch.attention_mask,
-            global_attention_mask=batch.global_attention_mask,
-            labels=batch.target_token_ids,
-            decoder_attention_mask=batch.decoder_attention_mask,
-            decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
-        )
-
         prediction_output = self.predict_step(batch=batch, batch_idx=batch_idx)
         predictions = self._tokenizer.batch_decode(prediction_output, skip_special_tokens=True)
-        batch.target_token_ids[batch.target_token_ids < 0] = self._tokenizer.pad_token_id
-        references = self._tokenizer.batch_decode(batch.target_token_ids, skip_special_tokens=True)
+        references = batch.target_text
 
-        self.log("valid_loss", output.loss)
         self._captions["predictions"].extend(predictions)
-        self._captions["references"].extend(references)
+        self._captions["references"].extend(references)  # type: ignore[arg-type]
 
-        return output
+        return prediction_output
 
     @overrides(check_signature=False)
     def predict_step(self, batch: EmmaDatasetBatch, batch_idx: int) -> PredictType:
@@ -138,33 +119,14 @@ class COCOCaptioningEmmaPolicy(EmmaPolicy):
     @overrides(check_signature=False)
     def test_step(self, batch: EmmaDatasetBatch, batch_idx: int) -> PredictType:
         """Inference step."""
-        inputs_embeds = self.emma.emma.embed_inputs(
-            scene_features=batch.scene_features,
-            scene_coordinates=batch.scene_coordinates,
-            scene_frame_tokens=batch.scene_frame_tokens,
-            object_features=batch.object_features,
-            object_coordinates=batch.object_coordinates,
-            object_frame_tokens=batch.object_frame_tokens,
-            visual_token_ids=batch.visual_token_ids,
-            language_token_ids=batch.input_token_ids,
-        )
-
-        output = self.emma.generate(
-            inputs_embeds=inputs_embeds,
-            attention_mask=batch.attention_mask,
-            global_attention_mask=batch.global_attention_mask,
-            max_length=self._max_text_length,
-            num_beams=self._num_beams,
-        )
-
         prediction_output = self.predict_step(batch=batch, batch_idx=batch_idx)
         predictions = self._tokenizer.batch_decode(prediction_output, skip_special_tokens=True)
-        batch.target_token_ids[batch.target_token_ids < 0] = self._tokenizer.pad_token_id
-        references = self._tokenizer.batch_decode(batch.target_token_ids, skip_special_tokens=True)
-        self._captions["predictions"].extend(predictions)
-        self._captions["references"].extend(references)
+        references = batch.target_text
 
-        return output
+        self._captions["predictions"].extend(predictions)
+        self._captions["references"].extend(references)  # type: ignore[arg-type]
+
+        return prediction_output
 
     def _compute_scores(
         self, predictions: list[str], references: list[str], mode: str = "valid"

@@ -70,22 +70,26 @@ class COCOCaptioningDataModule(LightningDataModule):
         self._train_dataset = COCOCaptioningDataset(
             dataset_db_path=self._coco_cap_train_db_file,
             tokenizer=self._tokenizer,
+            is_train=True,
         )
 
         if self._use_restval:
             self._restval_dataset = COCOCaptioningDataset(
                 dataset_db_path=self._coco_cap_restvalid_db_file,
                 tokenizer=self._tokenizer,
+                is_train=True,
             )
 
         self._valid_dataset = COCOCaptioningDataset(
             dataset_db_path=self._coco_cap_valid_db_file,
             tokenizer=self._tokenizer,
+            is_train=False,
         )
 
         self._test_dataset = COCOCaptioningDataset(
             dataset_db_path=self._coco_cap_test_db_file,
             tokenizer=self._tokenizer,
+            is_train=False,
         )
 
     def train_dataloader(self) -> DataLoader[EmmaDatasetBatch]:

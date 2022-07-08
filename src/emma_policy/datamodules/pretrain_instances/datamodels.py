@@ -55,10 +55,10 @@ TASK_TEMPLATES_MAP: Mapping[Task, list[str]] = MappingProxyType(
             "Evaluate the description: {statement}",
         ],
         Task.visual_grounding: [
-            "Find the {caption}",
-            "Locate the {caption}",
-            "Pick the {caption}",
-            "Select the {caption}",
+            "Find the object: {caption}",
+            "Locate the object: {caption}",
+            "Pick the object: {caption}",
+            "Select the object: {caption}",
         ],
         Task.dense_captioning: [
             "Caption {region}",

@@ -116,7 +116,7 @@ def policy_model_wrapper(fixtures_root: Path, requests_mock: Mocker) -> PolicyMo
         model_name="heriot-watt/emma-tiny",
     )
 
-    yield model_wrapper
+    return model_wrapper
 
 
 @fixture(scope="module")

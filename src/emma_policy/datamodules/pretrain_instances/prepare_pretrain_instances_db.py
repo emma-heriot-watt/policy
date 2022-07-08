@@ -9,16 +9,10 @@ from emma_datasets.db import DatasetDb, JsonStorage
 from rich.console import Group
 from rich.live import Live
 from rich.panel import Panel
-from rich.progress import SpinnerColumn, TaskID
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskID
 from torch.utils.data import DataLoader, IterableDataset
 
-from emma_policy.common import (
-    BatchesProcessedColumn,
-    CustomBarColumn,
-    CustomProgress,
-    CustomTimeColumn,
-    ProcessingSpeedColumn,
-)
+from emma_policy.common import BatchesProcessedColumn, CustomTimeColumn, ProcessingSpeedColumn
 from emma_policy.datamodules.pretrain_instances import convert_instance_to_pretrain_instances
 from emma_policy.datamodules.pretrain_instances.datamodels import EnabledTasksHandler, Task
 from emma_policy.datamodules.pretrain_instances.is_train_instance import (
@@ -172,15 +166,15 @@ class PreparePretrainInstancesDb:
 
         self._instance_counter: Counter[int] = Counter()
 
-        self._overall_progress = CustomProgress(
+        self._overall_progress = Progress(
             "[progress.description]{task.description}",
-            CustomBarColumn(),
+            BarColumn(),
             BatchesProcessedColumn(),
             CustomTimeColumn(),
             ProcessingSpeedColumn(),
         )
 
-        self._task_progress = CustomProgress(
+        self._task_progress = Progress(
             "[progress.description]{task.description}",
             SpinnerColumn(),
             BatchesProcessedColumn(),

@@ -1,0 +1,11 @@
+_target_: emma_policy.datamodules.refcoco_datamodule.RefCocoDataModule
+
+model_name: heriot-watt/emma-small
+refcoco_train_db_file: storage/db/refcoco_train.db
+refcoco_valid_db_file: storage/db/refcoco_valid.db
+refcoco_test_db_file: storage/db/refcoco_test.db
+train_batch_size: 120
+val_batch_size: 100
+num_workers: 0
+max_lang_tokens: 512
+tokenizer_truncation_side: right

@@ -80,9 +80,13 @@ class RefCocoDataset(EmmaBaseDataset[EmmaDatasetItem]):
             decoder_attention_mask = target_encoding.attention_mask.squeeze(0)
         else:
             target_token_ids = torch.tensor(
-                [self.tokenizer.bos_token_id, -100, self.tokenizer.eos_token_id]
+                [
+                    self.tokenizer.bos_token_id,
+                    self.tokenizer.unk_token_id,
+                    self.tokenizer.eos_token_id,
+                ]
             )
-            decoder_attention_mask = torch.ones_like(target_encoding)
+            decoder_attention_mask = torch.ones_like(target_token_ids)
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),

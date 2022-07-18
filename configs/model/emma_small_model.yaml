@@ -8,3 +8,4 @@ weight_decay: 0.01
 optimizer: adamw
 lr_scheduler: linear_with_warmup
 num_warmup_steps: 0.05
+label_smoothing: 0.0

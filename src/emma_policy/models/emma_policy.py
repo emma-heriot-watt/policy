@@ -35,11 +35,12 @@ class EmmaPolicy(pl.LightningModule):
     def __init__(self, model_name: str, **kwargs: Any) -> None:
         super().__init__()
 
-        config = AutoConfig.from_pretrained(model_name)
-        self.emma = EmmaForConditionalGeneration(config)
-        self.loss_fn = CrossEntropyLoss(reduction="none")
-
         self.save_hyperparameters()
+        config = AutoConfig.from_pretrained(model_name)
+        label_smoothing = self.hparams.get("label_smoothing", 0)
+        self.emma = EmmaForConditionalGeneration(config, label_smoothing=label_smoothing)
+
+        self.loss_fn = CrossEntropyLoss(reduction="none", label_smoothing=label_smoothing)
         self.task_metrics = torch.nn.ModuleList([TaskLoss() for _ in Task])
 
         self.trainer: pl.Trainer  # type: ignore[assignment]

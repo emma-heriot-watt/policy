@@ -34,6 +34,7 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
 
         self.final_logits_bias: "torch.Tensor"
         self.main_input_name = "input_embeds"
+        self.label_smoothing: float = kwargs.get("label_smoothing", 0)  # type: ignore[assignment]
         # Initialize weights and apply final processing
         self.post_init()
 
@@ -135,6 +136,7 @@ class EmmaForConditionalGeneration(EmmaPreTrainedModel):
                 labels=labels,
                 lm_logits=lm_logits,
                 vocab_size=self.config.vocab_size,
+                label_smoothing=self.label_smoothing,
             )
 
         if not return_dict:

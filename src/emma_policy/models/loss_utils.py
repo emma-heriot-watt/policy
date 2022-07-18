@@ -42,10 +42,17 @@ def masked_mean(
 
 
 def average_task_loss(
-    labels: torch.Tensor, lm_logits: torch.Tensor, vocab_size: int
+    labels: torch.Tensor,
+    lm_logits: torch.Tensor,
+    vocab_size: int,
+    label_smoothing: float = 0,
 ) -> torch.Tensor:
     """Compute cross-entropy averaged by sequence length and batch size."""
-    loss_fct = CrossEntropyLoss(reduction="none", ignore_index=EmmaDatasetPadding.target_token_ids)
+    loss_fct = CrossEntropyLoss(
+        reduction="none",
+        ignore_index=EmmaDatasetPadding.target_token_ids,
+        label_smoothing=label_smoothing,
+    )
     batch_size, seq_len = labels.shape
     labels_mask = labels != EmmaDatasetPadding.target_token_ids
     # flat_labels shape (batch_size, seq_len) -> (batch_size * seq_len)

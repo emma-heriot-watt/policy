@@ -48,6 +48,7 @@ model:
   optimizer: adamw
   lr_scheduler: linear_with_warmup
   num_warmup_steps: 0.05
+  label_smoothing: 0.0
 
 datamodule:
   _target_: emma_policy.datamodules.coco_captioning_datamodule.COCOCaptioningDataModule

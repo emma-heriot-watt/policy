@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 import torch
 
@@ -42,7 +42,8 @@ class EmmaDatasetItem:
     scene_temporal_ids: Optional[torch.Tensor] = None
     object_temporal_ids: Optional[torch.Tensor] = None
     target_temporal_ids: Optional[torch.Tensor] = None
-    target_text: Optional[list[str]] = None
+    # Use raw_target for downstream tasks when needed to compute task-specific metrics
+    raw_target: Optional[Any] = None
 
 
 @dataclass
@@ -91,7 +92,7 @@ class EmmaDatasetBatch:
     attention_mask: torch.Tensor
     global_attention_mask: torch.Tensor
     decoder_encoder_attention_mask: Optional[torch.Tensor] = None
-    target_text: Optional[list[str]] = None
+    raw_target: Optional[Any] = None
 
     def __len__(self) -> int:
         """Returns the batch size."""

@@ -12,7 +12,7 @@ from emma_policy.datamodules.emma_dataclasses import (
 )
 
 
-RAW_FIELDS = ("target_text",)
+RAW_FIELDS = ("raw_target",)
 
 
 def _pad_sequence(seq: list[torch.Tensor], padding_value: int) -> torch.Tensor:

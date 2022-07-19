@@ -145,7 +145,7 @@ class COCOCaptioningDataset(EmmaBaseDataset[EmmaDatasetItem]):
             scene_features=visual_features.scene_features,
             scene_frame_tokens=visual_features.scene_frame_tokens,
             visual_token_ids=visual_features.visual_token_ids,
-            target_text=target_text,
+            raw_target=target_text,
             task=self._get_task_as_tensor(Task.captioning),
         )
 

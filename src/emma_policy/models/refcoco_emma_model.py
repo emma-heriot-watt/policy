@@ -15,6 +15,7 @@ from transformers.generation_utils import (
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
 from emma_policy.models.emma_policy import EmmaPolicy
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
+from emma_policy.utils.refcoco_accuracy import RefCOCOAccuracy
 
 
 PredictType = Union[
@@ -40,7 +41,7 @@ class RefCocoEmmaPolicy(EmmaPolicy):
         super().__init__(model_name=model_name, **kwargs)
         self._tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.train_acc = Accuracy()
-        self.eval_acc = Accuracy()
+        self.eval_acc = RefCOCOAccuracy()
         self._num_beams = num_beams
         self._max_generated_text_length = max_generated_text_length
         self._min_length = 1
@@ -88,14 +89,14 @@ class RefCocoEmmaPolicy(EmmaPolicy):
     def validation_step(self, batch: EmmaDatasetBatch, batch_idx: int) -> PredictType:
         """Validation step."""
         output = self._predict_and_compute_accuracy(batch=batch, batch_idx=batch_idx)
-        self.log("valid_accuracy", self.eval_acc, on_step=True, on_epoch=True)
+        self.log("valid_accuracy", self.eval_acc, on_step=False, on_epoch=True)
         return output
 
     @overrides(check_signature=False)
     def test_step(self, batch: EmmaDatasetBatch, batch_idx: int) -> PredictType:
         """Inference step."""
         output = self._predict_and_compute_accuracy(batch=batch, batch_idx=batch_idx)
-        self.log("test_accuracy", self.eval_acc, on_step=True, on_epoch=True)
+        self.log("test_accuracy", self.eval_acc, on_step=False, on_epoch=True)
         return output
 
     @overrides(check_signature=False)
@@ -129,5 +130,5 @@ class RefCocoEmmaPolicy(EmmaPolicy):
         """Generate the bounding box and compute the accuracy."""
         output = self.predict_step(batch=batch, batch_idx=batch_idx)
         # outputs begin with "</s><s>"
-        self.eval_acc(output[:, 2], batch.target_token_ids[:, 1])
+        self.eval_acc(output[:, 2], batch)
         return output

@@ -103,6 +103,7 @@ class RefCocoDataset(EmmaBaseDataset[EmmaDatasetItem]):
             scene_frame_tokens=visual_features.scene_frame_tokens,
             object_frame_tokens=visual_features.object_frame_tokens,
             task=self._get_task_as_tensor(Task.visual_grounding),
+            raw_target=gt_box,
         )
 
     def _get_ground_truth_bbox(self, instance: RefCocoInstance) -> torch.Tensor:

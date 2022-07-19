@@ -86,7 +86,7 @@ class COCOCaptioningEmmaPolicy(EmmaPolicy):
         """Validation step."""
         prediction_output = self.predict_step(batch=batch, batch_idx=batch_idx)
         predictions = self._tokenizer.batch_decode(prediction_output, skip_special_tokens=True)
-        references = batch.target_text
+        references = batch.raw_target
 
         self._captions["predictions"].extend(predictions)
         self._captions["references"].extend(references)  # type: ignore[arg-type]
@@ -121,7 +121,7 @@ class COCOCaptioningEmmaPolicy(EmmaPolicy):
         """Inference step."""
         prediction_output = self.predict_step(batch=batch, batch_idx=batch_idx)
         predictions = self._tokenizer.batch_decode(prediction_output, skip_special_tokens=True)
-        references = batch.target_text
+        references = batch.raw_target
 
         self._captions["predictions"].extend(predictions)
         self._captions["references"].extend(references)  # type: ignore[arg-type]

@@ -1,6 +1,8 @@
 from pathlib import Path
 
 import torch
+from emma_datasets.common import Settings
+from emma_datasets.datamodels.constants import DatasetSplit
 from emma_datasets.datamodels.datasets import RefCocoInstance
 from overrides import overrides
 from transformers import PreTrainedTokenizer
@@ -13,6 +15,8 @@ from emma_policy.utils.boxes import BoxMode
 
 
 logger = get_logger(__name__)
+
+settings = Settings()
 
 
 class RefCocoDataset(EmmaBaseDataset[EmmaDatasetItem]):
@@ -29,6 +33,7 @@ class RefCocoDataset(EmmaBaseDataset[EmmaDatasetItem]):
         max_frames: int = 0,
         bbox_match_threshold: float = 0.5,
         shuffle_objects: bool = False,
+        train_with_golden_bbox_prob: float = 1.0,
     ) -> None:
 
         super().__init__(
@@ -38,6 +43,7 @@ class RefCocoDataset(EmmaBaseDataset[EmmaDatasetItem]):
             bbox_match_threshold=bbox_match_threshold,
             shuffle_objects=shuffle_objects,
         )
+        self.train_with_golden_bbox_prob = train_with_golden_bbox_prob
 
     @overrides(check_signature=False)
     def __getitem__(self, index: int) -> EmmaDatasetItem:
@@ -57,8 +63,15 @@ class RefCocoDataset(EmmaBaseDataset[EmmaDatasetItem]):
             source_text, return_tensors=self._return_tensor_type, truncation=True
         )
 
+        train_with_predicted = torch.empty(1).uniform_().item() > self.train_with_golden_bbox_prob
+
+        features_path = instance.features_path
+        if instance.split == DatasetSplit.train and train_with_predicted:
+            features_path = settings.paths.coco_features.joinpath(features_path.name)
+
         visual_features = self._load_visual_features(
-            features_path=instance.features_path, modality=instance.modality
+            features_path=features_path,
+            modality=instance.modality,
         )
 
         gt_box = self._get_ground_truth_bbox(instance)

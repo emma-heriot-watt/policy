@@ -27,7 +27,7 @@ trainer:
   gpus: 0
 
   resume_from_checkpoint: null
-  max_epochs: 20
+  max_epochs: 10
 
   # number of validation steps to execute at the beginning of the training
   num_sanity_val_steps: 0
@@ -63,6 +63,7 @@ datamodule:
   max_lang_tokens: 64
   tokenizer_truncation_side: right
   shuffle_objects: False
+  train_with_golden_bbox_prob: 1.0
 
 callbacks:
   model_checkpoint:

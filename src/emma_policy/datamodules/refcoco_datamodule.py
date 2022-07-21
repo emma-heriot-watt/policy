@@ -24,6 +24,7 @@ class RefCocoDataModule(LightningDataModule):
         model_name: str = "heriot-watt/emma-base",
         max_lang_tokens: Optional[int] = None,
         tokenizer_truncation_side: Literal["left", "right"] = "right",
+        train_with_golden_bbox_prob: float = 1.0,
         shuffle_objects: bool = False,
     ) -> None:
         super().__init__()
@@ -44,10 +45,12 @@ class RefCocoDataModule(LightningDataModule):
         self._num_workers = num_workers
         self._train_batch_size = train_batch_size
         self._val_batch_size = val_batch_size
-        self._shuffle_objects = shuffle_objects
 
         # Model
         self._model_name = model_name
+
+        self.shuffle_objects = shuffle_objects
+        self.train_with_golden_bbox_prob = train_with_golden_bbox_prob
 
     def prepare_data(self) -> None:
         """Perform any preparation steps necessary before loading the data to the model."""
@@ -66,7 +69,8 @@ class RefCocoDataModule(LightningDataModule):
         self._train_dataset = RefCocoDataset(
             dataset_db_path=self._refcoco_train_db_file,
             tokenizer=self._tokenizer,
-            shuffle_objects=self._shuffle_objects,
+            train_with_golden_bbox_prob=self.train_with_golden_bbox_prob,
+            shuffle_objects=self.shuffle_objects,
         )
 
         self._valid_dataset = RefCocoDataset(

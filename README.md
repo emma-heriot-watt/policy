@@ -45,8 +45,8 @@
 Assuming you have [pyenv](https://github.com/pyenv/pyenv) and [Poetry](https://python-poetry.org/), clone the repository and run:
 
 ```bash
-# Use Python 3.9.9 in the project
-pyenv local 3.9.9
+# Use Python 3.9.13 in the project
+pyenv local 3.9.13
 
 # Tell Poetry to use pyenv
 poetry env use $(pyenv which python)
@@ -62,6 +62,12 @@ pre-commit install
 ```
 
 Check out the [CONTRIBUTING.md](https://github.com/emma-simbot/policy/blob/main/CONTRIBUTING.md) for more detailed information on getting started.
+
+### Installing optional dependencies
+
+We've separated specific groups of dependencies so that you only need to install what you need.
+
+- For RL, run `poetry install -E rl`
 
 ## Writing code and running things
 

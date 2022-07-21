@@ -57,7 +57,7 @@ interpreter = "bash"
 
 [tool.poetry.dependencies]
 python = "~3.9"
-torch = "^1.11.0"
+torch = "~1.11.0"
 pytorch-lightning = "~1.5"
 torchvision = "^0.12.0"
 wandb = "^0.12.17"

@@ -28,6 +28,7 @@ class RefCocoDataset(EmmaBaseDataset[EmmaDatasetItem]):
         tokenizer: PreTrainedTokenizer,
         max_frames: int = 0,
         bbox_match_threshold: float = 0.5,
+        shuffle_objects: bool = False,
     ) -> None:
 
         super().__init__(
@@ -35,6 +36,7 @@ class RefCocoDataset(EmmaBaseDataset[EmmaDatasetItem]):
             tokenizer=tokenizer,
             max_frames=max_frames,
             bbox_match_threshold=bbox_match_threshold,
+            shuffle_objects=shuffle_objects,
         )
 
     @overrides(check_signature=False)

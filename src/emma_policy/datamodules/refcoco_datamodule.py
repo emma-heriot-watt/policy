@@ -24,6 +24,7 @@ class RefCocoDataModule(LightningDataModule):
         model_name: str = "heriot-watt/emma-base",
         max_lang_tokens: Optional[int] = None,
         tokenizer_truncation_side: Literal["left", "right"] = "right",
+        shuffle_objects: bool = False,
     ) -> None:
         super().__init__()
         if isinstance(refcoco_train_db_file, str):
@@ -43,6 +44,7 @@ class RefCocoDataModule(LightningDataModule):
         self._num_workers = num_workers
         self._train_batch_size = train_batch_size
         self._val_batch_size = val_batch_size
+        self._shuffle_objects = shuffle_objects
 
         # Model
         self._model_name = model_name
@@ -64,16 +66,19 @@ class RefCocoDataModule(LightningDataModule):
         self._train_dataset = RefCocoDataset(
             dataset_db_path=self._refcoco_train_db_file,
             tokenizer=self._tokenizer,
+            shuffle_objects=self._shuffle_objects,
         )
 
         self._valid_dataset = RefCocoDataset(
             dataset_db_path=self._refcoco_valid_db_file,
             tokenizer=self._tokenizer,
+            shuffle_objects=False,
         )
 
         self._test_dataset = RefCocoDataset(
             dataset_db_path=self._refcoco_test_db_file,
             tokenizer=self._tokenizer,
+            shuffle_objects=False,
         )
 
     def train_dataloader(self) -> DataLoader[EmmaDatasetBatch]:

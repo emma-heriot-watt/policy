@@ -45,6 +45,7 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         tokenizer_truncation_side: str = "right",
         balance_datasets: bool = False,
         mlm_balancing_ratio: int = 4,
+        shuffle_objects: bool = False,
     ) -> None:
         super().__init__()
         self.model_name = model_name
@@ -75,6 +76,7 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         self.balance_datasets = self._verify_balance_datasets(balance_datasets)
         self.balanced_num_samples = -1
         self.mlm_balancing_ratio = mlm_balancing_ratio
+        self.shuffle_objects = shuffle_objects
 
     def prepare_data(self) -> None:
         """Download the pretrain DBs if necessary.
@@ -149,6 +151,7 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
                 tokenizer=self.tokenizer,
                 mlm_probability=self.mlm_probability,
                 max_frames=self.max_frames,
+                shuffle_objects=self.shuffle_objects,
             )
             if self.balance_datasets and dataset_split == DatasetSplit.train:
                 if task == Task.mlm:

@@ -10,6 +10,7 @@ max_lang_tokens: 512
 max_frames: 100
 tokenizer_truncation_side: right
 balance_datasets: False
+shuffle_objects: False
 enabled_tasks:
   image:
     - mlm

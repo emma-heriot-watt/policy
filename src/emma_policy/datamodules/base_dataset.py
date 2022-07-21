@@ -73,6 +73,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         max_frames: int = 0,
         bbox_match_threshold: float = 0.5,
         shuffle_frames_perc: float = 0.3,
+        shuffle_objects: bool = False,
     ) -> None:
         self.db = DatasetDb(dataset_db_path)
 
@@ -80,6 +81,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         self.max_frames = max_frames
         self.bbox_match_threshold = bbox_match_threshold
         self.shuffle_frames_prec = shuffle_frames_perc
+        self.shuffle_objects = shuffle_objects
 
     def __len__(self) -> int:
         """Return the total number of instances within the database."""
@@ -138,6 +140,12 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
             )
 
         for frame_idx, feature_dict in enumerate(feature_dicts):
+            if self.shuffle_objects:
+                shuffled_indices = torch.randperm(feature_dict["bbox_features"].shape[0])
+                feature_dict["bbox_features"] = feature_dict["bbox_features"][shuffled_indices]
+                feature_dict["bbox_probas"] = feature_dict["bbox_probas"][shuffled_indices]
+                feature_dict["bbox_coords"] = feature_dict["bbox_coords"][shuffled_indices]
+
             object_features.append(feature_dict["bbox_features"])
             object_classes.append(
                 torch.tensor([torch.argmax(proba, -1) for proba in feature_dict["bbox_probas"]])

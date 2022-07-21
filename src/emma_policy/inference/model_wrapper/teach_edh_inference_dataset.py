@@ -30,6 +30,7 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
         # This is what is expected by the `TeachEdhDataset`
         self.tokenizer = tokenizer
         self.max_frames = max_frames
+        self.shuffle_objects = False
         self.previous_frame: Optional[Image] = None
 
         self.client = FeatureClient(feature_extractor_settings=feature_extractor_settings)

@@ -62,6 +62,7 @@ datamodule:
   num_workers: 0
   max_lang_tokens: 64
   tokenizer_truncation_side: right
+  shuffle_objects: False
 
 callbacks:
   model_checkpoint:

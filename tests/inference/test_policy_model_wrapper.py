@@ -9,16 +9,16 @@ from emma_datasets.datamodels.datasets import TeachEdhInstance
 from PIL import Image
 from requests_mock import Mocker
 
+from emma_policy.api.clients import FeatureExtractorClient
 from emma_policy.common.settings import Settings
 from emma_policy.inference.model_wrapper import PolicyModelWrapper, SimulatorAction
-from emma_policy.inference.model_wrapper.feature_client import FeatureClient
 
 
 @pytest.fixture(scope="module")
 def single_feature_extractor_endpoint() -> str:
     endpoint = Settings().feature_extractor_endpoint
-    feature_client = FeatureClient(endpoint)
-    return feature_client._single_feature_endpoint
+    feature_client = FeatureExtractorClient(endpoint)
+    return feature_client._extract_single_feature_endpoint
 
 
 def load_frame_features_like_api_response(features_path: Path) -> list[dict[str, Any]]:

@@ -9,10 +9,10 @@ from PIL.Image import Image
 from pydantic import AnyHttpUrl
 from transformers import AutoTokenizer, BatchEncoding, PreTrainedTokenizer
 
+from emma_policy.api.clients import FeatureExtractorClient
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
 from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.datamodules.teach_edh_dataset import TeachEdhDataset
-from emma_policy.inference.model_wrapper.feature_client import FeatureClient
 
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
         self.shuffle_objects = False
         self.previous_frame: Optional[Image] = None
 
-        self.client = FeatureClient(feature_extractor_endpoint=feature_extractor_endpoint)
+        self.client = FeatureExtractorClient(feature_extractor_endpoint)
 
         self._trajectory_visual_features: list[EmmaVisualFeatures] = []
         self._history_visual_features: EmmaVisualFeatures
@@ -133,9 +133,9 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
         feature_dicts: list[dict[str, Any]] = []
 
         for idx, edh_history_image in enumerate(edh_history_images):
-            logger.debug(f"Requesting features for image {idx}/{len(edh_history_images)}")
+            logger.debug(f"Requesting features for image {idx+1}/{len(edh_history_images)}")
 
-            feature_response = self.client.post_request(edh_history_image)
+            feature_response = self.client.extract_single_image(edh_history_image)
             feature_dicts.append(asdict(feature_response))
 
         self._current_bbox_probas = feature_dicts[-1]["bbox_probas"]

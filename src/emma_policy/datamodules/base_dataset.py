@@ -49,6 +49,93 @@ def apply_frame_shuffling(
     return feature_dicts, original_frame_order
 
 
+def prepare_emma_visual_features(  # noqa: WPS210
+    feature_dicts: list[dict[str, torch.Tensor]],
+    tokenizer: PreTrainedTokenizer,
+    start_offset: int = 0,
+    shuffle_frames: bool = False,
+    shuffle_frames_perc: float = 0,
+    shuffle_objects: bool = False,
+) -> EmmaVisualFeatures:
+    """Prepare EmmaVisualFeatures from extracted features."""
+    object_features = []
+    object_classes = []
+    object_coordinates = []
+    vis_tokens = []
+    obj_frame_tokens = []
+    object_attention_mask = []
+    scene_features = []
+    scene_frame_tokens = []
+
+    num_features = len(feature_dicts)
+    original_frame_order = torch.arange(num_features)
+    # shuffling
+    if shuffle_frames:
+        feature_dicts, original_frame_order = apply_frame_shuffling(
+            feature_dicts=feature_dicts, fom_probability=shuffle_frames_perc
+        )
+
+    for frame_idx, feature_dict in enumerate(feature_dicts):
+        if shuffle_objects:
+            shuffled_indices = torch.randperm(feature_dict["bbox_features"].shape[0])
+            feature_dict["bbox_features"] = feature_dict["bbox_features"][shuffled_indices]
+            feature_dict["bbox_probas"] = feature_dict["bbox_probas"][shuffled_indices]
+            feature_dict["bbox_coords"] = feature_dict["bbox_coords"][shuffled_indices]
+
+        object_features.append(feature_dict["bbox_features"])
+        object_classes.append(
+            torch.tensor([torch.argmax(proba, -1) for proba in feature_dict["bbox_probas"]])
+        )
+        image_coords = feature_dict["bbox_coords"]
+
+        # normalized coordinates
+        image_coords[:, (0, 2)] /= feature_dict["width"]
+        image_coords[:, (1, 3)] /= feature_dict["height"]
+        object_coordinates.append(image_coords)
+
+        scene_features.append(feature_dict["cnn_features"].unsqueeze(0))
+
+        feature_count = object_features[-1].shape[0]
+
+        curr_vis_tokens = torch.tensor(
+            tokenizer.convert_tokens_to_ids(
+                [f"<vis_token_{idx+1}>" for idx in range(feature_count)]
+            ),
+            dtype=torch.long,
+        )
+        vis_tokens.append(curr_vis_tokens)
+
+        frame_token = tokenizer.convert_tokens_to_ids(f"<frame_token_{frame_idx+start_offset+1}>")
+        obj_frame_tokens.append(
+            curr_vis_tokens.new_full(
+                curr_vis_tokens.shape,
+                fill_value=frame_token,  # type: ignore[arg-type]
+            )
+        )
+        scene_frame_tokens.append(frame_token)
+        object_attention_mask.append(torch.ones_like(curr_vis_tokens, dtype=torch.bool))
+
+    num_frames = len(scene_features)
+    scene_attention_mask = torch.ones(num_frames, dtype=torch.bool)
+    scene_coordinates = torch.tensor([0, 0, 1.0, 1.0]).repeat(num_frames, 1)
+
+    emma_visual_features = EmmaVisualFeatures(
+        object_attention_mask=torch.cat(object_attention_mask),
+        object_coordinates=torch.cat(object_coordinates),
+        object_classes=torch.cat(object_classes),
+        object_features=torch.cat(object_features),
+        object_frame_tokens=torch.cat(obj_frame_tokens),
+        scene_attention_mask=scene_attention_mask,
+        scene_coordinates=scene_coordinates,
+        scene_features=torch.cat(scene_features),
+        scene_frame_tokens=torch.tensor(scene_frame_tokens),
+        visual_token_ids=torch.cat(vis_tokens),
+        original_frame_order=original_frame_order,
+    )
+
+    return emma_visual_features
+
+
 class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
     """Common torch Dataset for easily getting dataset from DatasetDb files for modelling.
 
@@ -80,7 +167,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         self.tokenizer = tokenizer
         self.max_frames = max_frames
         self.bbox_match_threshold = bbox_match_threshold
-        self.shuffle_frames_prec = shuffle_frames_perc
+        self.shuffle_frames_perc = shuffle_frames_perc
         self.shuffle_objects = shuffle_objects
 
     def __len__(self) -> int:
@@ -115,91 +202,21 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
             feature_dicts=feature_dicts, start_offset=start_offset, shuffle_frames=shuffle_frames
         )
 
-    def _prepare_emma_visual_features(  # noqa: WPS210
+    def _prepare_emma_visual_features(
         self,
         feature_dicts: list[dict[str, torch.Tensor]],
         start_offset: int = 0,
         shuffle_frames: bool = False,
     ) -> EmmaVisualFeatures:
         """Prepare an EmmaVisualFeatures object."""
-        object_features = []
-        object_classes = []
-        object_coordinates = []
-        vis_tokens = []
-        obj_frame_tokens = []
-        object_attention_mask = []
-        scene_features = []
-        scene_frame_tokens = []
-
-        num_features = len(feature_dicts)
-        original_frame_order = torch.arange(num_features)
-        # shuffling
-        if shuffle_frames:
-            feature_dicts, original_frame_order = apply_frame_shuffling(
-                feature_dicts=feature_dicts, fom_probability=self.shuffle_frames_prec
-            )
-
-        for frame_idx, feature_dict in enumerate(feature_dicts):
-            if self.shuffle_objects:
-                shuffled_indices = torch.randperm(feature_dict["bbox_features"].shape[0])
-                feature_dict["bbox_features"] = feature_dict["bbox_features"][shuffled_indices]
-                feature_dict["bbox_probas"] = feature_dict["bbox_probas"][shuffled_indices]
-                feature_dict["bbox_coords"] = feature_dict["bbox_coords"][shuffled_indices]
-
-            object_features.append(feature_dict["bbox_features"])
-            object_classes.append(
-                torch.tensor([torch.argmax(proba, -1) for proba in feature_dict["bbox_probas"]])
-            )
-            image_coords = feature_dict["bbox_coords"]
-
-            # normalized coordinates
-            image_coords[:, (0, 2)] /= feature_dict["width"]
-            image_coords[:, (1, 3)] /= feature_dict["height"]
-            object_coordinates.append(image_coords)
-
-            scene_features.append(feature_dict["cnn_features"].unsqueeze(0))
-
-            feature_count = object_features[-1].shape[0]
-
-            curr_vis_tokens = torch.tensor(
-                self.tokenizer.convert_tokens_to_ids(
-                    [f"<vis_token_{idx+1}>" for idx in range(feature_count)]
-                ),
-                dtype=torch.long,
-            )
-            vis_tokens.append(curr_vis_tokens)
-
-            frame_token = self.tokenizer.convert_tokens_to_ids(
-                f"<frame_token_{frame_idx+start_offset+1}>"
-            )
-            obj_frame_tokens.append(
-                curr_vis_tokens.new_full(
-                    curr_vis_tokens.shape,
-                    fill_value=frame_token,  # type: ignore[arg-type]
-                )
-            )
-            scene_frame_tokens.append(frame_token)
-            object_attention_mask.append(torch.ones_like(curr_vis_tokens, dtype=torch.bool))
-
-        num_frames = len(scene_features)
-        scene_attention_mask = torch.ones(num_frames, dtype=torch.bool)
-        scene_coordinates = torch.tensor([0, 0, 1.0, 1.0]).repeat(num_frames, 1)
-
-        emma_visual_features = EmmaVisualFeatures(
-            object_attention_mask=torch.cat(object_attention_mask),
-            object_coordinates=torch.cat(object_coordinates),
-            object_classes=torch.cat(object_classes),
-            object_features=torch.cat(object_features),
-            object_frame_tokens=torch.cat(obj_frame_tokens),
-            scene_attention_mask=scene_attention_mask,
-            scene_coordinates=scene_coordinates,
-            scene_features=torch.cat(scene_features),
-            scene_frame_tokens=torch.tensor(scene_frame_tokens),
-            visual_token_ids=torch.cat(vis_tokens),
-            original_frame_order=original_frame_order,
+        return prepare_emma_visual_features(
+            feature_dicts=feature_dicts,
+            tokenizer=self.tokenizer,
+            start_offset=start_offset,
+            shuffle_frames=shuffle_frames,
+            shuffle_frames_perc=self.shuffle_frames_perc,
+            shuffle_objects=self.shuffle_objects,
         )
-
-        return emma_visual_features
 
     def _best_match_features(
         self,

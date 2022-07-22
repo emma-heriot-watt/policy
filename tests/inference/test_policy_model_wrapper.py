@@ -41,6 +41,7 @@ def test_model_is_loaded_from_checkpoint(policy_model_wrapper: PolicyModelWrappe
     assert not policy_model_wrapper._model.training
 
 
+@pytest.mark.skip(reason="Using inference like this will be deprecated in the near future.")
 def test_new_edh_instance_is_initialized(
     single_feature_extractor_endpoint: str,
     policy_model_wrapper: PolicyModelWrapper,
@@ -73,6 +74,7 @@ def test_new_edh_instance_is_initialized(
     )
 
 
+@pytest.mark.skip(reason="Using inference like this will be deprecated in the near future.")
 def test_next_action_can_be_predicted(
     single_feature_extractor_endpoint: str,
     policy_model_wrapper: PolicyModelWrapper,

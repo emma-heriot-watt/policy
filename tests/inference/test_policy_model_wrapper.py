@@ -9,8 +9,16 @@ from emma_datasets.datamodels.datasets import TeachEdhInstance
 from PIL import Image
 from requests_mock import Mocker
 
-from emma_policy.inference.api.settings import FeatureExtractorSettings
+from emma_policy.common.settings import Settings
 from emma_policy.inference.model_wrapper import PolicyModelWrapper, SimulatorAction
+from emma_policy.inference.model_wrapper.feature_client import FeatureClient
+
+
+@pytest.fixture(scope="module")
+def single_feature_extractor_endpoint() -> str:
+    endpoint = Settings().feature_extractor_endpoint
+    feature_client = FeatureClient(endpoint)
+    return feature_client._single_feature_endpoint
 
 
 def load_frame_features_like_api_response(features_path: Path) -> list[dict[str, Any]]:
@@ -34,6 +42,7 @@ def test_model_is_loaded_from_checkpoint(policy_model_wrapper: PolicyModelWrappe
 
 
 def test_new_edh_instance_is_initialized(
+    single_feature_extractor_endpoint: str,
     policy_model_wrapper: PolicyModelWrapper,
     teach_edh_instance: TeachEdhInstance,
     teach_edh_instance_history_images: list[Image.Image],
@@ -42,9 +51,10 @@ def test_new_edh_instance_is_initialized(
     """Verify that a new EDH instance is properly initialized within the wrapper."""
     history_features = load_frame_features_like_api_response(teach_edh_instance.features_path)
 
-    extract_features_endpoint = FeatureExtractorSettings().get_single_feature_url()
     requests_mock.register_uri(
-        "POST", extract_features_endpoint, [{"json": features} for features in history_features]
+        "POST",
+        single_feature_extractor_endpoint,
+        [{"json": features} for features in history_features],
     )
 
     policy_model_wrapper.start_new_edh_instance(
@@ -64,6 +74,7 @@ def test_new_edh_instance_is_initialized(
 
 
 def test_next_action_can_be_predicted(
+    single_feature_extractor_endpoint: str,
     policy_model_wrapper: PolicyModelWrapper,
     teach_edh_instance: TeachEdhInstance,
     teach_edh_instance_history_images: list[Image.Image],
@@ -76,10 +87,9 @@ def test_next_action_can_be_predicted(
         teach_edh_instance.future_features_path
     )
 
-    extract_features_endpoint = FeatureExtractorSettings().get_single_feature_url()
     requests_mock.register_uri(
         "POST",
-        extract_features_endpoint,
+        single_feature_extractor_endpoint,
         [{"json": features} for features in itertools.chain(history_features, future_features)],
     )
 
@@ -112,6 +122,7 @@ def test_next_action_can_be_predicted(
 
 @pytest.mark.skip(reason="Not all future images have been downloaded/added to the fixtures")
 def test_successive_next_actions_can_be_predicted(
+    single_feature_extractor_endpoint: str,
     policy_model_wrapper: PolicyModelWrapper,
     teach_edh_instance: TeachEdhInstance,
     teach_edh_instance_history_images: list[Image.Image],
@@ -124,10 +135,9 @@ def test_successive_next_actions_can_be_predicted(
         teach_edh_instance.future_features_path
     )
 
-    extract_features_endpoint = FeatureExtractorSettings().get_single_feature_url()
     requests_mock.register_uri(
         "POST",
-        extract_features_endpoint,
+        single_feature_extractor_endpoint,
         [{"json": features} for features in itertools.chain(history_features, future_features)],
     )
 

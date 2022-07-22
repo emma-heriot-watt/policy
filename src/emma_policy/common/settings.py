@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import BaseSettings
+from pydantic import AnyHttpUrl, BaseSettings
 
 
 BASE_DIR = Path("storage/")
@@ -26,3 +26,9 @@ class Settings(BaseSettings):
     """Common settings class for use throughout the repository."""
 
     paths: Paths = Paths()
+    feature_extractor_endpoint: AnyHttpUrl = "http://0.0.0.0:5500"  # type: ignore[assignment]
+
+    class Config:
+        """Inner config for API Settings to allow setting inner models from env variables."""
+
+        env_nested_delimiter = "__"

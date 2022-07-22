@@ -61,9 +61,7 @@ async def healthcheck(response: Response) -> str:
 
     async with httpx.AsyncClient() as client:
         logger.info("Checking Perception API")
-        perception_response = (
-            await client.get(settings.feature_extractor_api.endpoint)
-        ).status_code
+        perception_response = (await client.get(settings.feature_extractor_endpoint)).status_code
         logger.info(f"Perception API Response: {perception_response}")
 
     # Verify all the APIs are available.

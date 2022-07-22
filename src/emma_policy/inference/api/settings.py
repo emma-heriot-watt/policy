@@ -1,34 +1,7 @@
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from pydantic import BaseModel, BaseSettings
-
-
-class FeatureExtractorSettings(BaseModel):
-    """API settings for the Feature Extractor."""
-
-    host: str = "http://0.0.0.0"
-    port: int = 5500
-    single_feature: str = "features"
-    batch_features: str = "batch_features"
-    update_model_device: str = "update_model_device"
-
-    @property
-    def endpoint(self) -> str:
-        """Get the endpoint of the API."""
-        return f"{self.host}:{self.port}"
-
-    def get_single_feature_url(self) -> str:
-        """Get the URL to extract features from a single image."""
-        return f"{self.endpoint}/{self.single_feature}"
-
-    def get_batch_features_url(self) -> str:
-        """Get the URL to extract features from a batch of images."""
-        return f"{self.endpoint}/{self.batch_features}"
-
-    def get_update_model_device_url(self) -> str:
-        """Get the URL to update the model device for the feature extractor."""
-        return f"{self.endpoint}/{self.update_model_device}"
+from pydantic import AnyHttpUrl, BaseSettings
 
 
 class ApiSettings(BaseSettings):
@@ -37,12 +10,7 @@ class ApiSettings(BaseSettings):
     port: int = 5000
     host: str = "0.0.0.0"  # noqa: S104
     log_level: str = "info"
-    feature_extractor_api: FeatureExtractorSettings = FeatureExtractorSettings()
-
-    class Config:
-        """Inner config for API Settings to allow setting inner models from env variables."""
-
-        env_nested_delimiter = "__"
+    feature_extractor_endpoint: AnyHttpUrl = "http://0.0.0.0:5500"  # type: ignore[assignment]
 
 
 def parse_api_args() -> tuple[Namespace, list[str]]:

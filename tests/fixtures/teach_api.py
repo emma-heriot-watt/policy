@@ -12,8 +12,9 @@ from pytest_mock import MockerFixture
 from requests_mock import Mocker
 
 from emma_policy.commands.run_teach_api import app
-from emma_policy.inference.api.settings import FeatureExtractorSettings
+from emma_policy.common.settings import Settings
 from emma_policy.inference.model_wrapper import PolicyModelWrapper
+from emma_policy.inference.model_wrapper.feature_client import FeatureClient
 from tests.fixtures.instance_dbs import (
     TeachEdhInstanceFeaturesPathPropertyMock,
     TeachEdhInstanceFutureFeaturesPathPropertyMock,
@@ -105,7 +106,9 @@ def policy_model_wrapper(fixtures_root: Path, requests_mock: Mocker) -> PolicyMo
     """Create a policy model wrapper so no need to keep repeating the args."""
     model_checkpoint_path = fixtures_root.joinpath("teach_tiny.ckpt")
 
-    perception_update_device_path = FeatureExtractorSettings().get_update_model_device_url()
+    perception_update_device_path = FeatureClient(
+        Settings().feature_extractor_endpoint
+    )._update_model_device_endpoint
 
     requests_mock.post(perception_update_device_path)
 

@@ -6,12 +6,12 @@ import torch
 from emma_datasets.datamodels.datasets import TeachEdhInstance
 from overrides import overrides
 from PIL.Image import Image
+from pydantic import AnyHttpUrl
 from transformers import AutoTokenizer, BatchEncoding, PreTrainedTokenizer
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
 from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.datamodules.teach_edh_dataset import TeachEdhDataset
-from emma_policy.inference.api.settings import FeatureExtractorSettings
 from emma_policy.inference.model_wrapper.feature_client import FeatureClient
 
 
@@ -24,7 +24,7 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
     def __init__(
         self,
         tokenizer: PreTrainedTokenizer,
-        feature_extractor_settings: FeatureExtractorSettings,
+        feature_extractor_endpoint: AnyHttpUrl,
         max_frames: int = 100,
     ) -> None:
         # This is what is expected by the `TeachEdhDataset`
@@ -33,7 +33,7 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
         self.shuffle_objects = False
         self.previous_frame: Optional[Image] = None
 
-        self.client = FeatureClient(feature_extractor_settings=feature_extractor_settings)
+        self.client = FeatureClient(feature_extractor_endpoint=feature_extractor_endpoint)
 
         self._trajectory_visual_features: list[EmmaVisualFeatures] = []
         self._history_visual_features: EmmaVisualFeatures
@@ -47,7 +47,7 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
     def from_model_name(
         cls,
         model_name: str,
-        feature_extractor_settings: FeatureExtractorSettings,
+        feature_extractor_endpoint: AnyHttpUrl,
         max_frames: int = 0,
         max_lang_tokens: Optional[int] = None,
     ) -> "TeachEdhInferenceDataset":
@@ -59,7 +59,7 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
         return cls(
             tokenizer=tokenizer,
             max_frames=max_frames,
-            feature_extractor_settings=feature_extractor_settings,
+            feature_extractor_endpoint=feature_extractor_endpoint,
         )
 
     def __len__(self) -> int:

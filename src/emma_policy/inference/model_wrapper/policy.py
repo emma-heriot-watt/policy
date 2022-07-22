@@ -56,14 +56,14 @@ class PolicyModelWrapper(BaseModelWrapper):
         self._model_name = model_name
         self._model = self._setup_model(model_checkpoint_path)
 
-        feature_extractor_settings = ApiSettings().feature_extractor_api
-        logger.info(f"Using feature extractor API at `{feature_extractor_settings.endpoint}`")
+        feature_extractor_endpoint = ApiSettings().feature_extractor_endpoint
+        logger.info(f"Using feature extractor API at `{feature_extractor_endpoint}`")
 
         self._teach_edh_inference_dataset = TeachEdhInferenceDataset.from_model_name(
             model_name=model_name,
             max_frames=max_frames,
             max_lang_tokens=max_lang_tokens,
-            feature_extractor_settings=feature_extractor_settings,
+            feature_extractor_endpoint=feature_extractor_endpoint,
         )
 
         self._tokenizer = self._teach_edh_inference_dataset.tokenizer

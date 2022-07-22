@@ -5,8 +5,7 @@ from dataclasses import dataclass
 import requests
 import torch
 from PIL import Image
-
-from emma_policy.inference.api.settings import FeatureExtractorSettings
+from pydantic import AnyHttpUrl
 
 
 logger = logging.getLogger(__name__)
@@ -29,14 +28,11 @@ class FeatureResponse:
 class FeatureClient:
     """Simple client for making requests to a feature extraction server."""
 
-    def __init__(self, feature_extractor_settings: FeatureExtractorSettings) -> None:
-        self._feature_extractor_settings = feature_extractor_settings
+    def __init__(self, feature_extractor_endpoint: AnyHttpUrl) -> None:
+        self._endpoint = feature_extractor_endpoint
 
-        self._single_feature_endpoint = self._feature_extractor_settings.get_single_feature_url()
-        self._batch_features_endpoint = self._feature_extractor_settings.get_batch_features_url()
-        self._update_model_device_endpoint = (
-            self._feature_extractor_settings.get_update_model_device_url()
-        )
+        self._single_feature_endpoint = f"{self._endpoint}/features"
+        self._update_model_device_endpoint = f"{self._endpoint}/update_device"
 
     def update_device(self, device: torch.device) -> None:
         """Update the device used by the feature extractor."""

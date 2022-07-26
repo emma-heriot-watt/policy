@@ -7,6 +7,7 @@ import torch
 from emma_datasets.common import Downloader, Settings
 from emma_datasets.datamodels import DatasetSplit
 from emma_datasets.db import DatasetDb
+from overrides import overrides
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import ConcatDataset, DataLoader, Subset
 from transformers import AutoTokenizer
@@ -44,8 +45,9 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         enabled_tasks: Optional[EnabledTasksPerModality] = None,
         tokenizer_truncation_side: str = "right",
         balance_datasets: bool = False,
-        mlm_balancing_ratio: int = 4,
+        balancing_ratio: int = 2,
         shuffle_objects: bool = False,
+        propotional_task_sampling: bool = False,
     ) -> None:
         super().__init__()
         self.model_name = model_name
@@ -75,8 +77,9 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         self.tokenizer_truncation_side = tokenizer_truncation_side
         self.balance_datasets = self._verify_balance_datasets(balance_datasets)
         self.balanced_num_samples = -1
-        self.mlm_balancing_ratio = mlm_balancing_ratio
+        self.balancing_ratio = balancing_ratio
         self.shuffle_objects = shuffle_objects
+        self.propotional_task_sampling = propotional_task_sampling
 
     def prepare_data(self) -> None:
         """Download the pretrain DBs if necessary.
@@ -103,23 +106,42 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         if self.max_lang_tokens:
             self.tokenizer.model_max_length = self.max_lang_tokens
 
-        self._train_dataset = self._get_dataset_from_tasks(DatasetSplit.train)
         if self.balance_datasets:
             self.balanced_num_samples = self._get_balanced_dataset_length(DatasetSplit.train)
+        self._train_dataset = self._get_datasets_from_tasks(DatasetSplit.train)
 
         if self.load_valid_data:
-            self._val_dataset = self._get_dataset_from_tasks(DatasetSplit.valid)
+            self._val_dataset = self._get_concatenated_dataset_from_tasks(DatasetSplit.valid)
 
-    def train_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
+    @overrides(check_signature=False)
+    def train_dataloader(
+        self,
+    ) -> Union[dict[Task, DataLoader[EmmaDatasetBatch]], DataLoader[EmmaDatasetBatch]]:
         """Generate train dataloader."""
         if self.balance_datasets:
             # Resample at the beginning of each epoch.
-            train_dataset = self._get_dataset_from_tasks(DatasetSplit.train)
+            train_dataset = self._get_datasets_from_tasks(DatasetSplit.train)
         else:
             train_dataset = self._train_dataset
 
+        if self.propotional_task_sampling:
+            return {
+                task: DataLoader(
+                    dataset,  # type: ignore[arg-type]
+                    batch_size=self._train_batch_size,
+                    num_workers=self._num_workers,
+                    collate_fn=collate_fn,
+                    shuffle=True,
+                    pin_memory=True,
+                )
+                for task, dataset in train_dataset.items()
+            }
+
+        combined_dataset: ConcatDataset[Optional[EmmaDatasetItem]] = ConcatDataset(
+            train_dataset.values()
+        )
         return DataLoader(
-            train_dataset,  # type: ignore[arg-type]
+            combined_dataset,  # type: ignore[arg-type]
             batch_size=self._train_batch_size,
             num_workers=self._num_workers,
             collate_fn=collate_fn,
@@ -137,11 +159,12 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
             shuffle=False,
         )
 
-    def _get_dataset_from_tasks(
-        self, dataset_split: DatasetSplit
-    ) -> ConcatDataset[Optional[EmmaDatasetItem]]:
-        """Iterate over all the enabled tasks and create a concatenated dataset."""
-        all_datasets: list[EmmaPretrainDataset] = []
+    def _get_datasets_from_tasks(
+        self,
+        dataset_split: DatasetSplit,
+    ) -> dict[Task, EmmaPretrainDataset]:
+        """Create the dataset for each enabled task."""
+        all_datasets: dict[Task, EmmaPretrainDataset] = {}
 
         for task in itertools.chain.from_iterable(self._enabled_tasks.values()):
             task_db_name = get_db_file_name(task, dataset_split)
@@ -154,17 +177,22 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
                 shuffle_objects=self.shuffle_objects,
             )
             if self.balance_datasets and dataset_split == DatasetSplit.train:
-                if task == Task.mlm:
-                    indices = torch.randperm(len(dataset))[
-                        : self.mlm_balancing_ratio * self.balanced_num_samples
-                    ]
-                else:
-                    indices = torch.randperm(len(dataset))[: self.balanced_num_samples]
+                indices = torch.randperm(len(dataset))[
+                    : self.balancing_ratio * self.balanced_num_samples
+                ]
                 dataset = Subset(dataset, indices.tolist())  # type: ignore[assignment]
 
-            all_datasets.append(dataset)
+            all_datasets[task] = dataset
 
-        return ConcatDataset(all_datasets)
+        return all_datasets
+
+    def _get_concatenated_dataset_from_tasks(
+        self,
+        dataset_split: DatasetSplit,
+    ) -> ConcatDataset[Optional[EmmaDatasetItem]]:
+        """Iterate over all the enabled tasks and create a concatenated dataset."""
+        all_datasets = self._get_datasets_from_tasks(dataset_split)
+        return ConcatDataset(all_datasets.values())
 
     def _get_balanced_dataset_length(self, dataset_split: DatasetSplit) -> int:
         """Balance the number of samples from datasets of different tasks."""

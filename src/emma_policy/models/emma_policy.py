@@ -16,7 +16,7 @@ from transformers.generation_utils import (
 )
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
-from emma_policy.datamodules.pretrain_instances import Task
+from emma_policy.datamodules.pretrain_instances import Task, sort_tasks
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
 from emma_policy.models.seq_emma import EmmaForConditionalGeneration
 from emma_policy.utils.task_loss import TaskLoss
@@ -25,7 +25,7 @@ from emma_policy.utils.task_loss import TaskLoss
 PredictType = Union[
     GreedySearchOutput, SampleOutput, BeamSearchOutput, BeamSampleOutput, torch.LongTensor
 ]
-
+TrainBatchType = Union[EmmaDatasetBatch, dict[str, EmmaDatasetBatch]]
 log = logging.getLogger(__name__)
 
 
@@ -44,6 +44,7 @@ class EmmaPolicy(pl.LightningModule):
         self.task_metrics = torch.nn.ModuleList([TaskLoss() for _ in Task])
 
         self.trainer: pl.Trainer  # type: ignore[assignment]
+        self.enabled_task_probabilities: Optional[dict[str, Any]] = None
 
     def num_training_steps(self) -> int:
         """Total training steps inferred from datamodule and devices."""
@@ -140,6 +141,40 @@ class EmmaPolicy(pl.LightningModule):
             "optimizer": optimizer,
             "lr_scheduler": {"scheduler": scheduler, "interval": "step", "frequency": 1},
         }
+
+    def on_train_start(self) -> None:
+        """Compute probabilites for task proportional sampling."""
+        train_dataloader = self.trainer.datamodule.train_dataloader()  # type: ignore[attr-defined]
+        if isinstance(train_dataloader, dict):
+            tasks = sort_tasks(list(train_dataloader.keys()))
+            task_lens = {
+                task: float(len(dataloader.dataset))
+                for task, dataloader in train_dataloader.items()
+            }
+            total = sum(task_lens.values())
+            self.enabled_task_probabilities = {
+                "tasks": tasks,
+                "probs": torch.tensor([task_lens[task] / total for task in tasks]),
+            }
+            log.info(
+                f"Pretraining tasks: {self.enabled_task_probabilities['tasks']} with probabilites: {self.enabled_task_probabilities['probs']}"
+            )
+        return super().on_train_start()
+
+    def on_before_batch_transfer(
+        self, batch: EmmaDatasetBatch, dataloader_idx: int
+    ) -> EmmaDatasetBatch:
+        """Select a batch from one task."""
+        if self.enabled_task_probabilities and isinstance(batch, dict):
+            task_idx = torch.multinomial(self.enabled_task_probabilities["probs"], 1)
+            if torch.distributed.is_available() and torch.distributed.is_initialized():
+                task_idx = task_idx.to(self.device)
+                torch.distributed.barrier()
+                torch.distributed.broadcast_multigpu([task_idx], src=0)
+                task_idx = task_idx.item()  # type: ignore[assignment]
+
+            batch = batch[self.enabled_task_probabilities["tasks"][task_idx]]
+        return batch
 
     @overrides(check_signature=False)
     def training_step(self, batch: EmmaDatasetBatch, batch_idx: int) -> EmmaSeq2SeqLMOutput:

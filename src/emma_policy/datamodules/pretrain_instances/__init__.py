@@ -8,6 +8,7 @@ from emma_policy.datamodules.pretrain_instances.datamodels import (
     EnabledTasksPerModality,
     PretrainInstance,
     Task,
+    sort_tasks,
 )
 from emma_policy.datamodules.pretrain_instances.is_train_instance import (
     get_validation_coco_ids,

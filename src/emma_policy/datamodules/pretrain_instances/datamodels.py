@@ -38,6 +38,14 @@ class Task(Enum):
         return list(cls).index(task)
 
 
+def sort_tasks(task_list: list[Task]) -> list[Task]:
+    """Sort a list of tasks."""
+    all_tasks = list(Task)
+    task_indices = [Task.get_index(task) for task in task_list]
+    task_indices = sorted(task_indices)
+    return [all_tasks[idx] for idx in task_indices]
+
+
 TASK_TEMPLATES_MAP: Mapping[Task, list[str]] = MappingProxyType(
     {
         Task.mlm: [

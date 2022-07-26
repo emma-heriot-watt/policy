@@ -74,19 +74,15 @@ def test_prepare_balanced_datasets(
         load_valid_data=True,
         enabled_tasks=enabled_tasks_per_modality,
         balance_datasets=True,
+        balancing_ratio=1,
     )
 
     dm.prepare_data()
     dm.setup()
     if dm.balance_datasets:
-        total_tasks = sum(
-            len(set(modality_tasks)) for modality_tasks in enabled_tasks_per_modality.values()
-        )
-        for enabled_tasks in enabled_tasks_per_modality.values():
-            if "mlm" in enabled_tasks:
-                total_tasks += dm.mlm_balancing_ratio - 1
+        total_tasks = len(set(itertools.chain.from_iterable(enabled_tasks_per_modality.values())))
 
-        assert len(dm.train_dataloader().dataset) == total_tasks * dm.balanced_num_samples  # type: ignore[arg-type]
+        assert len(dm.train_dataloader().dataset) == total_tasks * dm.balanced_num_samples
 
 
 def masked_tokens_check(input_text: str, mask_token: str = "<mask>") -> None:  # noqa: S107

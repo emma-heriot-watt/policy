@@ -54,15 +54,19 @@ class VQAv2Dataset(EmmaBaseDataset[EmmaDatasetItem]):
         visual_features = self._load_visual_features(
             features_path=instance.features_path, modality=instance.modality
         )
-        # Select the target answer based on the answer scores
-        scores = torch.tensor([answer.score for answer in instance.training_targets])
-        selected_idx = torch.multinomial(scores, 1).item()
 
-        target_text = instance.training_targets[selected_idx].answer
+        if instance.training_targets:
+            # Select the target answer based on the answer scores
+            scores = torch.tensor([answer.score for answer in instance.training_targets])
+            selected_idx = torch.multinomial(scores, 1).item()
+            target_text = instance.training_targets[selected_idx].answer
+        else:
+            target_text = ""
+
         target_encoding = self.tokenizer.encode_plus(
             target_text, return_tensors=self._return_tensor_type, truncation=True
         )
-
+        target = {"question_id": instance.question_id, "answers": instance.answers}
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
@@ -78,5 +82,5 @@ class VQAv2Dataset(EmmaBaseDataset[EmmaDatasetItem]):
             scene_frame_tokens=visual_features.scene_frame_tokens,
             object_frame_tokens=visual_features.object_frame_tokens,
             task=self._get_task_as_tensor(Task.vqa),
-            raw_target=instance.answers,
+            raw_target=target,
         )

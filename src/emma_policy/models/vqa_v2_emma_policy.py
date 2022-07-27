@@ -1,7 +1,10 @@
+import itertools
 import logging
-from typing import Any, Union
+from pathlib import Path
+from typing import Any, Optional, Union
 
 import torch
+from emma_datasets.io.json import write_json
 from overrides import overrides
 from transformers import AutoTokenizer
 from transformers.generation_utils import (
@@ -37,6 +40,7 @@ class VQAv2EmmaPolicy(EmmaPolicy):
         model_name: str,
         num_beams: int = 1,
         max_generated_text_length: int = 20,
+        save_results_path: Optional[Path] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model_name=model_name, **kwargs)
@@ -46,6 +50,39 @@ class VQAv2EmmaPolicy(EmmaPolicy):
         self._max_generated_text_length = max_generated_text_length
         self._min_length = 1
         self.task_metrics = None  # type: ignore[assignment]
+        self._results_path = save_results_path
+        self.question_ids: list[int] = []
+        self.generated_answers: list[str] = []
+
+    def on_test_epoch_end(self) -> None:
+        """Save the QA resutls."""
+        if self._results_path is not None:
+            if torch.distributed.is_available() and torch.distributed.is_initialized():
+                torch.distributed.barrier()
+                world_size = torch.distributed.get_world_size()
+                all_question_ids = [None for _ in range(world_size)]
+                torch.distributed.all_gather_object(all_question_ids, self.question_ids)
+                generated_answers = [None for _ in range(world_size)]
+                torch.distributed.all_gather_object(generated_answers, self.generated_answers)
+                if torch.distributed.get_rank() == 0:
+                    all_question_ids = list(
+                        itertools.chain.from_iterable(all_question_ids)  # type: ignore[arg-type]
+                    )
+                    generated_answers = list(
+                        itertools.chain.from_iterable(generated_answers)  # type: ignore[arg-type]
+                    )
+                    outputs = [
+                        {"answer": answer, "question_id": qid}
+                        for answer, qid in zip(generated_answers, all_question_ids)
+                    ]
+                    write_json(self._results_path, outputs)
+            else:
+                outputs = [
+                    {"answer": answer, "question_id": qid}
+                    for answer, qid in zip(generated_answers, all_question_ids)
+                ]
+                write_json(self._results_path, outputs)
+        return super().on_test_epoch_end()
 
     @overrides(check_signature=False)
     def training_step(self, batch: EmmaDatasetBatch, batch_idx: int) -> EmmaSeq2SeqLMOutput:
@@ -80,6 +117,9 @@ class VQAv2EmmaPolicy(EmmaPolicy):
     def test_step(self, batch: EmmaDatasetBatch, batch_idx: int) -> PredictType:
         """Inference step."""
         output = self._predict_answer(batch=batch, batch_idx=batch_idx)
+        if batch.raw_target is not None:
+            self.question_ids.extend([instance["question_id"] for instance in batch.raw_target])
+        self.generated_answers.extend(output)
         return output
 
     @overrides(check_signature=False)
@@ -116,5 +156,7 @@ class VQAv2EmmaPolicy(EmmaPolicy):
     ) -> PredictType:
         """Generate the bounding box and compute the accuracy."""
         predictions = self._predict_answer(batch, batch_idx)
-        self.eval_acc(predictions, batch.raw_target)
+        if batch.raw_target is not None:
+            targets = [instance["answers"] for instance in batch.raw_target]
+        self.eval_acc(predictions, targets)
         return predictions

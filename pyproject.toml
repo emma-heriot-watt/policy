@@ -69,7 +69,6 @@ pydantic = { version = "~1.8", extras = ["dotenv"] }
 overrides = "^6.1.0"
 numpy = "^1.22.2"
 emma-datasets = { git = "https://github.com/emma-simbot/datasets", rev = "main" }
-gradio = "^2.9.4"
 fastapi = { extras = ["all"], version = "^0.75.2" }
 httpx = "^0.23.0"
 loguru = "^0.6.0"
@@ -81,9 +80,11 @@ gym = { version = "<0.22", extras = [
 	"atari",
 	"accept-rom-license",
 ], optional = true }
+gradio = { version = "^3.1.1", optional = true }
 
 [tool.poetry.extras]
 rl = ["ray", "gym"]
+demo = ["gradio"]
 
 [tool.poetry.dev-dependencies]
 wemake-python-styleguide = "^0.16.0"

@@ -73,7 +73,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install -E rl
+          poetry install -E rl -E demo
 
       - name: Load mypy cache
         uses: tespkg/actions-cache@v1
@@ -148,7 +148,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install -E rl
+          poetry install -E rl -E demo
 
       - name: Run flake8
         env:

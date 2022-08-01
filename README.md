@@ -68,6 +68,7 @@ Check out the [CONTRIBUTING.md](https://github.com/emma-simbot/policy/blob/main/
 We've separated specific groups of dependencies so that you only need to install what you need.
 
 - For RL, run `poetry install -E rl`
+- For demonstrating using Gradio, run `poetry install -E demo`
 
 ## Writing code and running things
 

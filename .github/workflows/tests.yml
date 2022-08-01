@@ -57,7 +57,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install -E rl
+          poetry install -E rl -E demo
           poetry run poe install-everything-else
           poetry run poe download-coco-resplit-train
 

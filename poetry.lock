@@ -69,7 +69,7 @@ requests = ">=2.7,<3.0"
 six = ">=1.5"
 
 [package.extras]
-test = ["mock (==2.0.0)", "pylint (==1.9.3)", "flake8 (==3.7.9)"]
+test = ["flake8 (==3.7.9)", "pylint (==1.9.3)", "mock (==2.0.0)"]
 
 [[package]]
 name = "antlr4-python3-runtime"
@@ -513,7 +513,7 @@ optional = false
 python-versions = "*"
 
 [package.extras]
-test = ["flake8 (==3.7.8)", "hypothesis (==3.55.3)"]
+test = ["hypothesis (==3.55.3)", "flake8 (==3.7.8)"]
 
 [[package]]
 name = "coverage"
@@ -599,13 +599,13 @@ xxhash = "*"
 apache-beam = ["apache-beam (>=2.26.0)"]
 audio = ["librosa"]
 benchmarks = ["numpy (==1.18.5)", "tensorflow (==2.3.0)", "torch (==1.6.0)", "transformers (==3.0.2)"]
-dev = ["absl-py", "pytest", "pytest-datadir", "pytest-xdist", "apache-beam (>=2.26.0)", "elasticsearch (<8.0.0)", "aiobotocore (==1.4.2)", "boto3 (==1.17.106)", "botocore (==1.20.106)", "faiss-cpu (>=1.6.4)", "fsspec", "moto[server,s3] (==2.0.4)", "rarfile (>=4.0)", "s3fs (==2021.08.1)", "tensorflow (>=2.3,!=2.6.0,!=2.6.1)", "torch", "torchaudio", "soundfile", "transformers", "bs4", "conllu", "h5py", "langdetect", "lxml", "lz4", "mwparserfromhell", "nltk", "openpyxl", "py7zr", "tldextract", "zstandard", "sentencepiece", "sacremoses", "bert-score (>=0.3.6)", "jiwer", "mauve-text", "rouge-score", "sacrebleu", "scikit-learn", "scipy", "seqeval", "toml (>=0.10.1)", "requests-file (>=1.5.1)", "tldextract (>=3.1.0)", "texttable (>=1.6.3)", "Werkzeug (>=1.0.1)", "six (>=1.15.0,<1.16.0)", "Pillow (>=6.2.1)", "librosa", "black (>=22.0,<23.0)", "flake8 (>=3.8.3)", "isort (>=5.0.0)", "pyyaml (>=5.3.1)", "importlib-resources"]
+dev = ["absl-py", "pytest", "pytest-datadir", "pytest-xdist", "apache-beam (>=2.26.0)", "elasticsearch (<8.0.0)", "aiobotocore (==1.4.2)", "boto3 (==1.17.106)", "botocore (==1.20.106)", "faiss-cpu (>=1.6.4)", "fsspec", "moto[s3,server] (==2.0.4)", "rarfile (>=4.0)", "s3fs (==2021.08.1)", "tensorflow (>=2.3,!=2.6.0,!=2.6.1)", "torch", "torchaudio", "soundfile", "transformers", "bs4", "conllu", "h5py", "langdetect", "lxml", "lz4", "mwparserfromhell", "nltk", "openpyxl", "py7zr", "tldextract", "zstandard", "sentencepiece", "sacremoses", "bert-score (>=0.3.6)", "jiwer", "mauve-text", "rouge-score", "sacrebleu", "scikit-learn", "scipy", "seqeval", "toml (>=0.10.1)", "requests-file (>=1.5.1)", "tldextract (>=3.1.0)", "texttable (>=1.6.3)", "Werkzeug (>=1.0.1)", "six (>=1.15.0,<1.16.0)", "Pillow (>=6.2.1)", "librosa", "black (>=22.0,<23.0)", "flake8 (>=3.8.3)", "isort (>=5.0.0)", "pyyaml (>=5.3.1)", "importlib-resources"]
 docs = ["s3fs"]
 quality = ["black (>=22.0,<23.0)", "flake8 (>=3.8.3)", "isort (>=5.0.0)", "pyyaml (>=5.3.1)"]
 s3 = ["fsspec", "boto3", "botocore", "s3fs"]
 tensorflow = ["tensorflow (>=2.2.0,!=2.6.0,!=2.6.1)"]
 tensorflow_gpu = ["tensorflow-gpu (>=2.2.0,!=2.6.0,!=2.6.1)"]
-tests = ["absl-py", "pytest", "pytest-datadir", "pytest-xdist", "apache-beam (>=2.26.0)", "elasticsearch (<8.0.0)", "aiobotocore (==1.4.2)", "boto3 (==1.17.106)", "botocore (==1.20.106)", "faiss-cpu (>=1.6.4)", "fsspec", "moto[server,s3] (==2.0.4)", "rarfile (>=4.0)", "s3fs (==2021.08.1)", "tensorflow (>=2.3,!=2.6.0,!=2.6.1)", "torch", "torchaudio", "soundfile", "transformers", "bs4", "conllu", "h5py", "langdetect", "lxml", "lz4", "mwparserfromhell", "nltk", "openpyxl", "py7zr", "tldextract", "zstandard", "sentencepiece", "sacremoses", "bert-score (>=0.3.6)", "jiwer", "mauve-text", "rouge-score", "sacrebleu", "scikit-learn", "scipy", "seqeval", "toml (>=0.10.1)", "requests-file (>=1.5.1)", "tldextract (>=3.1.0)", "texttable (>=1.6.3)", "Werkzeug (>=1.0.1)", "six (>=1.15.0,<1.16.0)", "Pillow (>=6.2.1)", "librosa", "importlib-resources"]
+tests = ["absl-py", "pytest", "pytest-datadir", "pytest-xdist", "apache-beam (>=2.26.0)", "elasticsearch (<8.0.0)", "aiobotocore (==1.4.2)", "boto3 (==1.17.106)", "botocore (==1.20.106)", "faiss-cpu (>=1.6.4)", "fsspec", "moto[s3,server] (==2.0.4)", "rarfile (>=4.0)", "s3fs (==2021.08.1)", "tensorflow (>=2.3,!=2.6.0,!=2.6.1)", "torch", "torchaudio", "soundfile", "transformers", "bs4", "conllu", "h5py", "langdetect", "lxml", "lz4", "mwparserfromhell", "nltk", "openpyxl", "py7zr", "tldextract", "zstandard", "sentencepiece", "sacremoses", "bert-score (>=0.3.6)", "jiwer", "mauve-text", "rouge-score", "sacrebleu", "scikit-learn", "scipy", "seqeval", "toml (>=0.10.1)", "requests-file (>=1.5.1)", "tldextract (>=3.1.0)", "texttable (>=1.6.3)", "Werkzeug (>=1.0.1)", "six (>=1.15.0,<1.16.0)", "Pillow (>=6.2.1)", "librosa", "importlib-resources"]
 torch = ["torch"]
 vision = ["Pillow (>=6.2.1)"]
 
@@ -1067,7 +1067,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "fsspec"
-version = "2022.5.0"
+version = "2022.7.1"
 description = "File-system specification"
 category = "main"
 optional = false
@@ -1306,13 +1306,13 @@ tqdm = "*"
 typing-extensions = ">=3.7.4.3"
 
 [package.extras]
-all = ["pytest", "pytest-cov", "datasets", "soundfile", "black (>=22.0,<23.0)", "isort (>=5.5.4)", "flake8 (>=3.8.3)"]
-dev = ["pytest", "pytest-cov", "datasets", "soundfile", "black (>=22.0,<23.0)", "isort (>=5.5.4)", "flake8 (>=3.8.3)"]
-fastai = ["toml", "fastai (>=2.4)", "fastcore (>=1.3.27)"]
-quality = ["black (>=22.0,<23.0)", "isort (>=5.5.4)", "flake8 (>=3.8.3)"]
-tensorflow = ["tensorflow", "pydot", "graphviz"]
-testing = ["pytest", "pytest-cov", "datasets", "soundfile"]
 torch = ["torch"]
+testing = ["soundfile", "datasets", "pytest-cov", "pytest"]
+tensorflow = ["graphviz", "pydot", "tensorflow"]
+quality = ["flake8 (>=3.8.3)", "isort (>=5.5.4)", "black (>=22.0,<23.0)"]
+fastai = ["fastcore (>=1.3.27)", "fastai (>=2.4)", "toml"]
+dev = ["flake8 (>=3.8.3)", "isort (>=5.5.4)", "black (>=22.0,<23.0)", "soundfile", "datasets", "pytest-cov", "pytest"]
+all = ["flake8 (>=3.8.3)", "isort (>=5.5.4)", "black (>=22.0,<23.0)", "soundfile", "datasets", "pytest-cov", "pytest"]
 
 [[package]]
 name = "hydra-colorlog"
@@ -1736,10 +1736,10 @@ python-versions = ">=3.6"
 uc-micro-py = "*"
 
 [package.extras]
-benchmark = ["pytest", "pytest-benchmark"]
-dev = ["pre-commit", "isort", "flake8", "black"]
-doc = ["sphinx", "sphinx-book-theme", "myst-parser"]
-test = ["coverage", "pytest", "pytest-cov"]
+test = ["pytest-cov", "pytest", "coverage"]
+doc = ["myst-parser", "sphinx-book-theme", "sphinx"]
+dev = ["black", "flake8", "isort", "pre-commit"]
+benchmark = ["pytest-benchmark", "pytest"]
 
 [[package]]
 name = "loguru"
@@ -1754,7 +1754,7 @@ colorama = {version = ">=0.3.4", markers = "sys_platform == \"win32\""}
 win32-setctime = {version = ">=1.0.0", markers = "sys_platform == \"win32\""}
 
 [package.extras]
-dev = ["colorama (>=0.3.4)", "docutils (==0.16)", "flake8 (>=3.7.7)", "tox (>=3.9.0)", "pytest (>=4.6.2)", "pytest-cov (>=2.7.1)", "black (>=19.10b0)", "isort (>=5.1.1)", "Sphinx (>=4.1.1)", "sphinx-autobuild (>=0.7.1)", "sphinx-rtd-theme (>=0.4.3)"]
+dev = ["sphinx-rtd-theme (>=0.4.3)", "sphinx-autobuild (>=0.7.1)", "Sphinx (>=4.1.1)", "isort (>=5.1.1)", "black (>=19.10b0)", "pytest-cov (>=2.7.1)", "pytest (>=4.6.2)", "tox (>=3.9.0)", "flake8 (>=3.7.7)", "docutils (==0.16)", "colorama (>=0.3.4)"]
 
 [[package]]
 name = "lz4"
@@ -1805,14 +1805,14 @@ mdit-py-plugins = {version = "*", optional = true, markers = "extra == \"plugins
 mdurl = ">=0.1,<1.0"
 
 [package.extras]
-benchmarking = ["psutil", "pytest", "pytest-benchmark (>=3.2,<4.0)"]
-code_style = ["pre-commit (==2.6)"]
-compare = ["commonmark (>=0.9.1,<0.10.0)", "markdown (>=3.3.6,<3.4.0)", "mistletoe (>=0.8.1,<0.9.0)", "mistune (>=2.0.2,<2.1.0)", "panflute (>=2.1.3,<2.2.0)"]
-linkify = ["linkify-it-py (>=1.0,<2.0)"]
-plugins = ["mdit-py-plugins"]
+testing = ["pytest-regressions", "pytest-cov", "pytest", "coverage"]
+rtd = ["sphinx-book-theme", "sphinx-design", "sphinx-copybutton", "sphinx", "pyyaml", "myst-parser", "attrs"]
 profiling = ["gprof2dot"]
-rtd = ["attrs", "myst-parser", "pyyaml", "sphinx", "sphinx-copybutton", "sphinx-design", "sphinx-book-theme"]
-testing = ["coverage", "pytest", "pytest-cov", "pytest-regressions"]
+plugins = ["mdit-py-plugins"]
+linkify = ["linkify-it-py (>=1.0,<2.0)"]
+compare = ["panflute (>=2.1.3,<2.2.0)", "mistune (>=2.0.2,<2.1.0)", "mistletoe (>=0.8.1,<0.9.0)", "markdown (>=3.3.6,<3.4.0)", "commonmark (>=0.9.1,<0.10.0)"]
+code_style = ["pre-commit (==2.6)"]
+benchmarking = ["pytest-benchmark (>=3.2,<4.0)", "pytest", "psutil"]
 
 [[package]]
 name = "markupsafe"
@@ -1872,9 +1872,9 @@ python-versions = "~=3.6"
 markdown-it-py = ">=1.0.0,<3.0.0"
 
 [package.extras]
+testing = ["pytest-regressions", "pytest-cov", "pytest (>=3.6,<4)", "coverage"]
+rtd = ["sphinx-book-theme (>=0.1.0,<0.2.0)", "myst-parser (>=0.14.0,<0.15.0)"]
 code_style = ["pre-commit (==2.6)"]
-rtd = ["myst-parser (>=0.14.0,<0.15.0)", "sphinx-book-theme (>=0.1.0,<0.2.0)"]
-testing = ["coverage", "pytest (>=3.6,<4)", "pytest-cov", "pytest-regressions"]
 
 [[package]]
 name = "mdurl"
@@ -1936,9 +1936,9 @@ optional = false
 python-versions = ">=3.6"
 
 [package.extras]
-check = ["check-manifest", "flake8", "flake8-black", "readme-renderer", "pygments", "isort (>=5.0.3)", "twine"]
-test = ["pytest", "pytest-cov", "pyannotate", "coverage[toml] (>=5.2)", "coveralls (>=2.1.1)", "hypothesis"]
-type = ["mypy", "mypy-extensions"]
+type = ["mypy-extensions", "mypy"]
+test = ["hypothesis", "coveralls (>=2.1.1)", "coverage[toml] (>=5.2)", "pyannotate", "pytest-cov", "pytest"]
+check = ["twine", "isort (>=5.0.3)", "pygments", "readme-renderer", "flake8-black", "flake8", "check-manifest"]
 
 [[package]]
 name = "murmurhash"
@@ -2002,9 +2002,9 @@ tornado = ">=6.1"
 traitlets = ">=4.2.1"
 
 [package.extras]
-docs = ["sphinx", "nbsphinx", "sphinxcontrib-github-alt", "sphinx-rtd-theme", "myst-parser"]
+test = ["requests-unixsocket", "pytest-tornasync", "pytest-cov", "selenium (==4.1.5)", "nbval", "testpath", "requests", "coverage", "pytest"]
 json-logging = ["json-logging"]
-test = ["pytest", "coverage", "requests", "testpath", "nbval", "selenium (==4.1.5)", "pytest-cov", "pytest-tornasync", "requests-unixsocket"]
+docs = ["myst-parser", "sphinx-rtd-theme", "sphinxcontrib-github-alt", "nbsphinx", "sphinx"]
 
 [[package]]
 name = "nbclient"
@@ -2147,7 +2147,7 @@ python-versions = ">=3.7"
 jupyter-server = ">=1.8,<2.0"
 
 [package.extras]
-test = ["pytest", "pytest-tornasync", "pytest-console-scripts"]
+test = ["pytest-console-scripts", "pytest-tornasync", "pytest"]
 
 [[package]]
 name = "numpy"
@@ -2309,10 +2309,10 @@ smart-open = ">=5.2.1,<6.0.0"
 typer = ">=0.3.0,<1.0.0"
 
 [package.extras]
-all = ["google-cloud-storage (>=1.26.0,<2.0.0)", "boto3", "pytest", "pytest-coverage", "mock", "typer-cli"]
-gcs = ["google-cloud-storage (>=1.26.0,<2.0.0)"]
+test = ["typer-cli", "mock", "pytest-coverage", "pytest"]
 s3 = ["boto3"]
-test = ["pytest", "pytest-coverage", "mock", "typer-cli"]
+gcs = ["google-cloud-storage (>=1.26.0,<2.0.0)"]
+all = ["typer-cli", "mock", "pytest-coverage", "pytest", "boto3", "google-cloud-storage (>=1.26.0,<2.0.0)"]
 
 [[package]]
 name = "pbr"
@@ -2386,8 +2386,8 @@ optional = false
 python-versions = ">=3.6"
 
 [package.extras]
-dev = ["pre-commit", "tox"]
-testing = ["pytest", "pytest-benchmark"]
+testing = ["pytest-benchmark", "pytest"]
+dev = ["tox", "pre-commit"]
 
 [[package]]
 name = "poethepoet"
@@ -2595,8 +2595,8 @@ optional = false
 python-versions = ">=3.6"
 
 [package.extras]
-check = ["mypy (>=0.812)", "mypy-extensions (>=0.4.3)", "check-manifest", "flake8", "flake8-black", "readme-renderer", "pygments", "isort (>=5.0.3)", "twine"]
-test = ["pytest (>=6.0)", "pytest-cov", "hypothesis", "coverage[toml] (>=5.2)"]
+test = ["coverage[toml] (>=5.2)", "hypothesis", "pytest-cov", "pytest (>=6.0)"]
+check = ["twine", "isort (>=5.0.3)", "pygments", "readme-renderer", "flake8-black", "flake8", "check-manifest", "mypy-extensions (>=0.4.3)", "mypy (>=0.812)"]
 
 [[package]]
 name = "pycodestyle"
@@ -2786,7 +2786,7 @@ coverage = {version = ">=5.2.1", extras = ["toml"]}
 pytest = ">=4.6"
 
 [package.extras]
-testing = ["fields", "hunter", "process-tests", "six", "pytest-xdist", "virtualenv"]
+testing = ["virtualenv", "pytest-xdist", "six", "process-tests", "hunter", "fields"]
 
 [[package]]
 name = "pytest-forked"
@@ -3226,9 +3226,9 @@ optional = false
 python-versions = "*"
 
 [package.extras]
-nativelib = ["pyobjc-framework-cocoa", "pywin32"]
-objc = ["pyobjc-framework-cocoa"]
 win32 = ["pywin32"]
+objc = ["pyobjc-framework-cocoa"]
+nativelib = ["pywin32", "pyobjc-framework-cocoa"]
 
 [[package]]
 name = "sentry-sdk"
@@ -3355,7 +3355,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "spacy"
-version = "3.4.0"
+version = "3.4.1"
 description = "Industrial-strength Natural Language Processing (NLP) in Python"
 category = "main"
 optional = false
@@ -3450,7 +3450,7 @@ executing = "*"
 pure-eval = "*"
 
 [package.extras]
-tests = ["pytest", "typeguard", "pygments", "littleutils", "cython"]
+tests = ["cython", "littleutils", "pygments", "typeguard", "pytest"]
 
 [[package]]
 name = "starlette"
@@ -3639,8 +3639,8 @@ python-versions = ">=3.6"
 webencodings = ">=0.4"
 
 [package.extras]
-doc = ["sphinx", "sphinx-rtd-theme"]
-test = ["pytest", "pytest-cov", "pytest-flake8", "pytest-isort", "coverage"]
+test = ["coverage", "pytest-isort", "pytest-flake8", "pytest-cov", "pytest"]
+doc = ["sphinx-rtd-theme", "sphinx"]
 
 [[package]]
 name = "tokenize-rt"
@@ -3839,10 +3839,10 @@ python-versions = ">=3.6"
 click = ">=7.1.1,<9.0.0"
 
 [package.extras]
-all = ["colorama (>=0.4.3,<0.5.0)", "shellingham (>=1.3.0,<2.0.0)"]
-dev = ["autoflake (>=1.3.1,<2.0.0)", "flake8 (>=3.8.3,<4.0.0)", "pre-commit (>=2.17.0,<3.0.0)"]
-doc = ["mkdocs (>=1.1.2,<2.0.0)", "mkdocs-material (>=8.1.4,<9.0.0)", "mdx-include (>=1.4.1,<2.0.0)"]
-test = ["shellingham (>=1.3.0,<2.0.0)", "pytest (>=4.4.0,<5.4.0)", "pytest-cov (>=2.10.0,<3.0.0)", "coverage (>=5.2,<6.0)", "pytest-xdist (>=1.32.0,<2.0.0)", "pytest-sugar (>=0.9.4,<0.10.0)", "mypy (==0.910)", "black (>=22.3.0,<23.0.0)", "isort (>=5.0.6,<6.0.0)"]
+test = ["isort (>=5.0.6,<6.0.0)", "black (>=22.3.0,<23.0.0)", "mypy (==0.910)", "pytest-sugar (>=0.9.4,<0.10.0)", "pytest-xdist (>=1.32.0,<2.0.0)", "coverage (>=5.2,<6.0)", "pytest-cov (>=2.10.0,<3.0.0)", "pytest (>=4.4.0,<5.4.0)", "shellingham (>=1.3.0,<2.0.0)"]
+doc = ["mdx-include (>=1.4.1,<2.0.0)", "mkdocs-material (>=8.1.4,<9.0.0)", "mkdocs (>=1.1.2,<2.0.0)"]
+dev = ["pre-commit (>=2.17.0,<3.0.0)", "flake8 (>=3.8.3,<4.0.0)", "autoflake (>=1.3.1,<2.0.0)"]
+all = ["shellingham (>=1.3.0,<2.0.0)", "colorama (>=0.4.3,<0.5.0)"]
 
 [[package]]
 name = "types-mock"
@@ -3899,7 +3899,7 @@ optional = false
 python-versions = ">=3.6"
 
 [package.extras]
-test = ["coverage", "pytest", "pytest-cov"]
+test = ["pytest-cov", "pytest", "coverage"]
 
 [[package]]
 name = "ujson"
@@ -4137,7 +4137,7 @@ optional = false
 python-versions = ">=3.5"
 
 [package.extras]
-dev = ["pytest (>=4.6.2)", "black (>=19.3b0)"]
+dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 
 [[package]]
 name = "xxhash"
@@ -5003,8 +5003,8 @@ frozenlist = [
     {file = "frozenlist-1.3.0.tar.gz", hash = "sha256:ce6f2ba0edb7b0c1d8976565298ad2deba6f8064d2bebb6ffce2ca896eb35b0b"},
 ]
 fsspec = [
-    {file = "fsspec-2022.5.0-py3-none-any.whl", hash = "sha256:2c198c50eb541a80bbd03540b07602c4a957366f3fb416a1f270d34bd4ff0926"},
-    {file = "fsspec-2022.5.0.tar.gz", hash = "sha256:7a5459c75c44e760fbe6a3ccb1f37e81e023cde7da8ba20401258d877ec483b4"},
+    {file = "fsspec-2022.7.1-py3-none-any.whl", hash = "sha256:36c5a8e7c4fc20cf32ef6934ac0a122accc8a593ddc8478d30c3ca4dbbd95500"},
+    {file = "fsspec-2022.7.1.tar.gz", hash = "sha256:7f9fb19d811b027b97c4636c6073eb53bc4cbee2d3c4b33fa88b9f26906fd7d7"},
 ]
 future = [
     {file = "future-0.18.2.tar.gz", hash = "sha256:b1bead90b70cf6ec3f0710ae53a525360fa360d306a86583adc6bf83a4db537d"},
@@ -6938,30 +6938,30 @@ soupsieve = [
     {file = "soupsieve-2.3.2.post1.tar.gz", hash = "sha256:fc53893b3da2c33de295667a0e19f078c14bf86544af307354de5fcf12a3f30d"},
 ]
 spacy = [
-    {file = "spacy-3.4.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:9c9167631733f8618f8928745fc740f3fd680994993dce2db7a4dd2b85d8919e"},
-    {file = "spacy-3.4.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:9ff04736c88475a950726c92a8e87ea6f42ca49ae60e0dc9612b456333f25e9c"},
-    {file = "spacy-3.4.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5b95eff2f9e012991c27e93c038ef8f3ca4132ec7e66e097833ef22f263a46da"},
-    {file = "spacy-3.4.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a10451847eb7983ba1fe05ab87a37367e00e2807fe633d17926626cb2dacd10f"},
-    {file = "spacy-3.4.0-cp310-cp310-win_amd64.whl", hash = "sha256:eca827077f32965c1931ccb34375c29a7b9c321818e1773248004719b27b008f"},
-    {file = "spacy-3.4.0-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:6c45fe868973dd44afa4a200f72fd2d7288548ae6bc201fc5a6d5ffb0a4949b3"},
-    {file = "spacy-3.4.0-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ff0687a6f3e822655650a5ba45af6738b879962806f09ac3903768b0b67cf415"},
-    {file = "spacy-3.4.0-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:76ad38af7205dbc97e1a3dd0956f5d97b4d31542adbb039eb161bf5f08e386ec"},
-    {file = "spacy-3.4.0-cp36-cp36m-win_amd64.whl", hash = "sha256:9e631c07560457926860b1c64bf2a62e4e4c25359085024ea3847cc7e2fc39ee"},
-    {file = "spacy-3.4.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:b3b336aed79d7610ad33fac1557de8b96a1421aa8c4d41604700d1eb1c7e34fd"},
-    {file = "spacy-3.4.0-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3caaa36f8fc95776a558ec2a4625f5cd22c1fa7990b1d9ab650709851586cec4"},
-    {file = "spacy-3.4.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:eb39f5551f4ef6475fa7f46fec347553680ab0e917d2a790384aa75d5797333d"},
-    {file = "spacy-3.4.0-cp37-cp37m-win_amd64.whl", hash = "sha256:7039fe789caa9753fa0a66b9391f0f93d49e6cb1017336c6b0842220a04346a8"},
-    {file = "spacy-3.4.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:dbcf52b49a7221202f7a388993562c9dd610ed621697a4684583514aed63c06a"},
-    {file = "spacy-3.4.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:b350dc2321b4cbeac65419ec0cb0d0697f991c0a3b4ca4236438fbcce77e9421"},
-    {file = "spacy-3.4.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6d147595db91191a0a748e33629c99fb5e7849af5100237e058fd832b7254242"},
-    {file = "spacy-3.4.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4dc6ea142866f7042a710597ad2c3939bde3486c27d0eb11fcfb079245c72cb3"},
-    {file = "spacy-3.4.0-cp38-cp38-win_amd64.whl", hash = "sha256:0720297328e32c1952a6c2eb9f5d9aa7b11b95588886c9117a7030c2dd1a0619"},
-    {file = "spacy-3.4.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:f0b26babf0d7d9b07f8350c390b19445207a9f84cac7a81ac2b6d0cbcb47357a"},
-    {file = "spacy-3.4.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:344f262344f1c078e6159543eecc09b32b70c138deb1f9fe01c49cd89002730f"},
-    {file = "spacy-3.4.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e0bec5befbb6bbc11d4d984e8f864dcbdf9e9274dbc5dbc349b931a2dd9ec84c"},
-    {file = "spacy-3.4.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a4fa15d13ef73089680506c91e27630005537b9b68d2d4e736cec26cb29a3f47"},
-    {file = "spacy-3.4.0-cp39-cp39-win_amd64.whl", hash = "sha256:3c99920830c1cbf3be169b7817863d88fa07c465540ebf0eed304ba106201cb4"},
-    {file = "spacy-3.4.0.tar.gz", hash = "sha256:3ccd1a9f56759e5f0f9efdf57119a06702ad59c045dde0b3830b5472593e09ef"},
+    {file = "spacy-3.4.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:32e5d9512ae11716f032f5030f99e4b140e9e028ece5811db496b86d50c0f177"},
+    {file = "spacy-3.4.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:e982e3f8d915c6597a0eba7f44f7e7520960f9edf6a8dcf447759fbfc39a77f9"},
+    {file = "spacy-3.4.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:361b057df89956b874da41fba0febe4491131a5954e293baffc4e54db95f985a"},
+    {file = "spacy-3.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ec826d9c482c81ed37fa9fd95da9601ccdf8962bfef985e5523b228d6be24ff9"},
+    {file = "spacy-3.4.1-cp310-cp310-win_amd64.whl", hash = "sha256:46ec87090ad138ba35e177c29657ad52aa600b25bdfe35d12ced113db1cca828"},
+    {file = "spacy-3.4.1-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:b4e38ee787ccd59849e76f7f9d21fc7dc25e855e194f2cc0b166c7e7bf34be40"},
+    {file = "spacy-3.4.1-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:55688aff12540475ae2010b4f0220ec0728c93d4d1a8f73d0b35fb363558c7ec"},
+    {file = "spacy-3.4.1-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9d996f50910d243d356ea540ff609fee83c5ba036d4090fa87afeb51c65a280b"},
+    {file = "spacy-3.4.1-cp36-cp36m-win_amd64.whl", hash = "sha256:eaee9ed8b130f2b324c42ce6cef44a5e5183013a67b26260053818331be6d212"},
+    {file = "spacy-3.4.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:46112e1a47c0656804a89f1dbdbc3e554694a682f24659d1651823f52e29a81b"},
+    {file = "spacy-3.4.1-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:9b2d9d1a6795c49829747d7e011b0882be3e82c650552a93493f9b9fc3387892"},
+    {file = "spacy-3.4.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b9fe2b226b4c09fccf3d4f4e2f584020cadeb271972c951878208525df73d1bf"},
+    {file = "spacy-3.4.1-cp37-cp37m-win_amd64.whl", hash = "sha256:0a93797b9fea6ec1ecf3b95d86b8228d364470afac7278b23c13fd4305ad4ec2"},
+    {file = "spacy-3.4.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:256dc4f14922275f8576d255b3d36598a119f73241b12d53d3bc7e16ca50a717"},
+    {file = "spacy-3.4.1-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:420fdfe8882f4ca5aa7d730135af92f17baa7f6226e45097f48acf312d0b49bf"},
+    {file = "spacy-3.4.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c5c0183de17b3d8e59cff0bed4de7bdf6d341ae9263757212207a62bf9844177"},
+    {file = "spacy-3.4.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9966bcad9063309ce6a41a1bcc488ad9fc786ad6c52cbcd98621ddfa41f283e3"},
+    {file = "spacy-3.4.1-cp38-cp38-win_amd64.whl", hash = "sha256:f652cf821ab118a2d672d1b68951e740ea0cedcd6ee5d3d9fcdeb27ae188fbd5"},
+    {file = "spacy-3.4.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:509edc4cc55c463abf71c2f630b0dda4dedf06ea6ed8614334c081d87e54f96b"},
+    {file = "spacy-3.4.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:d78a71e9bffafe19c6d0f1de3e32bdb48f8e2ab4b5c6dc88dc0c83197f2ff5f0"},
+    {file = "spacy-3.4.1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:60a3facb99c53ced0cb218865237764349f0cf4ecc559cc6bebe120f1d685c95"},
+    {file = "spacy-3.4.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b3da242a5805b3f9fd5a2ed6f7d84177d6b4f189597e00fb338c782b8520d6bc"},
+    {file = "spacy-3.4.1-cp39-cp39-win_amd64.whl", hash = "sha256:23aaa7cac0233fd0e1057eb71b4ecf6a8e453d693a431ac416e099322edd4c1d"},
+    {file = "spacy-3.4.1.tar.gz", hash = "sha256:59c5cf5d348a6c0e64a59ac5cfe6cd85d08e866337870c95d1ec6161d531e463"},
 ]
 spacy-legacy = [
     {file = "spacy-legacy-3.0.9.tar.gz", hash = "sha256:4f7dcbc4e6c8e8cb4eadbb009f9c0a1a2a67442e0032c8d6776c9470c3759903"},

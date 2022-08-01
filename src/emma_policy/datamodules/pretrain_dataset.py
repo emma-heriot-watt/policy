@@ -408,7 +408,10 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             )
 
         input_text = instance.qa_pair.question
-        target_text = instance.qa_pair.answer
+        if isinstance(instance.qa_pair.answer, list):
+            target_text = random.choice(instance.qa_pair.answer)
+        else:
+            target_text = instance.qa_pair.answer
 
         # formats the masked caption using the corresponding task template
         source_text = self._get_random_template_for_task(Task.vqa).format(

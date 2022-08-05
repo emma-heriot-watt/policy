@@ -288,7 +288,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
     ) -> list[dict[str, torch.Tensor]]:
         """Load the visual features from a single file."""
         if not features_path.exists():
-            raise AssertionError("Provided features path does not exist.")
+            raise AssertionError(f"Provided features path does not exist: {features_path}.")
 
         if modality == MediaType.video:
             feature_dicts = [

@@ -64,7 +64,7 @@ class FeatureExtractorClient:
     def extract_single_image(self, image: Union[Image.Image, ArrayLike]) -> FeatureResponse:
         """Submit a request to the feature extraction server for a single image."""
         image_bytes = self._convert_single_image_to_bytes(image)
-        request_files = {"imput_file": image_bytes}
+        request_files = {"input_file": image_bytes}
         response = requests.post(
             self._extract_single_feature_endpoint, files=request_files, timeout=5
         )

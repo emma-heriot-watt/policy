@@ -589,7 +589,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             scene_features=visual_features.scene_features,
             scene_frame_tokens=visual_features.scene_frame_tokens,
             visual_token_ids=visual_features.visual_token_ids,
-            task=self._get_task_as_tensor(Task.instruction_prediction),
+            task=self._get_task_as_tensor(Task.goal_prediction),
         )
 
     def action_execution(self, instance: PretrainInstance) -> EmmaDatasetItem:

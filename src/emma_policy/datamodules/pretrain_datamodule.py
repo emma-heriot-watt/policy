@@ -45,7 +45,7 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         enabled_tasks: Optional[EnabledTasksPerModality] = None,
         tokenizer_truncation_side: str = "right",
         balance_datasets: bool = False,
-        balancing_ratio: int = 2,
+        balancing_ratio: float = 2.0,
         shuffle_objects: bool = False,
         propotional_task_sampling: bool = False,
     ) -> None:
@@ -178,7 +178,7 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
             )
             if self.balance_datasets and dataset_split == DatasetSplit.train:
                 indices = torch.randperm(len(dataset))[
-                    : self.balancing_ratio * self.balanced_num_samples
+                    : int(self.balancing_ratio * self.balanced_num_samples)
                 ]
                 dataset = Subset(dataset, indices.tolist())  # type: ignore[assignment]
 

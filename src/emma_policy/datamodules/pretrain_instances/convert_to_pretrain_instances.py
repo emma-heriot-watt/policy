@@ -2,7 +2,7 @@ import itertools
 from random import shuffle
 from typing import Callable, Iterator, Optional
 
-from emma_datasets.datamodels import Caption, Instance, MediaType, Region
+from emma_datasets.datamodels import Caption, DatasetName, Instance, MediaType, Region
 
 from emma_policy.datamodules.pretrain_instances.datamodels import (
     EnabledTasksHandler,
@@ -249,7 +249,8 @@ class PretrainInstanceCreator:
         skip_instance = (
             not self.instance.captions or Task.instruction_prediction not in self.enabled_tasks
         )
-        if skip_instance:
+        should_skip_alfred_instance = self._should_skip_alfred_instance()
+        if skip_instance or should_skip_alfred_instance:
             return []
 
         yield from (
@@ -271,7 +272,8 @@ class PretrainInstanceCreator:
             or Task.goal_prediction not in self.enabled_tasks
             or not self.instance.task_description
         )
-        if skip_instance:
+        should_skip_alfred_instance = self._should_skip_alfred_instance()
+        if skip_instance or should_skip_alfred_instance:
             return []
 
         yield from (
@@ -315,7 +317,8 @@ class PretrainInstanceCreator:
             or Task.vtm not in self.enabled_tasks
             or self.instance.is_full_trajectory  # Do not apply VTM to trajectory data
         )
-        if skip_instance:
+        should_skip_alfred_instance = self._should_skip_alfred_instance()
+        if skip_instance or should_skip_alfred_instance:
             return []
 
         yield from (
@@ -333,7 +336,8 @@ class PretrainInstanceCreator:
     def fom(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instance for the feature order modeling task given a subgoal."""
         skip_instance = not self.instance.captions or Task.fom not in self.enabled_tasks
-        if skip_instance:
+        should_skip_alfred_instance = self._should_skip_alfred_instance()
+        if skip_instance or should_skip_alfred_instance:
             return []
 
         yield from (
@@ -350,7 +354,9 @@ class PretrainInstanceCreator:
     @video_task_check
     def vmlm(self) -> Iterator[PretrainInstance]:
         """Get pretrain instances for the video MLM task."""
-        if not self.instance.captions or Task.vmlm not in self.enabled_tasks:
+        skip_instance = not self.instance.captions or Task.vmlm not in self.enabled_tasks
+        should_skip_alfred_instance = self._should_skip_alfred_instance()
+        if skip_instance or should_skip_alfred_instance:
             return []
 
         yield from (
@@ -362,6 +368,21 @@ class PretrainInstanceCreator:
             )
             for caption in self.instance.captions
         )
+
+    def _should_skip_alfred_instance(self) -> bool:
+        """Ignore ALFRED instances that are not suitable for some pretraining tasks.
+
+        The ALFRED instances do not have interpolated trajectories which means that there are
+        instances with only a single frame, a current observation and a low-level action. These
+        instances are invalid for certain pretraining tasks: instruction_prediction, fom
+        goal_prediction. Therefore we make sure to ignore these instances in these pretraining
+        objectives.
+        """
+        should_skip_instance = False
+        alfred_metadata = self.instance.dataset.get(DatasetName.alfred, None)
+        if alfred_metadata is not None:
+            should_skip_instance = len(alfred_metadata.media) == 1
+        return should_skip_instance
 
 
 def convert_instance_to_pretrain_instances(

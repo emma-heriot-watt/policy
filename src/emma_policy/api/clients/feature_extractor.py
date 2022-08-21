@@ -31,7 +31,7 @@ class FeatureExtractorClient:
         self._healthcheck_endpoint = f"{self._endpoint}/ping"
         self._extract_single_feature_endpoint = f"{self._endpoint}/features"
         self._extract_batch_features_endpoint = f"{self._endpoint}/batch_features"
-        self._update_model_device_endpoint = f"{self._endpoint}/update_device"
+        self._update_model_device_endpoint = f"{self._endpoint}/update_model_device"
 
     def healthcheck(self) -> bool:
         """Verify the feature extractor server is healthy."""

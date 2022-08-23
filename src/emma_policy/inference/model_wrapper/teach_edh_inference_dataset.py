@@ -9,6 +9,7 @@ from pydantic import AnyHttpUrl
 from transformers import AutoTokenizer, BatchEncoding, PreTrainedTokenizer
 
 from emma_policy.api.clients import FeatureExtractorClient
+from emma_policy.datamodules.base_dataset import prepare_emma_visual_features
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
 from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.datamodules.teach_edh_dataset import TeachEdhDataset
@@ -78,13 +79,14 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
     ) -> bool:
         """Clear the state and start a new EDH instance."""
         logger.debug(f"Preparing visual features for `{edh_instance.instance_id}`")
-
-        self._history_visual_features = self.prepare_visual_features(edh_history_images)
-        self._trajectory_visual_features = []
         self._original_history_length = min(self.max_frames, len(edh_history_images))
+        edh_history_images = edh_history_images[: self._original_history_length]
         self._feature_dicts = [
             {"width": image.size[0], "height": image.size[1]} for image in edh_history_images
         ]
+
+        self._history_visual_features = self.prepare_visual_features(edh_history_images)
+        self._trajectory_visual_features = []
 
         logger.debug(f"Tokenizing input text `{edh_instance.instance_id}`")
         self._input_encoding = self.tokenizer(
@@ -134,15 +136,18 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
         for idx, edh_history_image in enumerate(edh_history_images):
             logger.debug(f"Requesting features for image {idx+1}/{len(edh_history_images)}")
 
-            feature_response = self.client.extract_single_image(edh_history_image)
-            feature_dicts.append(feature_response.dict())
+            feature_response = self.client.extract_single_image(edh_history_image).dict()
+            feature_response["width"] = edh_history_image.size[0]
+            feature_response["height"] = edh_history_image.size[1]
+
+            feature_dicts.append(feature_response)
 
         self._current_bbox_probas = feature_dicts[-1]["bbox_probas"]
         self._current_coordinates = feature_dicts[-1]["bbox_coords"]
 
-        logging.debug("Converting feature dicts to `EmmaVisualFeatures` object")
-        return self._prepare_emma_visual_features(
-            feature_dicts=feature_dicts, start_offset=start_offset
+        logger.debug("Converting feature dicts to `EmmaVisualFeatures` object")
+        return prepare_emma_visual_features(
+            feature_dicts=feature_dicts, tokenizer=self.tokenizer, start_offset=start_offset
         )
 
     def _prepare_visual_input(

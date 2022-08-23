@@ -1,5 +1,4 @@
 import logging
-from dataclasses import asdict
 from typing import Any, Optional
 
 import torch
@@ -136,7 +135,7 @@ class TeachEdhInferenceDataset(TeachEdhDataset):
             logger.debug(f"Requesting features for image {idx+1}/{len(edh_history_images)}")
 
             feature_response = self.client.extract_single_image(edh_history_image)
-            feature_dicts.append(asdict(feature_response))
+            feature_dicts.append(feature_response.dict())
 
         self._current_bbox_probas = feature_dicts[-1]["bbox_probas"]
         self._current_coordinates = feature_dicts[-1]["bbox_coords"]

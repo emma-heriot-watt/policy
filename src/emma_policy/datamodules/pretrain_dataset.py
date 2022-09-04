@@ -928,8 +928,7 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
                             visual_features.visual_token_ids[frame_objects][matched_index[0]]
                         )
                     )
-
-            trajectory_text.append(self.tokenizer.sep_token)
+            trajectory_text[-1] = f"{trajectory_text[-1]}{self.tokenizer.sep_token}"
 
         return " ".join(trajectory_text)
 

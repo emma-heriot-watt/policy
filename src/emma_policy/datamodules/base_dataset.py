@@ -333,9 +333,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
 
     def _refine_instruction_text(self, raw_instruction_text: str) -> Optional[str]:
         """Makes sure that each instruction doesn't end with a fullstop."""
-        if raw_instruction_text.endswith("."):
-            refined_text = raw_instruction_text.replace(".", "")
-        else:
-            refined_text = raw_instruction_text
-
-        return refined_text
+        refined_text = raw_instruction_text.strip().lower()
+        if not refined_text.endswith("."):
+            refined_text = f"{raw_instruction_text}."
+        return refined_text.lower()

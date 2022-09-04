@@ -208,7 +208,7 @@ class TeachEdhDataset(EmmaBaseDataset[EmmaDatasetItem]):
                         )
                     )
 
-            trajectory.append(self.tokenizer.sep_token)
+            trajectory[-1] = f"{trajectory[-1]}{self.tokenizer.sep_token}"
 
         return " ".join(trajectory)
 

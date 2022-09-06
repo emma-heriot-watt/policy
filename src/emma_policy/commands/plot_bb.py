@@ -1,6 +1,7 @@
 import argparse
+from collections.abc import Iterator
 from random import random
-from typing import Any, Iterator, Optional, Union
+from typing import Any, Optional, Union
 
 import cv2
 import numpy as np

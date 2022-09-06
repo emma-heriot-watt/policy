@@ -1,8 +1,9 @@
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import lru_cache
 from types import MappingProxyType
-from typing import Mapping, Optional
+from typing import Optional
 
 import spacy
 import torch

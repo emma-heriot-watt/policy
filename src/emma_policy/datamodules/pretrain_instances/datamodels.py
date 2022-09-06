@@ -1,7 +1,8 @@
 import string
+from collections.abc import Iterator, Mapping
 from enum import Enum
 from types import MappingProxyType
-from typing import Any, Iterator, Mapping, Optional, Union, cast
+from typing import Any, Optional, Union, cast
 
 from emma_datasets.datamodels import (
     Caption,

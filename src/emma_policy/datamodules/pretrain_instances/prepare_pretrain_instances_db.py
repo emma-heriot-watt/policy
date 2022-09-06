@@ -1,7 +1,8 @@
 import math
 from collections import Counter
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator, NamedTuple, Optional
+from typing import NamedTuple, Optional
 
 import torch
 from emma_datasets.datamodels import DatasetSplit, Instance, MediaType

@@ -1,7 +1,7 @@
 import itertools
 from argparse import ArgumentParser, Namespace
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 from emma_datasets.datamodels import Instance
 from emma_datasets.db import DatasetDb

@@ -1,7 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import math
+from collections.abc import Generator
 from enum import IntEnum, unique
-from typing import Generator, Union
+from typing import Union
 
 import numpy as np
 import torch

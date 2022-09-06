@@ -1,7 +1,8 @@
 import json
+from collections.abc import Generator
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any
 from unittest.mock import patch
 
 from emma_datasets.datamodels.datasets import TeachEdhInstance

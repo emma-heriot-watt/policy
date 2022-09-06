@@ -1,6 +1,7 @@
 import itertools
+from collections.abc import Iterator
 from random import shuffle
-from typing import Callable, Iterator, Optional
+from typing import Callable, Optional
 
 from emma_datasets.datamodels import Caption, DatasetName, Instance, MediaType, Region
 

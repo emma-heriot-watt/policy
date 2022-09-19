@@ -28,15 +28,15 @@ repos:
         types: [yaml]
 
   # ----------------------------- Dependency checks ----------------------------
-  - repo: https://github.com/python-poetry/poetry
-    rev: "1.2.0"
-    hooks:
-      - id: poetry-check
-        name: Verify Poetry configuration
-        files: "pyproject.toml"
-      # - id: poetry-lock
-      #   name: Ensure lock file is up-to-date
-      #   files: "poetry.lock"
+  # - repo: https://github.com/python-poetry/poetry
+  #   rev: "1.2.0"
+  #   hooks:
+  #     - id: poetry-check
+  #       name: Verify Poetry configuration
+  #       files: "pyproject.toml"
+  # - id: poetry-lock
+  #   name: Ensure lock file is up-to-date
+  #   files: "poetry.lock"
 
   # ----------------------------- Check file issues ---------------------------- #
   - repo: https://github.com/pre-commit/pre-commit-hooks

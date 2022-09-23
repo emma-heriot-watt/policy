@@ -6,7 +6,7 @@ import torch
 from overrides import overrides
 from torch.nn import CrossEntropyLoss
 from torch.optim import AdamW
-from transformers import AutoConfig, get_linear_schedule_with_warmup
+from transformers import AutoConfig, AutoTokenizer, get_linear_schedule_with_warmup
 from transformers.generation_stopping_criteria import StoppingCriteriaList
 from transformers.generation_utils import (
     BeamSampleOutput,
@@ -36,6 +36,7 @@ class EmmaPolicy(pl.LightningModule):
         super().__init__()
 
         self.save_hyperparameters()
+        self.model_name = model_name
         config = AutoConfig.from_pretrained(model_name)
         label_smoothing = self.hparams.get("label_smoothing", 0)
         self.emma = EmmaForConditionalGeneration(config, label_smoothing=label_smoothing)
@@ -45,6 +46,14 @@ class EmmaPolicy(pl.LightningModule):
 
         self.trainer: pl.Trainer  # type: ignore[assignment]
         self.enabled_task_probabilities: Optional[dict[str, Any]] = None
+
+    def resize_model_embeddings(self, tokenizer: Optional[AutoTokenizer] = None) -> None:
+        """Resize the embeddings to match the tokenizer vocabulary."""
+        if tokenizer is None:
+            tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        vocab_size = len(tokenizer)  # type: ignore[arg-type]
+        if self.emma.final_logits_bias.shape[-1] != vocab_size:
+            self.emma.resize_token_embeddings(new_num_tokens=vocab_size)
 
     def num_training_steps(self) -> int:
         """Total training steps inferred from datamodule and devices."""

@@ -154,6 +154,10 @@ class TrainModel:
             model = model_class.load_from_checkpoint(  # type: ignore[attr-defined]
                 config.model.initialization_checkpoint, **config["model"]
             )
+        if "resize_embeddings" in config.model and config.model.resize_embeddings:
+            model.resize_model_embeddings(  # type: ignore[operator]
+                tokenizer=datamodule.setup_tokenizer()
+            )
 
         callbacks: list[Callback] = []
         if "callbacks" in config:

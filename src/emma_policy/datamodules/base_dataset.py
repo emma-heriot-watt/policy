@@ -290,7 +290,7 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         if not features_path.exists():
             raise AssertionError(f"Provided features path does not exist: {features_path}.")
 
-        if modality == MediaType.video:
+        if modality in {MediaType.video, MediaType.multicam}:
             feature_dicts = [
                 feature_dict["features"] for feature_dict in torch.load(features_path)["frames"]
             ]

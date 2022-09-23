@@ -40,17 +40,17 @@ class EmmaModel(EmmaPreTrainedModel):
         word_embeddings = Embedding(
             config.vocab_size, config.d_model, padding_idx=config.pad_token_id
         )
-        self.image_position_embeddings = EmmaImagePositionEmbeddings(
+        image_position_embeddings = EmmaImagePositionEmbeddings(
             config=config, word_embeddings=word_embeddings
         )
         self.scene_embeddings = EmmaSceneEmbeddings(
             config=config,
-            image_position_embeddings=self.image_position_embeddings,
+            image_position_embeddings=image_position_embeddings,
         )
         self.object_embeddings = EmmaObjectEmbeddings(
             config=config,
             word_embeddings=word_embeddings,
-            image_position_embeddings=self.image_position_embeddings,
+            image_position_embeddings=image_position_embeddings,
         )
 
         self.encoder = EmmaEncoder(config=config, embed_tokens=word_embeddings)
@@ -73,6 +73,9 @@ class EmmaModel(EmmaPreTrainedModel):
         """Set word embeddings."""
         self.encoder.embed_tokens = value
         self.decoder.embed_tokens = value
+        self.scene_embeddings.image_position_embeddings.word_embeddings = value
+        self.object_embeddings.image_position_embeddings.word_embeddings = value
+        self.object_embeddings.word_embeddings = value
 
     def embed_inputs(
         self,

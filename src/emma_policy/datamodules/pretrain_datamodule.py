@@ -99,9 +99,18 @@ class EmmaPretrainDataModule(LightningDataModule):  # noqa: WPS230
         # make sure to trigger the tokenizer download on the main process
         AutoTokenizer.from_pretrained(self.model_name)
 
+    def setup_tokenizer(self) -> AutoTokenizer:
+        """Set up the tokenizer."""
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self.tokenizer.truncation_side = self.tokenizer_truncation_side
+        if self.max_lang_tokens:
+            self.tokenizer.model_max_length = self.max_lang_tokens
+        return self.tokenizer
+
     def setup(self, stage: Optional[str] = None) -> None:
         """Setup datasets for the dataloaders."""
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self.setup_tokenizer()
+
         self.tokenizer.truncation_side = self.tokenizer_truncation_side
         if self.max_lang_tokens:
             self.tokenizer.model_max_length = self.max_lang_tokens

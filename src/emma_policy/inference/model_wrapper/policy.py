@@ -288,7 +288,7 @@ class PolicyModelWrapper(BaseModelWrapper):
         """Setup the model from the checkpoint."""
         model = EmmaPolicy(model_name=self._model_name)
         model = model.load_from_checkpoint(
-            model_checkpoint_path.as_posix(), map_location=self._device
+            model_checkpoint_path.as_posix(), strict=False, map_location=self._device
         )
         model.eval()
 

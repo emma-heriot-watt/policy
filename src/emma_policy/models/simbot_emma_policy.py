@@ -179,3 +179,36 @@ class SimBotEmmaPolicy(EmmaPolicy):
             self._example_ids.extend(batch.raw_target)
         self._generated_actions.extend(outputs_text)
         return outputs
+
+    @overrides(check_signature=False)
+    def inference_step(
+        self,
+        batch: EmmaDatasetBatch,
+        decoder_input_ids: Optional[torch.Tensor] = None,
+        max_length: int = 10,
+        num_beams: int = 5,
+        no_repeat_ngram_size: int = 0,
+    ) -> PredictType:
+        """Teach Inference step."""
+        inputs_embeds = self.emma.emma.embed_inputs(
+            scene_features=batch.scene_features,
+            scene_coordinates=batch.scene_coordinates,
+            scene_frame_tokens=batch.scene_frame_tokens,
+            object_features=batch.object_features,
+            object_coordinates=batch.object_coordinates,
+            object_frame_tokens=batch.object_frame_tokens,
+            visual_token_ids=batch.visual_token_ids,
+            language_token_ids=batch.input_token_ids,
+        )
+
+        outputs = self.emma.generate(
+            inputs_embeds=inputs_embeds,
+            attention_mask=batch.attention_mask,
+            global_attention_mask=batch.global_attention_mask,
+            decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
+            max_length=max_length,
+            decoder_input_ids=decoder_input_ids,
+            num_beams=num_beams,
+            no_repeat_ngram_size=no_repeat_ngram_size,
+        )
+        return outputs

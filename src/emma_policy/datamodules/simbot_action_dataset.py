@@ -118,7 +118,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
     def _prepare_source_text(self, instance: SimBotInstructionInstance) -> str:
         """Prepare the source text.
 
-        The source text ollows the same template as the action execution task
+        The source text allows the same template as the action execution task
         with the addition of the question and answer pair.
 
         Example:

@@ -3,7 +3,7 @@ from typing import Literal, Optional, Union
 
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from emma_policy.datamodules.collate import collate_fn
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
@@ -19,6 +19,23 @@ SimBotNLU_SPECIAL_TOKENS = [
     "<disambiguation>",
     "<direction>",
 ]
+
+
+def prepare_nlu_tokenizer(
+    model_name: str = "heriot-watt/emma-base",
+    tokenizer_truncation_side: Literal["left", "right"] = "right",
+    max_lang_tokens: Optional[int] = 64,
+) -> PreTrainedTokenizer:
+    """Add special tokens to tokenizer."""
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer.add_special_tokens(
+        {"additional_special_tokens": SimBotNLU_SPECIAL_TOKENS}
+    )  # doesn't add if they are already there
+    tokenizer.truncation_side = tokenizer_truncation_side
+
+    if max_lang_tokens:
+        tokenizer.model_max_length = max_lang_tokens
+    return tokenizer
 
 
 class SimBotNLUDataModule(LightningDataModule):
@@ -65,16 +82,13 @@ class SimBotNLUDataModule(LightningDataModule):
 
         AutoTokenizer.from_pretrained(self._model_name)
 
-    def setup_tokenizer(self) -> AutoTokenizer:
+    def setup_tokenizer(self) -> PreTrainedTokenizer:
         """Add special tokens to tokenizer."""
-        self.tokenizer = AutoTokenizer.from_pretrained(self._model_name)
-        self.tokenizer.add_special_tokens(
-            {"additional_special_tokens": SimBotNLU_SPECIAL_TOKENS}
-        )  # doesn't add if they are already there
-        self.tokenizer.truncation_side = self.tokenizer_truncation_side
-
-        if self._max_lang_tokens:
-            self.tokenizer.model_max_length = self._max_lang_tokens
+        self.tokenizer = prepare_nlu_tokenizer(
+            model_name=self._model_name,
+            tokenizer_truncation_side=self.tokenizer_truncation_side,
+            max_lang_tokens=self._max_lang_tokens,
+        )
         return self.tokenizer
 
     def setup(self, stage: Optional[str] = None) -> None:

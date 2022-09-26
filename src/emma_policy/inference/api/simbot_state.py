@@ -19,7 +19,7 @@ class RequestUtterance(BaseModel):
 
     role: Literal["user", "agent"]
     utterance: str
-    intent: Literal["instruction", "clarify_question", "clarify_answer"]
+    intent: Optional[Literal["instruction", "clarify_question", "clarify_answer"]] = None
 
 
 class GenerateRequest(BaseModel):

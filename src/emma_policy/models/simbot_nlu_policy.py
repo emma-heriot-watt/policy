@@ -24,7 +24,11 @@ from emma_policy.utils.simbot_nlu_metrics import (
 
 
 PredictType = Union[
-    GreedySearchOutput, SampleOutput, BeamSearchOutput, BeamSampleOutput, torch.LongTensor
+    GreedySearchOutput,
+    SampleOutput,
+    BeamSearchOutput,
+    BeamSampleOutput,
+    torch.LongTensor,
 ]
 
 log = logging.getLogger(__name__)
@@ -42,6 +46,8 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
         num_acts: int = 2,
         **kwargs: Any,
     ) -> None:
+        super().__init__(model_name=f"{model_name}-nlu", **kwargs)
+        self.model_name = model_name
         self._question_answers: dict[str, list[str]] = {"predictions": [], "references": []}
 
         self._num_beams = num_beams
@@ -60,7 +66,6 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
         ]
         if self._num_beams == 1:
             self._num_beams += 1  # constrains need num_beams > 1
-        super().__init__(model_name=model_name, **kwargs)
         self.task_metrics = None  # type: ignore[assignment]
         self.validation_action_type_F1 = SimbotActionTypeF1(tokenizer=self._tokenizer)
         self.validation_accuracy = SimbotNLUExactMatch()
@@ -132,6 +137,12 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
         )
         return output
 
+    @overrides(check_signature=False)
+    def inference_step(self, batch: EmmaDatasetBatch, batch_idx: int = 0) -> list[str]:
+        """Inference step."""
+        output_tokens = self.predict_step(batch, batch_idx)
+        return self._postprocess_nlu_output(output_tokens)
+
     def compute_metrics(self, prediction_output: torch.Tensor, batch: EmmaDatasetBatch) -> None:
         """Compute the evaluation metrics."""
         self.validation_action_type_F1(prediction_output, batch.target_token_ids)
@@ -157,3 +168,22 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
         # Reseting internal state such that metric ready for new data
         self.validation_question_types.reset()
         return super().on_validation_epoch_end()
+
+    def _postprocess_nlu_output(self, output: list[str]) -> list[str]:
+        """Remove special tokens from predicted outputs."""
+        output_sentences = self._tokenizer.batch_decode(output, skip_special_tokens=False)
+        output_sentences = [
+            self._remove_sequence_special_tokens(sentence) for sentence in output_sentences
+        ]
+        return output_sentences
+
+    def _remove_sequence_special_tokens(self, sentence: str) -> str:
+        """Remove the start, end of sequence and padding tokens from a string."""
+        special_tokens = [
+            self._tokenizer.bos_token,
+            self._tokenizer.eos_token,
+            self._tokenizer.pad_token,
+        ]
+        for special_token in special_tokens:
+            sentence = sentence.replace(special_token, "")
+        return sentence

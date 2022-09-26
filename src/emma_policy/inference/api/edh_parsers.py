@@ -6,7 +6,7 @@ from emma_datasets.datamodels.datasets import TeachEdhInstance
 from fastapi import HTTPException, status
 from PIL import Image
 
-from emma_policy.inference.api.state import TeachDatasetSplit
+from emma_policy.inference.api.teach_state import TeachDatasetSplit
 
 
 logger = logging.getLogger("uvicorn.error")

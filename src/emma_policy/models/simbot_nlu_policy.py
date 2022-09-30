@@ -4,7 +4,6 @@ from typing import Any, Union
 import pandas as pd
 import torch
 from overrides import overrides
-from transformers import AutoTokenizer
 from transformers.generation_utils import (
     BeamSampleOutput,
     BeamSearchOutput,
@@ -13,7 +12,7 @@ from transformers.generation_utils import (
 )
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
-from emma_policy.datamodules.simbot_nlu_datamodule import SimBotNLU_SPECIAL_TOKENS
+from emma_policy.datamodules.simbot_nlu_datamodule import prepare_nlu_tokenizer
 from emma_policy.models.emma_policy import EmmaPolicy
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
 from emma_policy.utils.simbot_nlu_metrics import (
@@ -51,8 +50,7 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
         self._question_answers: dict[str, list[str]] = {"predictions": [], "references": []}
 
         self._num_beams = num_beams
-        self._tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self._tokenizer.add_special_tokens({"additional_special_tokens": SimBotNLU_SPECIAL_TOKENS})
+        self._tokenizer = prepare_nlu_tokenizer(model_name=model_name)
         self._min_length = 1
         self._max_generated_text_length = max_generated_text_length
         # For the type of force_words_ids see: https://huggingface.co/docs/transformers/v4.20.1/en/main_classes/text_generation#transformers.generation_utils.GenerationMixin.generate.force_words_ids(List[List[int]]

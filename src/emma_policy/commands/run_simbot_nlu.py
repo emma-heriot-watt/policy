@@ -25,7 +25,7 @@ class ApiSettings(BaseSettings):
     host: str = "0.0.0.0"  # noqa: S104
     log_level: str = "debug"
     model_checkpoint_path: FilePath = Path("storage/model/checkpoints/simbot/nlu.ckpt")
-    model_name: str = "heriot-watt/emma-base-nlu"
+    model_name: str = "heriot-watt/emma-base"
     device: str = "cpu"
 
 

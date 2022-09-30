@@ -3,8 +3,8 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Any, TypedDict
 
-from fastapi import FastAPI, HTTPException, Response, status
-from pydantic import BaseSettings
+from fastapi import FastAPI, Request, Response, status
+from pydantic import BaseSettings, FilePath
 from transformers import AutoTokenizer, PreTrainedTokenizer
 from uvicorn import Config, Server
 
@@ -24,7 +24,9 @@ class ApiSettings(BaseSettings):
 
     port: int = 6000
     host: str = "0.0.0.0"  # noqa: S104
-    log_level: str = "info"
+    log_level: str = "debug"
+    model_checkpoint_path: FilePath = Path("storage/model/checkpoints/simbot/action.ckpt")
+    model_name: str = "heriot-watt/emma-base"
     device: str = "cpu"
 
 
@@ -35,12 +37,23 @@ class ApiStore(TypedDict, total=False):
     tokenizer: PreTrainedTokenizer
     model: SimBotEmmaPolicy
     max_length_per_action_sequence: int
+    num_beams: int
+    no_repeat_ngram_size: int
 
 
 settings = ApiSettings()
 api_store: ApiStore = {}
 app = FastAPI()
 logger.info("Initializing Inference API")
+
+
+def load_model(checkpoint_path: str, model_name: str, device: str) -> SimBotEmmaPolicy:
+    """Load a SimBotAction checkpoint."""
+    model = SimBotEmmaPolicy(model_name=model_name)
+    model = model.load_from_checkpoint(checkpoint_path)
+    model.to(device)
+    model.eval()
+    return model
 
 
 def post_process_action(action: str) -> str:
@@ -60,22 +73,28 @@ def post_process_action(action: str) -> str:
 async def startup_event() -> None:
     """Run specific functions when starting up the API."""
     args = parse_api_args()
+    api_store["max_length_per_action_sequence"] = args.max_length_per_action_sequence
+    api_store["num_beams"] = args.num_beams
+    api_store["no_repeat_ngram_size"] = args.no_repeat_ngram_size
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
+    tokenizer = AutoTokenizer.from_pretrained(settings.model_name)
     tokenizer.truncation_side = args.tokenizer_truncation_side
     if args.max_lang_tokens:
         tokenizer.model_max_length = args.max_lang_tokens
 
-    api_store["max_length_per_action_sequence"] = args.max_length_per_action_sequence
     api_store["tokenizer"] = tokenizer
     api_store["input_builder"] = SimBotActionInputBuilder(
         tokenizer=tokenizer,
         device=settings.device,
     )
-    api_store["model"] = SimBotEmmaPolicy.load_from_checkpoint(
-        args.model_path, map_location=settings.device
-    )
 
+    logging.info(f"Loading model on device `{settings.device}`")
+    api_store["model"] = load_model(
+        checkpoint_path=str(settings.model_checkpoint_path),
+        model_name=settings.model_name,
+        device=settings.device,
+    )
+    logging.info(f"Model is on device: {api_store['model'].device}")
     logging.info("Inference service is setup!")
 
 
@@ -100,15 +119,21 @@ async def healthcheck(response: Response) -> str:
 
 
 @app.post("/generate", status_code=status.HTTP_200_OK)
-async def generate(
-    request: GenerateRequest,
-) -> str:
+async def generate(request: Request, response: Response) -> str:
     """Get the next action from the model for the given instruction, question, and answer.
 
     This is assumed to be called multiple times for a single instruction until the model predicts
     the eos token.
     """
-    (batch, decoder_input_ids) = api_store["input_builder"](request)
+    # Parse the request from the server
+    try:
+        simbot_request = GenerateRequest.parse_obj(await request.json())
+    except Exception as request_err:
+        logging.exception("Unable to parse request", exc_info=request_err)
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        raise request_err
+
+    (batch, decoder_input_ids) = api_store["input_builder"](simbot_request)
     if batch is not None:
         max_length = api_store["max_length_per_action_sequence"]
         if decoder_input_ids is not None:
@@ -121,21 +146,24 @@ async def generate(
                 batch,
                 decoder_input_ids=decoder_input_ids,
                 max_length=max_length,
+                num_beams=api_store["num_beams"],
+                no_repeat_ngram_size=api_store["no_repeat_ngram_size"],
             )
             action = api_store["tokenizer"].batch_decode(
                 model_output[:, len_decode:], skip_special_tokens=False
             )[0]
 
-        except Exception:
+        except Exception as err:
             # TODO: report session ID for better debugging
-            error_message = f"Failed to get next action for request `{request}"
-            logger.error(error_message, exc_info=True)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_message
-            )
+            error_message = f"Failed to get next action for request `{simbot_request}"
+            logger.error(error_message, exc_info=err)
+            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            raise err
+
     else:
         action = ""
-        logger.debug(f"Empty action for request: {request}")
+        logger.debug(f"Empty action for request: {simbot_request}")
+
     action = post_process_action(action)
     return action
 
@@ -161,20 +189,7 @@ def parse_api_args() -> Namespace:
     """Parse any arguments."""
     arg_parser = ArgumentParser()
 
-    arg_parser.add_argument(
-        "--model_path",
-        type=Path,
-        required=True,
-        help="Path to SimBotAction model checkpoint",
-    )
-
-    arg_parser.add_argument(
-        "--model_name",
-        type=Path,
-        required=True,
-        help="Path to SimBotAction model checkpoint",
-    )
-
+    # TODO: move this to an inference config
     arg_parser.add_argument(
         "--tokenizer_truncation_side",
         type=str,
@@ -182,7 +197,6 @@ def parse_api_args() -> Namespace:
         choices=["left", "right"],
         help="Tokenizer trunction side",
     )
-
     arg_parser.add_argument(
         "--max_lang_tokens",
         type=int,
@@ -194,6 +208,18 @@ def parse_api_args() -> Namespace:
         type=int,
         default=20,  # noqa: WPS432
         help="Maximum number of generated tokens for each action",
+    )
+    arg_parser.add_argument(
+        "--num_beams",
+        type=int,
+        default=5,
+        help="Number of beams during decoding",
+    )
+    arg_parser.add_argument(
+        "--no_repeat_ngram_size",
+        type=int,
+        default=0,
+        help="Maximum size of repeated ngrams",
     )
 
     return arg_parser.parse_args()

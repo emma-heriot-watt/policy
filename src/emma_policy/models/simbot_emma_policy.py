@@ -189,7 +189,7 @@ class SimBotEmmaPolicy(EmmaPolicy):
         num_beams: int = 5,
         no_repeat_ngram_size: int = 0,
     ) -> PredictType:
-        """Teach Inference step."""
+        """Simbot Inference step."""
         inputs_embeds = self.emma.emma.embed_inputs(
             scene_features=batch.scene_features,
             scene_coordinates=batch.scene_coordinates,
@@ -201,14 +201,25 @@ class SimBotEmmaPolicy(EmmaPolicy):
             language_token_ids=batch.input_token_ids,
         )
 
-        outputs = self.emma.generate(
-            inputs_embeds=inputs_embeds,
-            attention_mask=batch.attention_mask,
-            global_attention_mask=batch.global_attention_mask,
-            decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
-            max_length=max_length,
-            decoder_input_ids=decoder_input_ids,
-            num_beams=num_beams,
-            no_repeat_ngram_size=no_repeat_ngram_size,
-        )
+        if decoder_input_ids is not None:
+            outputs = self.emma.generate(
+                inputs_embeds=inputs_embeds,
+                attention_mask=batch.attention_mask,
+                global_attention_mask=batch.global_attention_mask,
+                decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
+                max_length=max_length,
+                decoder_input_ids=decoder_input_ids,
+                num_beams=num_beams,
+                no_repeat_ngram_size=no_repeat_ngram_size,
+            )
+        else:
+            outputs = self.emma.generate(
+                inputs_embeds=inputs_embeds,
+                attention_mask=batch.attention_mask,
+                global_attention_mask=batch.global_attention_mask,
+                decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
+                max_length=max_length,
+                num_beams=num_beams,
+                no_repeat_ngram_size=no_repeat_ngram_size,
+            )
         return outputs

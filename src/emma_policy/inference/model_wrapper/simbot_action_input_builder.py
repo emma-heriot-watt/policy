@@ -194,5 +194,7 @@ class SimBotActionInputBuilder:
     ) -> EmmaDatasetBatch:
         """Create the `EmmaDatasetBatch` for a given set of observations and actions."""
         batch = collate_fn([dataset_item])
-
-        return move_data_to_device(batch, self._device)
+        prev_device = batch.input_token_ids.device
+        batch = move_data_to_device(batch, self._device)
+        logger.debug(f"Moved batch from {prev_device} to {batch.input_token_ids.device}")
+        return batch

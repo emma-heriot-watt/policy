@@ -18,6 +18,7 @@ from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
 from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.models.emma_policy import EmmaPolicy
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
+from emma_policy.utils.simbot_action_metrics import SimbotActionExactMatch
 
 
 PredictType = Union[
@@ -47,6 +48,8 @@ class SimBotEmmaPolicy(EmmaPolicy):
         self._results_path = save_results_path
         self._example_ids: list[str] = []
         self._generated_actions: list[str] = []
+        self._train_exact_match = SimbotActionExactMatch()
+        self._valid_exact_match = SimbotActionExactMatch()
 
     def on_test_epoch_end(self) -> None:
         """Save the results."""
@@ -104,6 +107,11 @@ class SimBotEmmaPolicy(EmmaPolicy):
 
         self.log("train_loss", output.loss)
 
+        predictions = torch.argmax(torch.softmax(output.logits, -1), -1)
+
+        self._train_exact_match(predictions, batch.target_token_ids, batch.decoder_attention_mask)
+        self.log("train_action_exact_match", self._train_exact_match)
+
         return output
 
     @overrides(check_signature=False)
@@ -124,6 +132,11 @@ class SimBotEmmaPolicy(EmmaPolicy):
             decoder_attention_mask=batch.decoder_attention_mask,
             decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
         )
+
+        predictions = torch.argmax(torch.softmax(output.logits, -1), -1)
+
+        self._valid_exact_match(predictions, batch.target_token_ids, batch.decoder_attention_mask)
+        self.log("valid_action_exact_match", self._valid_exact_match)
 
         self.log("valid_loss", output.loss, sync_dist=True)
         logits = output.logits

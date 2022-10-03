@@ -115,8 +115,9 @@ class SimBotActionInputBuilder:
         """Parse the feature dicts and actions from the current request."""
         feature_dicts = []
         previous_actions = []
-        for step in request.environment_history:
-            if step.output is None:
+        total_steps = len(request.environment_history)
+        for idx, step in enumerate(request.environment_history):
+            if step.output is None and idx < total_steps:
                 msg = "Found unexpected 'None' as a previous action. Verify that the received request contains string values for previous actions."
                 logger.debug(msg)
 

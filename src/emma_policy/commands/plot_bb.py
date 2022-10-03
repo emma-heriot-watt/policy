@@ -6,6 +6,7 @@ from typing import Any, Optional, Union
 import cv2
 import numpy as np
 import torch
+from numpy import typing
 
 
 class PlotBoundingBoxes:
@@ -19,10 +20,10 @@ class PlotBoundingBoxes:
 
     def draw_bb(
         self,
-        image: np.typing.NDArray[np.uint8],
+        image: typing.NDArray[np.uint8],
         boxes_coords: list[list[float]],
         boxes_labels: list[Any],
-        probs: Optional[np.typing.NDArray[np.float32]] = None,
+        probs: Optional[typing.NDArray[np.float32]] = None,
         draw_label: Optional[bool] = True,
     ) -> None:
         """Plot the bounding boxes."""
@@ -49,14 +50,14 @@ class PlotBoundingBoxes:
 
     def _annotate(
         self,
-        image: np.typing.NDArray[np.uint8],
+        image: typing.NDArray[np.uint8],
         rect: list[float],
         rect_label: str,
         color_label: tuple[int, int, int],
     ) -> None:
         """Annotate a bounding box."""
 
-        def gen_candidate() -> Iterator[tuple[int, int]]:  # noqa: 430
+        def gen_candidate() -> Iterator[tuple[int, int]]:  # noqa: WPS430
             """Get coordinates for text."""
             # above of top left
             yield int(rect[0]) + 2, int(rect[1]) - 4
@@ -70,7 +71,10 @@ class PlotBoundingBoxes:
             self._font_info["font_thickness"],
         )
         for text_left, text_bottom in gen_candidate():
-            if 0 <= text_left < self._width - 12 and 12 < text_bottom < self._height:  # noqa: 432
+            if (  # noqa: WPS337
+                0 <= text_left < self._width - 12  # noqa: WPS432
+                and 12 < text_bottom < self._height  # noqa: WPS432
+            ):
                 self._put_text(
                     image=image,
                     text=rect_label,
@@ -113,7 +117,7 @@ class PlotBoundingBoxes:
 
     def _put_text(
         self,
-        image: np.typing.NDArray[np.uint8],
+        image: typing.NDArray[np.uint8],
         text: str,
         bottomleft: tuple[int, int] = (0, 100),
         color: tuple[int, int, int] = (255, 255, 255),
@@ -147,7 +151,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     image = cv2.imread(args.image_path)
-    image_features = torch.load(args.feature_path)
+    image_features = torch.load(args.feature_path)[0]
     PlotBoundingBoxes().draw_bb(
         image=image,
         boxes_coords=image_features["bbox_coords"].numpy(),

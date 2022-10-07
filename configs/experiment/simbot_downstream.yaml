@@ -17,7 +17,7 @@ defaults:
 
 # name of the run determines folder name in logs
 # it's also accessed by loggers
-name: "simbot_downstream_bsz128_lr1e-4_warmup0.1"
+name: "simbot_downstream"
 checkpoint_dir: "${work_dir}/storage/model/checkpoints/simbot/${name}"
 
 seed: 12345
@@ -57,14 +57,16 @@ datamodule:
   _target_: emma_policy.datamodules.simbot_action_datamodule.SimBotActionDataModule
 
   model_name: heriot-watt/emma-base
-  simbot_action_train_db_file: storage/db/simbot_instructions_train.db
-  simbot_action_valid_db_file: storage/db/simbot_instructions_valid.db
+  simbot_action_train_db_file: storage/db/simbot_actions_train.db
+  simbot_action_valid_db_file: storage/db/simbot_actions_valid.db
   train_batch_size: 32
   val_batch_size: 32
   num_workers: 16
   max_lang_tokens: 128
   max_frames: 15
   tokenizer_truncation_side: right
+  weighted_sampling: True
+  weight_temperature: 1.3
 
 callbacks:
   model_checkpoint:

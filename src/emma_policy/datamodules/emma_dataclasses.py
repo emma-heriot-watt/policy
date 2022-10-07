@@ -37,6 +37,7 @@ class EmmaDatasetItem:
     input_token_ids: torch.Tensor
     text_attention_mask: torch.Tensor
     task: Optional[torch.Tensor] = None
+    decoder_input_ids: Optional[torch.Tensor] = None
     decoder_attention_mask: Optional[torch.Tensor] = None
     target_token_ids: Optional[torch.Tensor] = None
     scene_temporal_ids: Optional[torch.Tensor] = None
@@ -55,6 +56,7 @@ class EmmaDatasetPadding:
     input_token_ids: int = 1
     text_attention_mask: int = 0
     target_token_ids: int = -100
+    decoder_input_ids: int = 1
     decoder_attention_mask: int = 0
     object_attention_mask: int = 0
     object_coordinates: int = 0
@@ -91,6 +93,7 @@ class EmmaDatasetBatch:
     task: torch.Tensor
     attention_mask: torch.Tensor
     global_attention_mask: torch.Tensor
+    decoder_input_ids: Optional[torch.Tensor] = None
     decoder_encoder_attention_mask: Optional[torch.Tensor] = None
     raw_target: Optional[Any] = None
 

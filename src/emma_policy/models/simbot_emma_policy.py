@@ -102,6 +102,7 @@ class SimBotEmmaPolicy(EmmaPolicy):
             global_attention_mask=batch.global_attention_mask,
             labels=batch.target_token_ids,
             decoder_attention_mask=batch.decoder_attention_mask,
+            decoder_input_ids=batch.decoder_input_ids,
             decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
         )
 
@@ -130,6 +131,7 @@ class SimBotEmmaPolicy(EmmaPolicy):
             global_attention_mask=batch.global_attention_mask,
             labels=batch.target_token_ids,
             decoder_attention_mask=batch.decoder_attention_mask,
+            decoder_input_ids=batch.decoder_input_ids,
             decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
         )
 

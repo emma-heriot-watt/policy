@@ -10,7 +10,11 @@ from transformers import PreTrainedTokenizer
 
 from emma_policy.common.settings import Settings
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
-from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
+from emma_policy.datamodules.emma_dataclasses import (
+    EmmaDatasetItem,
+    EmmaDatasetPadding,
+    EmmaVisualFeatures,
+)
 from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.utils import get_logger
 
@@ -20,6 +24,18 @@ ARENA_DICT_FILE = settings.paths.constants.joinpath("arena_definitions.json")
 
 
 logger = get_logger(__name__)
+
+
+def mask_past_target_actions(
+    full_target_token_ids: torch.Tensor, sep_token_id: int, masking_value: int = -1
+) -> torch.Tensor:
+    """Mask the target token ids for all but the last action."""
+    target_token_ids = full_target_token_ids.clone()
+    separator_positions = torch.where(full_target_token_ids == sep_token_id)[0]
+    if separator_positions.shape[0] > 1:
+        end_index = int(separator_positions[-2].item()) + 1
+        target_token_ids[:end_index] = masking_value  # noqa: WPS362
+    return target_token_ids
 
 
 class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
@@ -68,7 +84,6 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             raise AssertionError(
                 "Instructions for this instance must exist. Make sure this instance is connected to the right task!"
             )
-
         actions_ids_in_instruction = instance.instruction.actions
         action_ids_in_instance = [action.id for action in instance.actions]
         if action_ids_in_instance != actions_ids_in_instruction:
@@ -79,7 +94,9 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         visual_features = self._load_visual_features(
             features_path=instance.features_path, modality=instance.modality
         )
-        frames = [fdict["image"] for fdict in torch.load(instance.features_path)["frames"]]
+        frames = []
+        for fpath in instance.features_path:
+            frames.extend([fdict["image"] for fdict in torch.load(fpath)["frames"]])
 
         source_text = self._prepare_source_text(instance=instance)
 
@@ -90,17 +107,32 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         target_text = self._prepare_target_text(
             instance=instance, visual_features=visual_features, frames=frames
         )
+
         target_encoding = self.tokenizer.encode_plus(
             target_text, return_tensors=self._return_tensor_type, truncation=True
         )
-        target_token_ids = target_encoding.input_ids.squeeze(0)
 
-        decoder_attention_mask = target_encoding.attention_mask.squeeze(0)
+        full_target_token_ids = target_encoding.input_ids.squeeze(0)
 
+        target_token_ids = mask_past_target_actions(
+            full_target_token_ids,
+            sep_token_id=self.tokenizer.sep_token_id,  # type: ignore[arg-type]
+            masking_value=EmmaDatasetPadding.target_token_ids,
+        )
+        decoder_input_ids = torch.full_like(
+            full_target_token_ids,
+            fill_value=self.tokenizer.eos_token_id,  # type: ignore[arg-type]
+        )
+
+        # Now shift them to the right
+        decoder_input_ids[1:] = full_target_token_ids[:-1].clone()  # noqa: WPS362
+        decoder_attention_mask = torch.ones_like(decoder_input_ids)
+        raw_target = f"mission{instance.mission_id}_instr{instance.instruction_id}_ann{instance.annotation_id}_action{instance.actions[-1].type}"  # noqa: WPS221
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
             target_token_ids=target_token_ids,
+            decoder_input_ids=decoder_input_ids,
             decoder_attention_mask=decoder_attention_mask,
             object_attention_mask=visual_features.object_attention_mask,
             object_coordinates=visual_features.object_coordinates,
@@ -112,7 +144,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             scene_frame_tokens=visual_features.scene_frame_tokens,
             visual_token_ids=visual_features.visual_token_ids,
             task=self._get_task_as_tensor(Task.action_execution),
-            raw_target=f"mission{instance.mission_id}_instr{instance.instruction_id}_ann{instance.human_id}",
+            raw_target=raw_target,
         )
 
     def _prepare_source_text(self, instance: SimBotInstructionInstance) -> str:
@@ -166,8 +198,8 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             action_type = action.type
             action_metadata = getattr(action, action_type.lower())
             action_object_metadata = action_metadata.get("object", None)
-            # case 1: look around action
-            if action_type == "Look":
+            # case 1: navigation actions except GoTo
+            if action_type in {"Look", "Move", "Rotate"}:
                 target_text.append(f"{action_type} {action_metadata['direction']}.")
             # case 2: room/object navigation or interaction action
             elif action_object_metadata is not None:
@@ -192,7 +224,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             # no other action types, sanity check.
             else:
                 raise AssertionError(f"Unsupported action {action}.")
-        return " ".join(target_text)
+        return " ".join(target_text).lower()
 
     def _get_object_from_action_object_metadata(
         self, action_object_metadata: dict[str, Any]

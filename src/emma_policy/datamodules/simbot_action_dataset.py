@@ -213,8 +213,10 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         # Because the assets can have additional tags we need to remove these tags
         # and check if they asset after removing the tags match an object label
         object_asset_components = object_asset.split("_")
-        for idx in range(len(object_asset_components)):  # noqa: WPS518
-            object_name_candidate = "_".join(object_asset_components[:-idx])
+
+        for idx in range(len(object_asset_components), 0, -1):
+            # tries to match the longest sub-string first
+            object_name_candidate = "_".join(object_asset_components[:idx])
             object_name_candidate = self._object_assets_to_names.get(object_name_candidate, None)
             if object_name_candidate is not None:
                 return object_name_candidate

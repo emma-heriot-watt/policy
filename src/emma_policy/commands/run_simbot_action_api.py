@@ -137,7 +137,7 @@ async def generate(request: Request, response: Response) -> str:
     if batch is not None:
         max_length = api_store["max_length_per_action_sequence"]
         if decoder_input_ids is not None:
-            max_length += decoder_input_ids.shape[0]
+            max_length += decoder_input_ids.shape[1]
             len_decode = decoder_input_ids.shape[1]
         else:
             len_decode = 0

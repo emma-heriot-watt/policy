@@ -62,7 +62,7 @@ class SimBotActionInputBuilder:
         self, previous_actions: Optional[str] = None
     ) -> Optional[torch.Tensor]:
         """Prepare decoder input ids."""
-        if previous_actions is not None:
+        if previous_actions:
             decoder_encoding = self._tokenizer.encode_plus(
                 previous_actions, return_tensors="pt", truncation=True
             )

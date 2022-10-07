@@ -8,6 +8,7 @@ import botocore
 from emma_datasets.common import get_progress
 from emma_datasets.datamodels import BaseInstance, Instance
 from emma_datasets.datamodels.datasets import TeachEdhInstance
+from emma_datasets.datamodels.datasets.simbot import SimBotInstructionInstance
 from emma_datasets.db import DatasetDb
 
 from emma_policy.utils import get_logger
@@ -26,7 +27,9 @@ class FixtureDownload:
     """Downloads the features for all instances given a db."""
 
     def __init__(
-        self, input_db_path: Path, instance_type: Literal["pretrain", "teach_edh"] = "pretrain"
+        self,
+        input_db_path: Path,
+        instance_type: Literal["pretrain", "teach_edh", "simbot"] = "pretrain",
     ) -> None:
         self._db = DatasetDb(input_db_path)
 
@@ -34,12 +37,14 @@ class FixtureDownload:
         self.instance_type = instance_type
         if self.instance_type == "teach_edh":
             self._instance_model = TeachEdhInstance
+        elif self.instance_type == "simbot":
+            self._instance_model = SimBotInstructionInstance
 
         self._s3 = boto3.client("s3")
 
         self._progress = get_progress()
         self._task_id = self._progress.add_task(
-            f"Downloading features from {input_db_path}", total=len(self._db)
+            f"Downloading features from {input_db_path}", total=len(self._db), comment=""
         )
 
     def run(self) -> None:
@@ -47,7 +52,11 @@ class FixtureDownload:
         with self._progress, self._db:  # noqa: WPS316
             for _, _, data in self._db:
                 instance = self._instance_model.parse_raw(data)
-                if instance.is_full_trajectory:
+
+                if (  # noqa: WPS337
+                    self._instance_model != SimBotInstructionInstance
+                    and instance.is_full_trajectory
+                ):
                     local_feature_paths = instance.features_path
                 else:
                     local_feature_paths = [instance.features_path]
@@ -113,7 +122,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--instance_type",
         help="Type of instance model used within the DatasetDb",
-        choices=["pretrain", "teach_edh"],
+        choices=["pretrain", "teach_edh", "simbot"],
         default="pretrain",
     )
 

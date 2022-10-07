@@ -42,5 +42,6 @@
 	"vocab_size": 10259,
 	"scene_features_dim": 1024,
 	"object_features_dim": 2048,
-	"image_coordinates_dim": 4
+	"image_coordinates_dim": 4,
+	"use_encoder_global_positional_embeddings": false
 }

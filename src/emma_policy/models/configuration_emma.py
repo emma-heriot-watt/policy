@@ -56,6 +56,7 @@ class EmmaConfig(PretrainedConfig):  # noqa: WPS230
         scene_features_dim: int = 1024,
         object_features_dim: int = 2048,
         image_coordinates_dim: int = 4,
+        use_encoder_global_positional_embeddings: bool = False,
         **kwargs: Any,
     ) -> None:
         self.vocab_size = vocab_size
@@ -83,6 +84,7 @@ class EmmaConfig(PretrainedConfig):  # noqa: WPS230
         self.scene_features_dim = scene_features_dim
         self.object_features_dim = object_features_dim
         self.image_coordinates_dim = image_coordinates_dim
+        self.use_encoder_global_positional_embeddings = use_encoder_global_positional_embeddings
 
         super().__init__(
             pad_token_id=pad_token_id,

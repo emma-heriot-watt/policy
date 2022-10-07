@@ -89,10 +89,12 @@ class EmmaEncoder(LEDEncoder):  # noqa: WPS230
         else:
             self.embed_tokens = Embedding(config.vocab_size, embed_dim, self.padding_idx)
 
-        self.embed_positions = LEDLearnedPositionalEmbedding(
-            config.max_encoder_position_embeddings,
-            embed_dim,
-        )
+        self.embed_positions: Optional[LEDLearnedPositionalEmbedding] = None  # type: ignore[assignment]
+        if config.use_encoder_global_positional_embeddings:
+            self.embed_positions = LEDLearnedPositionalEmbedding(
+                config.max_encoder_position_embeddings,
+                embed_dim,
+            )
         self.embed_text_positions = LEDLearnedPositionalEmbedding(
             config.max_encoder_position_embeddings,
             embed_dim,
@@ -249,7 +251,11 @@ class EmmaEncoder(LEDEncoder):  # noqa: WPS230
         is_index_global_attn: torch.Tensor = global_attention_mask > 0  # type: ignore[assignment, operator]
         is_global_attn: bool = is_index_global_attn.flatten().any().item()  # type: ignore[assignment]
 
-        hidden_states = inputs_embeds + self.embed_positions(inputs_embeds.size()[:-1])  # type: ignore[union-attr]
+        if self.embed_positions is not None:
+            hidden_states = inputs_embeds + self.embed_positions(inputs_embeds.size()[:-1])  # type: ignore[union-attr]
+        else:
+            hidden_states = inputs_embeds
+
         hidden_states = self.layernorm_embedding(hidden_states)
         hidden_states = functional.dropout(hidden_states, p=self.dropout, training=self.training)
 

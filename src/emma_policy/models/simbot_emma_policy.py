@@ -6,7 +6,6 @@ from typing import Any, Optional, Union
 
 import torch
 from overrides import overrides
-from transformers import AutoTokenizer
 from transformers.generation_utils import (
     BeamSampleOutput,
     BeamSearchOutput,
@@ -16,6 +15,7 @@ from transformers.generation_utils import (
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
 from emma_policy.datamodules.pretrain_instances import Task
+from emma_policy.datamodules.simbot_action_datamodule import prepare_action_tokenizer
 from emma_policy.models.emma_policy import EmmaPolicy
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
 from emma_policy.utils.simbot_action_metrics import SimbotActionExactMatch
@@ -35,13 +35,14 @@ class SimBotEmmaPolicy(EmmaPolicy):
         self,
         model_name: str,
         num_beams: int = 1,
-        max_generated_text_length: int = 20,
+        max_generated_text_length: int = 50,
         save_results_path: Optional[Path] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(model_name=model_name, **kwargs)
+        super().__init__(model_name=f"{model_name}-action", **kwargs)
 
-        self._tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.model_name = model_name
+        self._tokenizer = prepare_action_tokenizer(model_name)
         self._num_beams = num_beams
         self._min_length = 1
         self._max_generated_text_length = max_generated_text_length

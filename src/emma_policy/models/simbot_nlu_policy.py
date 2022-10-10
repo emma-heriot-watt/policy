@@ -162,9 +162,7 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
         cm = self.validation_question_types.compute()
         classes = self.validation_question_types.class_tokens
         df_cm = pd.DataFrame(cm.tolist(), index=classes, columns=["Pred False", "Pred True"])
-        self.logger.experiment[0].log(  # type: ignore[union-attr]
-            {"valid_question_types_conf_mat": df_cm}
-        )
+        self.logger.experiment[0].log({"valid_question_types_conf_mat": df_cm})
         # Reseting internal state such that metric ready for new data
         self.validation_question_types.reset()
         return super().on_validation_epoch_end()

@@ -5,9 +5,10 @@ from typing import Any, TypedDict
 
 from fastapi import FastAPI, Request, Response, status
 from pydantic import BaseSettings, FilePath
-from transformers import AutoTokenizer, PreTrainedTokenizer
+from transformers import PreTrainedTokenizer
 from uvicorn import Config, Server
 
+from emma_policy.datamodules.simbot_action_datamodule import prepare_action_tokenizer
 from emma_policy.inference.api.logger import setup_logger
 from emma_policy.inference.api.simbot_state import GenerateRequest
 from emma_policy.inference.model_wrapper.simbot_action_input_builder import (
@@ -77,14 +78,9 @@ async def startup_event() -> None:
     api_store["num_beams"] = args.num_beams
     api_store["no_repeat_ngram_size"] = args.no_repeat_ngram_size
 
-    tokenizer = AutoTokenizer.from_pretrained(settings.model_name)
-    tokenizer.truncation_side = args.tokenizer_truncation_side
-    if args.max_lang_tokens:
-        tokenizer.model_max_length = args.max_lang_tokens
-
-    api_store["tokenizer"] = tokenizer
+    api_store["tokenizer"] = prepare_action_tokenizer(settings.model_name)
     api_store["input_builder"] = SimBotActionInputBuilder(
-        tokenizer=tokenizer,
+        tokenizer=api_store["tokenizer"],
         device=settings.device,
     )
 

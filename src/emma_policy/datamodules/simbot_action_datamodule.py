@@ -7,11 +7,33 @@ from emma_datasets.datamodels.datasets.simbot import SimBotInstructionInstance
 from emma_datasets.db import DatasetDb
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, WeightedRandomSampler
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from emma_policy.datamodules.collate import collate_fn
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
 from emma_policy.datamodules.simbot_action_dataset import SimBotActionDataset
+
+
+SimBotAction_SPECIAL_TOKENS = [
+    "<stop>",
+]
+
+
+def prepare_action_tokenizer(
+    model_name: str = "heriot-watt/emma-base",
+    tokenizer_truncation_side: Literal["left", "right"] = "right",
+    max_lang_tokens: Optional[int] = 64,
+) -> PreTrainedTokenizer:
+    """Add special tokens to tokenizer."""
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer.add_special_tokens(
+        {"additional_special_tokens": SimBotAction_SPECIAL_TOKENS}
+    )  # doesn't add if they are already there
+    tokenizer.truncation_side = tokenizer_truncation_side
+
+    if max_lang_tokens:
+        tokenizer.model_max_length = max_lang_tokens
+    return tokenizer
 
 
 class SimBotActionDataModule(LightningDataModule):
@@ -59,14 +81,17 @@ class SimBotActionDataModule(LightningDataModule):
 
         AutoTokenizer.from_pretrained(self._model_name)
 
+    def setup_tokenizer(self) -> PreTrainedTokenizer:
+        """Add special tokens to tokenizer."""
+        self._tokenizer = prepare_action_tokenizer(
+            model_name=self._model_name,
+            tokenizer_truncation_side=self._tokenizer_truncation_side,
+            max_lang_tokens=self._max_lang_tokens,
+        )
+        return self._tokenizer
+
     def setup(self, stage: Optional[str] = None) -> None:
         """Setup datasets for the dataloaders."""
-        self._tokenizer = AutoTokenizer.from_pretrained(self._model_name)
-        self._tokenizer.truncation_side = self._tokenizer_truncation_side
-
-        if self._max_lang_tokens:
-            self._tokenizer.model_max_length = self._max_lang_tokens
-
         self._train_dataset = SimBotActionDataset(
             dataset_db_path=self._simbot_action_train_db_file,
             tokenizer=self._tokenizer,

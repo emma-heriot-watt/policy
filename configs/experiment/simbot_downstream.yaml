@@ -36,6 +36,7 @@ trainer:
   accumulate_grad_batches: 1
   strategy: ddp_find_unused_parameters_false
   precision: 16
+  replace_sampler_ddp: False
 
 model:
   _target_: emma_policy.models.simbot_emma_policy.SimBotEmmaPolicy
@@ -52,6 +53,7 @@ model:
   label_smoothing: 0.0
   save_results_path: storage/datasets/simbot/test_predictions.json
   strict: False
+  resize_embeddings: True
 
 datamodule:
   _target_: emma_policy.datamodules.simbot_action_datamodule.SimBotActionDataModule

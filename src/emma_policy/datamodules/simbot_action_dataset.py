@@ -76,6 +76,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             instance_str = self.db[index]
 
         instance = SimBotInstructionInstance.parse_raw(instance_str)
+
         return self.simbot_action_execution(instance)
 
     def simbot_action_execution(self, instance: SimBotInstructionInstance) -> EmmaDatasetItem:
@@ -224,6 +225,9 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             # no other action types, sanity check.
             else:
                 raise AssertionError(f"Unsupported action {action}.")
+
+        if instance.actions[-1].final:
+            target_text[-1] = f"{target_text[-1][:-1]} <stop>."
         return " ".join(target_text).lower()
 
     def _get_object_from_action_object_metadata(

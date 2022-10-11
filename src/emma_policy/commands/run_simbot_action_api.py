@@ -202,7 +202,7 @@ def parse_api_args() -> Namespace:
     arg_parser.add_argument(
         "--max_length_per_action_sequence",
         type=int,
-        default=20,  # noqa: WPS432
+        default=50,  # noqa: WPS432
         help="Maximum number of generated tokens for each action",
     )
     arg_parser.add_argument(

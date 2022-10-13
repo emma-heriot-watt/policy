@@ -92,6 +92,8 @@ class SimBotActionDataModule(LightningDataModule):
 
     def setup(self, stage: Optional[str] = None) -> None:
         """Setup datasets for the dataloaders."""
+        self.setup_tokenizer()
+
         self._train_dataset = SimBotActionDataset(
             dataset_db_path=self._simbot_action_train_db_file,
             tokenizer=self._tokenizer,

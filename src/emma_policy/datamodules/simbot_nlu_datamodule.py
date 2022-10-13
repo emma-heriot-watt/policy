@@ -93,6 +93,8 @@ class SimBotNLUDataModule(LightningDataModule):
 
     def setup(self, stage: Optional[str] = None) -> None:
         """Setup datasets for the dataloaders."""
+        self.setup_tokenizer()
+
         self._train_dataset = SimBotNLUDataset(
             dataset_db_path=self._train_db_file,
             tokenizer=self.tokenizer,

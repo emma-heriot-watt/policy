@@ -161,6 +161,7 @@ async def generate(request: Request, response: Response) -> str:
         logger.debug(f"Empty action for request: {simbot_request}")
 
     action = post_process_action(action)
+    logger.debug(f"Predicted action: {action}")
     return action
 
 

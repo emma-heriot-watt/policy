@@ -116,7 +116,7 @@ class SimBotActionInputBuilder:
         feature_dicts = []
         previous_actions = []
         total_steps = len(request.environment_history)
-        for idx, step in enumerate(request.environment_history):
+        for idx, step in enumerate(request.environment_history, 1):
             if step.output is None and idx < total_steps:
                 msg = "Found unexpected 'None' as a previous action. Verify that the received request contains string values for previous actions."
                 logger.debug(msg)
@@ -132,7 +132,8 @@ class SimBotActionInputBuilder:
                     "height": features["height"],
                 }
                 feature_dicts.append(feature_dict)
-            previous_actions.append(step.output)
+            if idx < total_steps:
+                previous_actions.append(step.output)
 
         # concatenate all the previous actions to a string
         # ignore the last element as it is None (the current action has not been predicted yet)

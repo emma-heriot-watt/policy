@@ -1,4 +1,5 @@
 import dataclasses
+from enum import Enum
 from pathlib import Path
 from typing import Union
 
@@ -17,6 +18,13 @@ from emma_policy.utils import get_logger
 
 
 logger = get_logger(__name__)
+
+
+class SimBotNLUIntents(Enum):
+    """SimBot NLU intent types."""
+
+    act = "act"
+    clarify = "clarify"
 
 
 class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
@@ -50,6 +58,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             if question_type != SimBotClarificationTypes.other
         }
         self.is_train = is_train
+        self.data_intents: list[SimBotNLUIntents] = []
         if is_train:
             index_db_map, dataset_size = self._unpack_annotations()
             self.index_db_map = index_db_map
@@ -198,6 +207,12 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 instance_str: str = self.db[index]
                 instance = SimBotInstructionInstance.parse_raw(instance_str)
                 num_questions = self._num_necessary_questions(instance)
+                if num_questions == 0:
+                    self.data_intents.append(SimBotNLUIntents.act)
+                else:
+                    self.data_intents.extend(
+                        [SimBotNLUIntents.clarify for _ in range(num_questions)]
+                    )
                 individual_instances = [instance for _ in range(max(num_questions, 1))]
 
                 for num_question, _ in enumerate(individual_instances):

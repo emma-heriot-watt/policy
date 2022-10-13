@@ -34,6 +34,7 @@ trainer:
   gradient_clip_val: 1.0
   accumulate_grad_batches: 2
   precision: 16
+  reload_dataloaders_every_n_epochs: 1
 
 model:
   _target_: emma_policy.models.simbot_nlu_policy.SimBotNLUEmmaPolicy
@@ -63,6 +64,7 @@ datamodule:
   num_workers: 4
   max_lang_tokens: 64
   tokenizer_truncation_side: right
+  balance_dataset: True
 
 callbacks:
   model_checkpoint:

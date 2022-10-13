@@ -85,4 +85,6 @@ class SimbotQuestionTypeConfusionMatrix(ConfusionMatrix):
         preds[preds > self.num_classes] = 0
         cm_preds = torch.nn.functional.one_hot(preds.long(), num_classes=self.num_classes)
         cm_targets = cm_targets[ground_truth_tensors[:, 1] == self.clarify_token_id]
+        if not len(cm_targets):
+            return
         super().update(cm_preds, cm_targets)

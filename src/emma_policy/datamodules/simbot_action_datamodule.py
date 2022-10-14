@@ -52,6 +52,7 @@ class SimBotActionDataModule(LightningDataModule):
         tokenizer_truncation_side: Literal["left", "right"] = "right",
         weighted_sampling: bool = True,
         weight_temperature: float = 1.3,
+        iou_threshold: float = 0.5,
     ) -> None:
         super().__init__()
         if isinstance(simbot_action_train_db_file, str):
@@ -71,6 +72,7 @@ class SimBotActionDataModule(LightningDataModule):
         self._max_frames = max_frames
         self._weighted_sampling = weighted_sampling
         self._weight_temperature = weight_temperature
+        self._iou_threshold = iou_threshold
 
         # Model
         self._model_name = model_name
@@ -98,6 +100,7 @@ class SimBotActionDataModule(LightningDataModule):
             dataset_db_path=self._simbot_action_train_db_file,
             tokenizer=self._tokenizer,
             max_frames=self._max_frames,
+            iou_threshold=self._iou_threshold,
         )
         self._training_sampler_weights = None
         if self._weighted_sampling:
@@ -109,12 +112,14 @@ class SimBotActionDataModule(LightningDataModule):
             dataset_db_path=self._simbot_action_valid_db_file,
             tokenizer=self._tokenizer,
             max_frames=self._max_frames,
+            iou_threshold=self._iou_threshold,
         )
 
         self._test_dataset = SimBotActionDataset(
             dataset_db_path=self._simbot_action_valid_db_file,
             tokenizer=self._tokenizer,
             max_frames=self._max_frames,
+            iou_threshold=self._iou_threshold,
         )
 
     def train_dataloader(self) -> DataLoader[EmmaDatasetBatch]:

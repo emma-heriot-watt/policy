@@ -6,6 +6,7 @@ from typing import Any
 import torch
 from emma_datasets.datamodels.datasets.simbot import SimBotAction, SimBotInstructionInstance
 from overrides import overrides
+from torchvision.ops import masks_to_boxes
 from transformers import PreTrainedTokenizer
 
 from emma_policy.common.settings import Settings
@@ -16,11 +17,13 @@ from emma_policy.datamodules.emma_dataclasses import (
     EmmaVisualFeatures,
 )
 from emma_policy.datamodules.pretrain_instances import Task
-from emma_policy.utils import get_logger
+from emma_policy.utils import decompress_simbot_mask, get_logger
 
 
 settings = Settings()
 ARENA_DICT_FILE = settings.paths.constants.joinpath("arena_definitions.json")
+IMAGE_WIDTH = 300
+IMAGE_HEIGHT = 300
 
 
 logger = get_logger(__name__)
@@ -49,6 +52,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         self,
         dataset_db_path: Path,
         tokenizer: PreTrainedTokenizer,
+        iou_threshold: float = 0.5,
         max_frames: int = 15,
         use_only_necessary_questions: bool = True,
     ) -> None:
@@ -57,6 +61,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             dataset_db_path=dataset_db_path, tokenizer=tokenizer, max_frames=max_frames
         )
 
+        self._iou_threshold = iou_threshold
         self._use_only_necessary_questions = use_only_necessary_questions
         self._question_answer_prompts = [
             "With question: {question} and answer: {answer}.",
@@ -76,7 +81,6 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             instance_str = self.db[index]
 
         instance = SimBotInstructionInstance.parse_raw(instance_str)
-
         return self.simbot_action_execution(instance)
 
     def simbot_action_execution(self, instance: SimBotInstructionInstance) -> EmmaDatasetItem:
@@ -96,8 +100,11 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             features_path=instance.features_path, modality=instance.modality
         )
         frames = []
+        objects_per_frame = []
         for fpath in instance.features_path:
-            frames.extend([fdict["image"] for fdict in torch.load(fpath)["frames"]])
+            for fdict in torch.load(fpath)["frames"]:
+                frames.append(fdict["image"])
+                objects_per_frame.append(fdict["features"]["bbox_coords"].shape[0])
 
         source_text = self._prepare_source_text(instance=instance)
 
@@ -106,7 +113,10 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         )
 
         target_text = self._prepare_target_text(
-            instance=instance, visual_features=visual_features, frames=frames
+            instance=instance,
+            visual_features=visual_features,
+            frames=frames,
+            objects_per_frame=objects_per_frame,
         )
 
         target_encoding = self.tokenizer.encode_plus(
@@ -186,6 +196,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         instance: SimBotInstructionInstance,
         visual_features: EmmaVisualFeatures,
         frames: list[str],
+        objects_per_frame: list[int],
     ) -> str:
         """Prepare the target text.
 
@@ -215,6 +226,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                         image_index=action_metadata["object"]["colorImageIndex"],
                         visual_features=visual_features,
                         frames=frames,
+                        objects_per_frame=objects_per_frame,
                     )
                     target_text.append(f"{action_type} {object_name_with_tokens}.")
                 # action without an object (e.g, Goto Office)
@@ -265,13 +277,51 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         image_index: int,
         visual_features: EmmaVisualFeatures,
         frames: list[str],
+        objects_per_frame: list[int],
     ) -> str:
         """Map the name of an object with its frame and visual token.
 
         If the object cannot be mapped return the object name alone.
         """
-        # TODO: gpantaz update this to include feature and frame tokens
+        # Get the index of the color image
         color_image = action.color_images[image_index]
         frame_index = frames.index(color_image)
+        # Find the offset position of the frame objects within the visual features
+        offset_idx = sum(objects_per_frame[:frame_index])
+        object_coordinates_bbox = visual_features.object_coordinates[
+            offset_idx : offset_idx + objects_per_frame[frame_index], :
+        ]
+
+        gt_object_dict = getattr(action, action.type.lower())
+        # If the groundtruth object is a sticky note, the groundtruth bbox
+        # coordinates are currently provided directly in the mask
+        # TODO: this could potentially be improved if we have the segmentation masks for the sticky notes as well instead of the bounding boxes
+        if object_name == "Sticky Note":
+            ground_truth_bbox = (
+                torch.tensor(gt_object_dict["object"]["mask"][0]).unsqueeze(0).float()
+            )
+
+        else:
+            gt_binary_mask = decompress_simbot_mask(gt_object_dict["object"]["mask"])
+            ground_truth_bbox = masks_to_boxes(torch.tensor(gt_binary_mask).unsqueeze(0))
+
+        ground_truth_bbox[:, (0, 2)] /= IMAGE_WIDTH
+        ground_truth_bbox[:, (1, 3)] /= IMAGE_HEIGHT
+
+        matched_indices, ground_truth_flags = self._best_match_features(
+            ground_truth_bbox=ground_truth_bbox,
+            object_coordinates_bbox=object_coordinates_bbox,
+            threshold=self._iou_threshold,
+        )
+
         scene_frame_token = self.tokenizer.decode(visual_features.scene_frame_tokens[frame_index])
+
+        # If there is a matching bounding box, append its visual token to the target text
+        if ground_truth_flags[0]:
+            # Get the visual token ids for the corresponding frame
+            vis_tokens = visual_features.visual_token_ids[
+                offset_idx : offset_idx + objects_per_frame[frame_index]
+            ]
+            object_token = self.tokenizer.decode(vis_tokens[matched_indices[0]])
+            return f"{object_name} {scene_frame_token} {object_token}"
         return f"{object_name} {scene_frame_token}"

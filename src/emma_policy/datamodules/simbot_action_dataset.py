@@ -211,7 +211,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             action_metadata = getattr(action, action_type.lower())
             action_object_metadata = action_metadata.get("object", None)
             # case 1: navigation actions except GoTo
-            if action_type in {"Look", "Move", "Rotate"}:
+            if action_type in {"Look", "Move", "Rotate", "Turn"}:
                 target_text.append(f"{action_type} {action_metadata['direction']}.")
             # case 2: room/object navigation or interaction action
             elif action_object_metadata is not None:

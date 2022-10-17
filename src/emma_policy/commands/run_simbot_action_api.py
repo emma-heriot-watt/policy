@@ -3,6 +3,7 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Any, TypedDict
 
+import torch
 from fastapi import FastAPI, Request, Response, status
 from pydantic import BaseSettings, FilePath
 from transformers import PreTrainedTokenizer
@@ -138,16 +139,17 @@ async def generate(request: Request, response: Response) -> str:
         else:
             len_decode = 0
         try:
-            model_output = api_store["model"].inference_step(
-                batch,
-                decoder_input_ids=decoder_input_ids,
-                max_length=max_length,
-                num_beams=api_store["num_beams"],
-                no_repeat_ngram_size=api_store["no_repeat_ngram_size"],
-            )
-            action = api_store["tokenizer"].batch_decode(
-                model_output[:, len_decode:], skip_special_tokens=False
-            )[0]
+            with torch.no_grad():
+                model_output = api_store["model"].inference_step(
+                    batch,
+                    decoder_input_ids=decoder_input_ids,
+                    max_length=max_length,
+                    num_beams=api_store["num_beams"],
+                    no_repeat_ngram_size=api_store["no_repeat_ngram_size"],
+                )
+                action = api_store["tokenizer"].batch_decode(
+                    model_output[:, len_decode:], skip_special_tokens=False
+                )[0]
 
         except Exception as err:
             # TODO: report session ID for better debugging

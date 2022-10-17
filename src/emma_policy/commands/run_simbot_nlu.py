@@ -3,6 +3,7 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Any, TypedDict
 
+import torch
 from fastapi import FastAPI, Request, Response, status
 from pydantic import BaseSettings, FilePath
 from transformers import PreTrainedTokenizer
@@ -112,7 +113,8 @@ async def generate(request: Request, response: Response) -> str:
     if len(simbot_request.environment_history) == 1:
         batch = api_store["input_builder"](simbot_request)
         try:
-            action = api_store["model"].inference_step(batch)[0]
+            with torch.no_grad():
+                action = api_store["model"].inference_step(batch)[0]
 
         except Exception as err:
             # TODO: report session ID for better debugging

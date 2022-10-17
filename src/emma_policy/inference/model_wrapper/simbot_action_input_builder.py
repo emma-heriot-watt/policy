@@ -50,8 +50,13 @@ class SimBotActionInputBuilder:
                 feature_dicts=feature_dicts,
                 tokenizer=self._tokenizer,
             )
+
             dataset_item = self._create_emma_dataset_item(
-                visual_features=visual_features, encoded_inputs=encoded_inputs
+                visual_features=visual_features,
+                encoded_inputs=encoded_inputs,
+                minimum_frame_index=self._get_minimum_predicted_frame_index(
+                    feature_dicts=feature_dicts, request=request
+                ),
             )
             decoder_input_ids = self._prepare_decoder_input_ids(previous_actions=previous_actions)
 
@@ -172,6 +177,7 @@ class SimBotActionInputBuilder:
         self,
         visual_features: EmmaVisualFeatures,
         encoded_inputs: BatchEncoding,
+        minimum_frame_index: int = 0,
     ) -> EmmaDatasetItem:
         """Create the `EmmaDatasetItem` for a given set of observations and actions."""
         return EmmaDatasetItem(
@@ -188,6 +194,7 @@ class SimBotActionInputBuilder:
             scene_features=visual_features.scene_features,
             scene_frame_tokens=visual_features.scene_frame_tokens,
             visual_token_ids=visual_features.visual_token_ids,
+            raw_target={"minimum_frame_index": minimum_frame_index},
         )
 
     def _create_emma_dataset_batch(
@@ -200,3 +207,12 @@ class SimBotActionInputBuilder:
         batch = move_data_to_device(batch, self._device)
         logger.debug(f"Moved batch from {prev_device} to {batch.input_token_ids.device}")
         return batch
+
+    def _get_minimum_predicted_frame_index(
+        self, feature_dicts: list[dict[str, Any]], request: GenerateRequest
+    ) -> int:
+        """Force the predicted frame indices to be larger than past frames."""
+        total_frames = len(feature_dicts)
+        num_frames_in_current_turn = len(request.environment_history[-1].features)
+        minimum_frame_index = total_frames - num_frames_in_current_turn + 1
+        return minimum_frame_index

@@ -206,6 +206,8 @@ class SimBotEmmaPolicy(EmmaPolicy):
         no_repeat_ngram_size: int = 0,
     ) -> PredictType:
         """Simbot Inference step."""
+        bad_words_ids = self._get_inference_banned_frame_ids(batch)
+
         inputs_embeds = self.emma.emma.embed_inputs(
             scene_features=batch.scene_features,
             scene_coordinates=batch.scene_coordinates,
@@ -227,6 +229,7 @@ class SimBotEmmaPolicy(EmmaPolicy):
                 decoder_input_ids=decoder_input_ids,
                 num_beams=num_beams,
                 no_repeat_ngram_size=no_repeat_ngram_size,
+                bad_words_ids=bad_words_ids,  # type: ignore[arg-type]
             )
         else:
             outputs = self.emma.generate(
@@ -237,5 +240,23 @@ class SimBotEmmaPolicy(EmmaPolicy):
                 max_length=max_length,
                 num_beams=num_beams,
                 no_repeat_ngram_size=no_repeat_ngram_size,
+                bad_words_ids=bad_words_ids,  # type: ignore[arg-type]
             )
         return outputs
+
+    def _get_inference_banned_frame_ids(
+        self, batch: EmmaDatasetBatch
+    ) -> Optional[list[list[int]]]:
+        """Prohibit decoding past frame ids during inference for a single instance."""
+        bad_words_ids = None
+        batch_size = batch.scene_features.shape[0]
+        if batch_size > 1 or not isinstance(batch.raw_target, dict):
+            return bad_words_ids
+
+        minimum_frame_index = batch.raw_target.get("minimum_frame_index", 1)
+        if minimum_frame_index > 1:
+            bad_words_ids = [
+                [self._tokenizer.convert_tokens_to_ids(f"<frame_token_{idx}>")]
+                for idx in range(1, minimum_frame_index)
+            ]
+        return bad_words_ids  # type: ignore[return-value]

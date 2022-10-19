@@ -62,6 +62,8 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         )
 
         self._iou_threshold = iou_threshold
+        self._goto_proba = 0.5
+        self._goto_paraphrases = ["go to", "move to", "find", "head to", "approach", "locate"]
         self._use_only_necessary_questions = use_only_necessary_questions
         self._question_answer_prompts = [
             "With question: {question} and answer: {answer}.",
@@ -83,7 +85,9 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         instance = SimBotInstructionInstance.parse_raw(instance_str)
         return self.simbot_action_execution(instance)
 
-    def simbot_action_execution(self, instance: SimBotInstructionInstance) -> EmmaDatasetItem:
+    def simbot_action_execution(  # noqa: WPS231
+        self, instance: SimBotInstructionInstance
+    ) -> EmmaDatasetItem:
         """Process the instance for the SimBot action task."""
         if instance.instruction is None:
             raise AssertionError(
@@ -108,15 +112,32 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
 
         source_text = self._prepare_source_text(instance=instance)
 
-        input_encoding = self.tokenizer.encode_plus(
-            source_text, return_tensors=self._return_tensor_type, truncation=True
-        )
-
         target_text = self._prepare_target_text(
             instance=instance,
             visual_features=visual_features,
             frames=frames,
             objects_per_frame=objects_per_frame,
+        )
+
+        if instance.synthetic and "goto" in instance.actions[-1].type.lower():
+            # action_metadata["object"]["colorImageIndex"]
+            action = instance.actions[-1]
+            action_metadata = action.goto
+            action_object_metadata = action_metadata.get("object", None)
+
+            proba = random.random() > self._goto_proba
+            if action_object_metadata is not None and "id" in action_object_metadata and proba:
+                source_text, target_text, visual_features = self._ignore_goto_redundant_frames(
+                    action=action,
+                    source_text=source_text,
+                    target_text=target_text,
+                    visual_features=visual_features,
+                    frames=frames,
+                    objects_per_frame=objects_per_frame,
+                )
+
+        input_encoding = self.tokenizer.encode_plus(
+            source_text, return_tensors=self._return_tensor_type, truncation=True
         )
 
         target_encoding = self.tokenizer.encode_plus(
@@ -134,7 +155,6 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             full_target_token_ids,
             fill_value=self.tokenizer.eos_token_id,  # type: ignore[arg-type]
         )
-
         # Now shift them to the right
         decoder_input_ids[1:] = full_target_token_ids[:-1].clone()  # noqa: WPS362
         decoder_attention_mask = torch.ones_like(decoder_input_ids)
@@ -325,3 +345,72 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             object_token = self.tokenizer.decode(vis_tokens[matched_indices[0]])
             return f"{object_name} {scene_frame_token} {object_token}"
         return f"{object_name} {scene_frame_token}"
+
+    def _ignore_goto_redundant_frames(
+        self,
+        action: SimBotAction,
+        source_text: str,
+        target_text: str,
+        visual_features: EmmaVisualFeatures,
+        frames: list[str],
+        objects_per_frame: list[int],
+    ) -> tuple[str, str, EmmaVisualFeatures]:
+        """Remove the additional input frames from the goto synthetic instructions."""
+        # paraphrase the goto synthetic instruction
+        # all these instructions have the form go to OBJECT_NAME
+        paraphrase = random.choice(self._goto_paraphrases)
+        source_text = source_text.replace("go to", paraphrase)
+
+        # replace the <frame_token_X> with <frame_token_1> in the target_text
+        # target_text = "goto table <frame_token_2> <vis_token_1> <stop>."
+        target_text_list = []
+        for text in target_text.split(" "):
+            if "frame_token" in text:
+                target_text_list.append("<frame_token_1>")
+            else:
+                target_text_list.append(text)
+        # target_text = "goto table <frame_token_1> <vis_token_1> <stop>."
+        target_text = " ".join(target_text_list)
+
+        # remove the irrelevant frames from the visual features
+        # find the number of objects for the golden frame and keep only
+        # the relevant object features, classes, coordinates, visual tokens, and masks
+        # We only need the scene features, coordinates for a single scene.
+
+        frame_index = action.goto["object"]["colorImageIndex"]
+        offset_idx = sum(objects_per_frame[:frame_index])
+
+        frame_token = self.tokenizer.convert_tokens_to_ids("<frame_token_1>")
+        object_frame_tokens = (
+            torch.ones((objects_per_frame[frame_index]), dtype=torch.long) * frame_token
+        )
+
+        truncated_visual_features = EmmaVisualFeatures(
+            scene_features=visual_features.scene_features[frame_index, :].unsqueeze(0),
+            scene_coordinates=torch.tensor(
+                [[0, 0, 1, 1]], dtype=visual_features.scene_coordinates.dtype
+            ),
+            object_classes=visual_features.object_classes[
+                offset_idx : offset_idx + objects_per_frame[frame_index]
+            ],
+            object_features=visual_features.object_features[
+                offset_idx : offset_idx + objects_per_frame[frame_index], :
+            ],
+            object_coordinates=visual_features.object_coordinates[
+                offset_idx : offset_idx + objects_per_frame[frame_index], :
+            ],
+            visual_token_ids=visual_features.visual_token_ids[
+                offset_idx : offset_idx + objects_per_frame[frame_index]
+            ],
+            scene_frame_tokens=torch.tensor(
+                [frame_token], dtype=visual_features.scene_frame_tokens.dtype
+            ),
+            object_frame_tokens=object_frame_tokens,
+            scene_attention_mask=torch.tensor([True]),
+            object_attention_mask=visual_features.object_attention_mask[
+                offset_idx : offset_idx + objects_per_frame[frame_index]
+            ],
+            original_frame_order=torch.tensor([0]),
+        )
+
+        return source_text, target_text, truncated_visual_features

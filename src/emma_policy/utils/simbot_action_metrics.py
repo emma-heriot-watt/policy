@@ -22,8 +22,11 @@ class SimbotActionExactMatch(Metric):
         self, predicted: torch.Tensor, ground_truth: torch.Tensor, mask: torch.Tensor
     ) -> None:
         """Update loss sum and number of task samples."""
-        # first compute all the matches ignoring padding
-        masked_matches = (predicted == ground_truth) * mask
+        # first compute all the matches ignoring padding and -100 target token ids
+        target_mask = torch.zeros_like(ground_truth)
+        target_mask[ground_truth >= 0] = 1
+        target_padding_mask = mask * target_mask
+        masked_matches = (predicted == ground_truth) * target_padding_mask
         # then make sure that the number of matched elements is equal to the actual sequence length
         num_matches_per_batch = masked_matches.sum(-1)
         seq_length_per_batch = mask.sum(-1)

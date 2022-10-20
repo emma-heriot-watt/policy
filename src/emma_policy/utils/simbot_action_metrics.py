@@ -29,7 +29,7 @@ class SimbotActionExactMatch(Metric):
         masked_matches = (predicted == ground_truth) * target_padding_mask
         # then make sure that the number of matched elements is equal to the actual sequence length
         num_matches_per_batch = masked_matches.sum(-1)
-        seq_length_per_batch = mask.sum(-1)
+        seq_length_per_batch = target_padding_mask.sum(-1)
         correct_matches = (num_matches_per_batch == seq_length_per_batch).int()
         self.correct += correct_matches.sum()
         self.total += cast(torch.Tensor, masked_matches.size(0))

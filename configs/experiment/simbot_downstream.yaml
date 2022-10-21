@@ -37,6 +37,7 @@ trainer:
   strategy: ddp_find_unused_parameters_false
   precision: 16
   replace_sampler_ddp: False
+  reload_dataloaders_every_n_epochs: 1
 
 model:
   _target_: emma_policy.models.simbot_emma_policy.SimBotEmmaPolicy
@@ -50,7 +51,7 @@ model:
   optimizer: adamw
   lr_scheduler: linear_with_warmup
   num_warmup_steps: 0.01
-  label_smoothing: 0.0
+  label_smoothing: 0.1
   save_results_path: storage/datasets/simbot/test_predictions.json
   strict: False
   resize_embeddings: True
@@ -74,8 +75,8 @@ datamodule:
 callbacks:
   model_checkpoint:
     _target_: pytorch_lightning.callbacks.ModelCheckpoint
-    monitor: "valid_loss" # name of the logged metric which determines when model is improving
-    mode: "min" # "min" means higher metric value is better, can be also "max"
+    monitor: "valid_action_exact_match" # name of the logged metric which determines when model is improving
+    mode: "max" # "min" means higher metric value is better, can be also "max"
     save_top_k: 1 # save k best models (determined by above metric)
     save_last: True # additionaly always save model from last epoch
     verbose: False

@@ -1,9 +1,14 @@
+import json
+import random
 from collections import Counter
 from pathlib import Path
 from typing import Literal, Optional, Union
 
 import numpy as np
-from emma_datasets.datamodels.datasets.simbot import SimBotInstructionInstance
+from emma_datasets.datamodels.datasets.simbot import SimBotAction, SimBotInstructionInstance
+from emma_datasets.datamodels.datasets.utils.simbot_utils import (
+    get_object_from_action_object_metadata,
+)
 from emma_datasets.db import DatasetDb
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, WeightedRandomSampler
@@ -11,7 +16,7 @@ from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from emma_policy.datamodules.collate import collate_fn
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
-from emma_policy.datamodules.simbot_action_dataset import SimBotActionDataset
+from emma_policy.datamodules.simbot_action_dataset import ARENA_DICT_FILE, SimBotActionDataset
 
 
 SimBotAction_SPECIAL_TOKENS = [
@@ -72,10 +77,15 @@ class SimBotActionDataModule(LightningDataModule):
         self._max_frames = max_frames
         self._weighted_sampling = weighted_sampling
         self._weight_temperature = weight_temperature
+        self._subsample_perc = 0.5
+        self._skip_goto_objects = {"Desk", "Table"}
         self._iou_threshold = iou_threshold
 
         # Model
         self._model_name = model_name
+        with open(ARENA_DICT_FILE) as in_file:
+            arena_constants = json.load(in_file)
+            self._object_assets_to_names = arena_constants["asset_to_name"]
 
     def prepare_data(self) -> None:
         """Perform any preparation steps necessary before loading the data to the model."""
@@ -102,11 +112,8 @@ class SimBotActionDataModule(LightningDataModule):
             max_frames=self._max_frames,
             iou_threshold=self._iou_threshold,
         )
-        self._training_sampler_weights = None
-        if self._weighted_sampling:
-            self._training_sampler_weights = self._compute_sample_weights(
-                self._simbot_action_train_db_file
-            )
+
+        self._training_sampler_weights: Optional[list[float]] = None
 
         self._valid_dataset = SimBotActionDataset(
             dataset_db_path=self._simbot_action_valid_db_file,
@@ -124,7 +131,10 @@ class SimBotActionDataModule(LightningDataModule):
 
     def train_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
         """Generate train dataloader for SimBot action instances."""
-        if self._training_sampler_weights is not None:
+        if self._weighted_sampling:
+            self._training_sampler_weights = self._compute_sample_weights(
+                self._simbot_action_train_db_file
+            )
             return DataLoader(
                 self._train_dataset,  # type: ignore[arg-type]
                 batch_size=self._train_batch_size,
@@ -171,10 +181,18 @@ class SimBotActionDataModule(LightningDataModule):
         db = DatasetDb(dataset_db)
         # First pass through the dataset to get action type counts
         actions = []
+        subsampled_weight: list[float] = []
         for _, _, instance_str in db:
             instance = SimBotInstructionInstance.parse_raw(instance_str)
-            actions.append(instance.actions[-1].type)
+            if self._skip_instance(instance.actions[-1]):
+                subsampled_weight.append(0)
+            else:
+                subsampled_weight.append(1)
+            actions.append(self._get_action_type(instance.actions[-1]))
 
+        action_types = [
+            action for weight, action in zip(subsampled_weight, actions) if weight == 1
+        ]
         counts = Counter(actions)
         action_types = list(counts.keys())
         action_counts = np.array([counts[action] for action in action_types])
@@ -185,9 +203,36 @@ class SimBotActionDataModule(LightningDataModule):
         scaled_probas = scaled_probas / scaled_probas.sum()
         action_type_weights = dict(zip(action_types, scaled_probas))
 
-        # Second pass to get the weight of each sample
+        # Second pass to get the final weight of each sample
         data_weights = []
-        for _, _, instance_str in db:  # noqa: WPS440
-            instance = SimBotInstructionInstance.parse_raw(instance_str)
-            data_weights.append(action_type_weights[instance.actions[-1].type])
+        for weight, action_type in zip(subsampled_weight, actions):
+            data_weights.append(float(weight) * action_type_weights[action_type])
         return data_weights
+
+    def _get_action_type(self, action: SimBotAction) -> str:
+        if action.type != "Goto":
+            return action.type
+        if "officeRoom" in action.goto["object"]:
+            return "Goto-Room"
+
+        return "Goto-Object"
+
+    def _skip_instance(self, action: SimBotAction) -> bool:
+        """Randomly skip common action types."""
+        action_type = self._get_action_type(action)
+        # Check if action is Look Around or Goto object
+        action_is_look_around = action_type == "Look" and action.look["direction"] == "Around"
+        action_is_goto_object = action_type == "Goto-Object"
+        if not (action_is_look_around or action_is_goto_object):
+            return False
+        # Probability of skipping the instance
+        skip_instance = random.random() < self._subsample_perc
+        # Skip Look Around
+        if action_is_look_around:
+            return skip_instance
+        # Skip Goto Desk or Table
+        target_object = get_object_from_action_object_metadata(
+            action.goto["object"]["id"], self._object_assets_to_names
+        )
+        skip_target_object = target_object in self._skip_goto_objects
+        return skip_target_object and skip_instance

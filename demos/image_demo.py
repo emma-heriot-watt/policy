@@ -56,13 +56,17 @@ def change_textbox(choice: str) -> dict[str, Any]:
     return gr.Textbox.update(value=choice, visible=True)
 
 
-def run_model(model: EmmaPolicy, tokenizer: PreTrainedTokenizer) -> Callable[[str, str], str]:
+def run_model(
+    model: EmmaPolicy,
+    tokenizer: PreTrainedTokenizer,
+    endpoint: str,
+) -> Callable[[str, str], str]:
     """Prepare the response generation."""
 
     def generate_response(input_text: str, input_image_path: str) -> str:  # noqa: WPS430
         """Generate a response to the text input."""
         input_image = Image.open(input_image_path)
-        feature_dict = extract_single_image(input_image)
+        feature_dict = extract_single_image(input_image, endpoint=endpoint)
 
         vis_tokens = torch.tensor(
             tokenizer.convert_tokens_to_ids(
@@ -228,7 +232,11 @@ def main(args: argparse.Namespace) -> None:
             )
         dropdown_prompts.change(fn=change_textbox, inputs=dropdown_prompts, outputs=input_text)
         model_button.click(
-            fn=run_model(model=model, tokenizer=tokenizer),
+            fn=run_model(
+                model=model,
+                tokenizer=tokenizer,
+                endpoint=args.endpoint,
+            ),
             inputs=[input_text, input_image],
             outputs=out_text,
         )

@@ -11,6 +11,11 @@ packages = [{ include = "emma_policy", from = "src" }]
 [tool.poe]
 envfile = ".env"
 
+
+[tool.poe.poetry_hooks]
+post_install = "install-everything-else"
+
+
 [tool.poe.tasks]
 
 [tool.poe.tasks.format]
@@ -45,12 +50,12 @@ shell = """
 		"""
 interpreter = "bash"
 
-[tool.poe.tasks.install-everything-else]
+[[tool.poe.tasks.install-everything-else]]
 help = 'Download the spacy pipeline'
 shell = """python -m spacy download en_core_web_lg"""
 interpreter = "bash"
 
-[tool.poe.tasks.download-coco-resplit-train]
+[[tool.poe.tasks.install-everything-else]]
 help = "Download mscoco_resplit_train.json"
 shell = "wget -O storage/constants/mscoco_resplit_train.json https://www.dropbox.com/sh/m26a281y97ok6wm/AAA-97WOmyvcWLaaf2jFRrT8a/mscoco_resplit_train.json\\?dl\\=0"
 interpreter = "bash"
@@ -58,37 +63,26 @@ interpreter = "bash"
 [tool.poetry.dependencies]
 python = "~3.9"
 torch = "1.11.0"
-pytorch-lightning = "1.5.10"
 torchvision = "0.12.0"
-wandb = "^0.12.17"
+pytorch-lightning = "1.5.10"
+transformers = "4.18.0"
 torchmetrics = "0.7.3"
+wandb = "^0.12.17"
 hydra-core = "^1.1.2"
 hydra-colorlog = "^1.1.0"
-transformers = "4.18.0"
-pydantic = { version = "~1.8", extras = ["dotenv"] }
 overrides = "^6.1.0"
 numpy = "^1.22.2"
-emma-datasets = { git = "https://github.com/emma-simbot/datasets", rev = "main" }
-fastapi = { extras = ["all"], version = "^0.75.2" }
 httpx = "^0.23.0"
 loguru = "^0.6.0"
 spacy = "^3.2.4"
 scipy = "^1.8.0"
 rich = "^12.4.4"
-ray = { extras = ["rllib"], version = "^1.13.0", optional = true }
-gym = { version = "<0.22", extras = [
-	"atari",
-	"accept-rom-license",
-], optional = true }
-gradio = { version = "^3.1.1", optional = true }
+emma-datasets = { git = "https://github.com/emma-simbot/datasets" }
+emma-common = { git = "https://github.com/emma-simbot/common" }
+pydantic = { extras = ["dotenv"], version = "^1.10.2" }
 
-[tool.poetry.extras]
-rl = ["ray", "gym"]
-demo = ["gradio"]
-
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 wemake-python-styleguide = "^0.16.0"
-flake8 = "^4.0"
 pytest = "^7.1.1"
 ipykernel = "^6.13.0"
 pre-commit = "^2.18.1"
@@ -109,6 +103,10 @@ pytest-xdist = "^2.5.0"
 filelock = "^3.6.0"
 requests-mock = "^1.9.3"
 
+
+[tool.poetry.group.demo.dependencies]
+gradio = "^3.7"
+
 [tool.black]
 line-length = 99
 
@@ -117,7 +115,7 @@ profile = "black"
 combine_as_imports = true
 lines_after_imports = 2
 line_length = 99
-known_first_party = ["src, emma_policy"]
+known_first_party = ["emma_policy"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "setuptools"]

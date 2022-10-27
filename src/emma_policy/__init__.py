@@ -1,5 +1,6 @@
 from transformers import AutoConfig, AutoModel, AutoModelForCausalLM, AutoTokenizer
 
+from emma_policy._version import __version__
 from emma_policy.models import (
     EmmaConfig,
     EmmaForConditionalGeneration,

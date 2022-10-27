@@ -84,6 +84,8 @@ max-string-usages = 10
 max-annotation-complexity = 4
 min-name-length = 1
 max-try-body-length = 2
+exps-for-one-empty-line = 1
+show-violation-links = true
 format = wemake
 
 # Black enforces double quotes.
@@ -107,8 +109,8 @@ allowed-domain-names =
 		params
 
 per-file-ignores =
-    src/__init__.py:D,F401
-    src/**/__init__.py:D,F401
+		src/*/_version.py:WPS410
+    src/**/__init__.py:D,F401,WPS436
 		tests/*:D,F401,WPS118,WPS202,WPS204,WPS214,WPS218,WPS226,WPS231,WPS232,WPS235,WPS301,WPS432,WPS437,WPS442,S101
 		scripts/update_torch_cuda.py:S404,S603,S607,WPS323,WPS333,WPS432,WPS433,WPS459
 

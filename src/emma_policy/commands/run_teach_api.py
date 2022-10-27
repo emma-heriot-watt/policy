@@ -1,6 +1,6 @@
 import logging
 from io import BytesIO
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
 import httpx
 from fastapi import FastAPI, File, Form, HTTPException, Response, UploadFile, status
@@ -88,8 +88,7 @@ async def start_new_edh_instance(
     parsed_edh_instance = parse_edh_instance(edh_instance)
 
     logger.debug("Loading PIL images from bytes")
-    edh_history_image = [await raw_file.read() for raw_file in edh_history_images]
-    edh_history_image_bytes = cast(list[bytes], edh_history_image)
+    edh_history_image_bytes = [await raw_file.read() for raw_file in edh_history_images]
 
     try:
         logger.debug("Attempting to parse images for EDH history")
@@ -140,7 +139,7 @@ async def get_next_action(
 
     logger.debug("Creating PIL image from the bytes")
     raw_image = await img.read()
-    image = Image.open(BytesIO(cast(bytes, raw_image)))
+    image = Image.open(BytesIO(raw_image))
 
     logger.debug(f"Previous action: {prev_action}")
     previous_simulator_action = (

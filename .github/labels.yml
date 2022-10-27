@@ -5,75 +5,86 @@
 # The repository labels will be automatically configured using this file and
 # the GitHub Action https://github.com/marketplace/actions/github-labeler.
 ## more info https://github.com/crazy-max/ghaction-github-labeler
-- name: bug
-  description: Something isn't working
-  color: d23832
-- name: build
-  description: Compiling and packaging
-  color: "962EDD"
-- name: continuous integration
-  description: Continuous Integration
-  color: FCBFE3
-- name: deployment
-  description: Continuous Deployment
-  color: E1BFFC
-- name: developer tools
-  description: Developer tools and automation
-  color: "A8D8F0"
-- name: configuration
-  description: Modifying the model configurations
-  color: 8334C4
-- name: dependencies
-  description: Pull requests that update a dependency file
-  color: 0366d6
-- name: documentation
-  description: Improvements or additions to documentation
-  color: F695C4
-- name: duplicate
-  description: This issue or pull request already exists
-  color: ffffff
-- name: enhancement
-  description: New feature or request
+
+# ------------------------- Conventional Commit types ------------------------ #
+# From https://github.com/commitizen/conventional-commit-types/blob/master/index.json
+
+- name: feature
+  description: A new enhancement or feature
   color: 0A8844
-- name: good first issue
-  description: Good for newcomers
-  color: "42CD7D"
-- name: help wanted
-  description: Extra attention is needed
-  color: 95FFA4
-- name: invalid
-  description: This doesn't seem right
-  color: ffffff
-- name: performance
-  description: Improving efficiency and speed
-  color: "F2A33C"
-- name: question
-  description: Further information is requested
-  color: EE328E
-- name: refactoring
-  description: Refactoring
-  color: FBCA0C
-- name: removal
-  description: Removals and Deprecations
-  color: FFCC73
-- name: stale
-  description: Stale
-  color: ffffff
+  from_name: "enhancement"
+
+- name: fix
+  description: A bug fix
+  color: d23832
+  from_name: "bug"
+
+- name: documentation
+  description: Documentation changes only
+  color: F695C4
+
 - name: style
-  description: Code style and linting
-  color: FAC580
-- name: sync
-  description: Files are synced from the template
-  color: 0366d6
+  description: Changes that do not affect meaning of code (formatting, etc.)
+  color: FBCA0C
+
+- name: refactor
+  description: Code change that neither fixes a bug nor adds a feature
+  color: FBCA0C
+  from_name: refactoring
+
+- name: performance
+  description: Code change that improves performance
+  color: F2A33C
+
+- name: test
+  description: Adding missing tests or correcting existing tests
+  color: EE328E
+
+- name: build
+  description: Changes that affect the build system or external dependencies
+  color: 962EDD
+
+- name: continuous integration
+  description: Changes to CI configuration and scripts
+  color: FCBFE3
+
+- name: chore
+  description: Other changes that don't modify src or test files
+  color: A8D8F0
+
+- name: revert
+  description: Revert a previous commit
+  color: A8D8F0
+
+- name: backwards incompatible
+  description: incompatible changes to how the application works
+  color: AB2232
+
 - name: question
   description: Further information is requested
   color: EE328E
-- name: testing
-  description: Testing the code base
-  color: FEEDB2
-- name: experiments
-  description: Performing experiments with the models
-  color: CD93F3
-- name: wontfix
-  description: This will not be worked on
-  color: ffffff
+
+# ------------------------------- Dependencies ------------------------------- #
+- name: dependencies
+  description: Pull requests that update dependencies
+  color: 0366d6
+
+# ------------------------------ Utility labels ------------------------------ #
+- name: automerge
+  color: "ffffff"
+  description: "Automerge this PR"
+
+- name: "stale"
+  color: "ffffff"
+  description: ""
+# - name: duplicate
+#   description: This issue or pull request already exists
+#   color: ffffff
+
+# - name: invalid
+#   description: This doesn't seem right
+#   color: ffffff
+
+# - name: wontfix
+#   description: This will not be worked on
+#   color: ffffff

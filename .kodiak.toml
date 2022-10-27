@@ -1,0 +1,15 @@
+version = 1
+
+[merge.automerge_dependencies]
+# only auto merge "minor" and "patch" version upgrades.
+# do not automerge "major" version upgrades.
+versions = ["minor", "patch"]
+usernames = ["dependabot"]
+
+# allow dependabot to update and close stale dependency upgrades.
+[update]
+ignored_usernames = ["dependabot"]
+
+# Automatically approve when using automerge label
+[approve]
+auto_approve_usernames = ["dependabot"]

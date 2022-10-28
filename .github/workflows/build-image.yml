@@ -1,0 +1,58 @@
+name: Build and push images
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+env:
+  PYTHON_VERSION: 3.9
+  NODE_VERSION: 16
+  REPOSITORY: emma/policy
+
+jobs:
+  build_image:
+    name: Build and push image to ECR
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        torch_version_suffix: ["", "+cu113"]
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+
+      - name: Get latest release tag
+        id: release-tag
+        uses: rez0n/actions-github-release@main
+        env:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          type: "stable"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          install: true
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push the docker image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_BASE_NAME: ${{ steps.login-ecr.outputs.registry }}/emma/base
+          RELEASE_VERSION: ${{ steps.release-tag.outputs.release }}
+          TORCH_VERSION_SUFFIX: ${{ matrix.torch_version_suffix }}
+        run: |
+          IMAGE_TAG=$(echo "$RELEASE_VERSION" | cut -d v -f 2)
+          IMAGE_TAG=$(echo "$IMAGE_TAG$TORCH_VERSION_SUFFIX" | tr + -)
+          docker build --build-arg IMAGE_BASE_NAME --build-arg TORCH_VERSION_SUFFIX --load -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push -a $REGISTRY/$REPOSITORY

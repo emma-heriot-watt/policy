@@ -6,7 +6,7 @@ from typing import Literal, Optional, Union
 import numpy as np
 from emma_datasets.constants.simbot.simbot import get_arena_definitions
 from emma_datasets.datamodels.datasets.simbot import SimBotAction, SimBotInstructionInstance
-from emma_datasets.datamodels.datasets.utils.simbot_utils import (
+from emma_datasets.datamodels.datasets.utils.simbot.instruction_processing import (
     get_object_from_action_object_metadata,
 )
 from emma_datasets.db import DatasetDb

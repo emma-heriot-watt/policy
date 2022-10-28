@@ -1,10 +1,25 @@
 import logging
-from typing import Any, Literal, Optional
+from collections.abc import Mapping
+from enum import Enum
+from types import MappingProxyType
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
 
 logger = logging.getLogger(__name__)
+
+
+class SpeakerRole(Enum):
+    """Speaker roles."""
+
+    user = "user"
+    agent = "agent"
+
+
+SPEAKER_TOKEN_MAP: Mapping[SpeakerRole, str] = MappingProxyType(
+    {SpeakerRole.user: "<<commander>>", SpeakerRole.agent: "<<driver>>"}
+)
 
 
 class RequestTurn(BaseModel):
@@ -17,9 +32,8 @@ class RequestTurn(BaseModel):
 class RequestUtterance(BaseModel):
     """Information about a single utterance."""
 
-    role: Literal["user", "agent"]
+    role: SpeakerRole
     utterance: str
-    intent: Optional[Literal["instruction", "clarify_question", "clarify_answer"]] = None
 
 
 class GenerateRequest(BaseModel):

@@ -12,7 +12,8 @@ from emma_policy.datamodules.emma_dataclasses import (
     EmmaDatasetItem,
     EmmaVisualFeatures,
 )
-from emma_policy.inference.api.simbot_state import GenerateRequest
+from emma_policy.datamodules.pretrain_instances import TASK_TEMPLATES_MAP, Task
+from emma_policy.inference.api.simbot_state import SPEAKER_TOKEN_MAP, GenerateRequest
 
 
 logger = logging.getLogger(__name__)
@@ -24,8 +25,7 @@ class SimBotActionInputBuilder:
     def __init__(self, tokenizer: PreTrainedTokenizer, device: str = "cpu") -> None:
         self._tokenizer = tokenizer
         self._device = device
-        self._action_execution_prompt = "Act according to the instruction: {instruction}"
-        self._question_answer_prompt = "With question: {question} and answer: {answer}"
+        self._action_execution_prompt = TASK_TEMPLATES_MAP[Task.action_execution][0]
 
     def __call__(
         self, request: GenerateRequest
@@ -35,17 +35,15 @@ class SimBotActionInputBuilder:
         The sample batch provides the set of previous observations and previous actions taken by
         the agent in the environment.
         """
-        (instruction, question, answer) = self._parse_dialogue_from_request(request)
+        instruction = self._parse_dialogue_from_request(request)
         (feature_dicts, previous_actions) = self._parse_environment_history_from_request(request)
 
         batch: Optional[EmmaDatasetBatch] = None
         decoder_input_ids: Optional[torch.Tensor] = None
-        if instruction is not None:
+        if instruction is not None and instruction:
             logger.debug(f"Predicting action for instruction: {instruction}")
 
-            encoded_inputs = self._prepare_input_text(
-                instruction=instruction, question=question, answer=answer
-            )
+            encoded_inputs = self._prepare_input_text(instruction=instruction)
             visual_features = prepare_emma_visual_features(
                 feature_dicts=feature_dicts,
                 tokenizer=self._tokenizer,
@@ -82,37 +80,27 @@ class SimBotActionInputBuilder:
             return decoder_input_ids
         return None
 
-    def _parse_dialogue_from_request(  # noqa: WPS231
+    def _parse_dialogue_from_request(
         self,
         request: GenerateRequest,
-    ) -> tuple[Optional[str], Optional[str], Optional[str]]:
+    ) -> Optional[str]:
         """Parse the dialogue for the current request."""
         instruction = None
-        question = None
-        answer = None
-        instruction_pos = None
-        dialogue_history = request.dialogue_history
-        for idx, utterance in enumerate(dialogue_history[::-1], 1):
-            if utterance.role == "user" and utterance.intent == "instruction":
-                instruction = utterance.utterance
-                instruction_pos = idx
-                break
+        dialogue = []
+        for utterance in request.dialogue_history:
+            if not utterance.utterance:
+                continue
+            utterance_text = f"{SPEAKER_TOKEN_MAP[utterance.role]} {utterance.utterance}"
+            if not utterance_text.endswith(("?", ".")):
+                utterance_text = f"{utterance_text}."
+            dialogue.append(utterance_text)
 
-        if instruction_pos is None:
-            logger.debug(f"No instruction for request: {request}")
-
+        if dialogue:
+            instruction = " ".join(dialogue)
+            logger.debug(f"Found instruction: {instruction}")
         else:
-            for utterance in dialogue_history[-instruction_pos:]:  # noqa: WPS440
-                if utterance.role == "agent" and utterance.intent == "clarify_question":
-                    question = utterance.utterance
-
-                if utterance.role == "user" and utterance.intent == "clarify_answer":
-                    answer = utterance.utterance
-
-            logger.debug(
-                f"Found instruction: {instruction}, question: {question} answer: {answer}"
-            )
-        return (instruction, question, answer)
+            logger.debug(f"No instruction for request: {request}")
+        return instruction
 
     def _parse_environment_history_from_request(
         self, request: GenerateRequest
@@ -152,25 +140,13 @@ class SimBotActionInputBuilder:
     def _prepare_input_text(
         self,
         instruction: str,
-        question: Optional[str] = None,
-        answer: Optional[str] = None,
     ) -> BatchEncoding:
         """Prepare the input text for the SimBotAction model.
 
         The input text follows the same template as with the action execution with the addition of
         the clarification question and answer (if provided).
         """
-        if not instruction.endswith("."):
-            instruction = f"{instruction}."
-        source_text = self._action_execution_prompt.format(instruction=instruction)
-        if question is not None and answer is not None:
-            source_question_answer = self._question_answer_prompt.format(
-                question=question, answer=answer
-            )
-            if not source_question_answer.endswith("."):
-                source_question_answer = f"{source_question_answer}."
-            source_text = f"{source_text} {source_question_answer}"
-
+        source_text = self._action_execution_prompt.format(instruction)
         return self._tokenizer.encode_plus(source_text, return_tensors="pt", truncation=True)
 
     def _create_emma_dataset_item(

@@ -58,12 +58,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         self._goto_proba = 0.5
         self._goto_paraphrases = ["go to", "move to", "find", "head to", "approach", "locate"]
         self._use_only_necessary_questions = use_only_necessary_questions
-        self._question_answer_prompts = [
-            "With question: {question} and answer: {answer}.",
-            "After asking: {question} and receiving: {answer}.",
-            "With clarification: {question} and answer: {answer}.",
-            "With question and answer: {question} {answer}.",
-        ]
+        self.question_answer_prompt = "<<driver>> {question} <<commander>> {answer}"
         arena_definitions = get_arena_definitions()
         self._object_assets_to_names = arena_definitions["asset_to_name"]
         self._image_width = arena_definitions["image_width"]
@@ -182,8 +177,9 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             source_text = Execute the instruction: go to the desk with a hammer on it. With question
             and answer: where is the hammer? the hammer is on the table in the robotics lab.
         """
+        source_text = f"<<commander>> {instance.instruction.instruction}"
         source_text = self._get_random_template_for_task(Task.action_execution).format(
-            instruction=instance.instruction.instruction
+            instruction=source_text
         )
         if instance.instruction.question_answers is not None:
             question_answer_candidates = instance.instruction.question_answers
@@ -193,11 +189,10 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 ]
             if question_answer_candidates:
                 question_answer = random.choice(question_answer_candidates)
-
-                question_answer_prompt = random.choice(self._question_answer_prompts).format(
+                question_answer_text = self.question_answer_prompt.format(
                     question=question_answer.question.lower(), answer=question_answer.answer
                 )
-                source_text = f"{source_text}. {question_answer_prompt}"
+                source_text = f"{source_text}. {question_answer_text}"
 
         if not source_text.endswith("."):
             source_text = f"{source_text}."

@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.0](https://github.com/emma-simbot/policy/compare/v1.0.0...v1.1.0) (2022-10-28)
+
+
+### Features
+
+* Replace QA format with speaker tokens ([#616](https://github.com/emma-simbot/policy/issues/616)) ([895cb8d](https://github.com/emma-simbot/policy/commit/895cb8d65c03459b0581b276f0a7d80aa4756747))
+
 ## 1.0.0 (2022-10-27)
 
 

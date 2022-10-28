@@ -23,7 +23,7 @@ jobs:
       run:
         shell: bash
 
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
     steps:
       - name: Checkout the repository

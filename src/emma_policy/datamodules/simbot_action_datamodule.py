@@ -1,10 +1,10 @@
-import json
 import random
 from collections import Counter
 from pathlib import Path
 from typing import Literal, Optional, Union
 
 import numpy as np
+from emma_datasets.constants.simbot.simbot import get_arena_definitions
 from emma_datasets.datamodels.datasets.simbot import SimBotAction, SimBotInstructionInstance
 from emma_datasets.datamodels.datasets.utils.simbot_utils import (
     get_object_from_action_object_metadata,
@@ -16,7 +16,7 @@ from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from emma_policy.datamodules.collate import collate_fn
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
-from emma_policy.datamodules.simbot_action_dataset import ARENA_DICT_FILE, SimBotActionDataset
+from emma_policy.datamodules.simbot_action_dataset import SimBotActionDataset
 
 
 SimBotAction_SPECIAL_TOKENS = [
@@ -83,9 +83,11 @@ class SimBotActionDataModule(LightningDataModule):
 
         # Model
         self._model_name = model_name
-        with open(ARENA_DICT_FILE) as in_file:
-            arena_constants = json.load(in_file)
-            self._object_assets_to_names = arena_constants["asset_to_name"]
+
+        arena_definitions = get_arena_definitions()
+        self._object_assets_to_names = arena_definitions["asset_to_name"]
+        self._image_width = arena_definitions["image_width"]
+        self._image_height = arena_definitions["image_height"]
 
     def prepare_data(self) -> None:
         """Perform any preparation steps necessary before loading the data to the model."""

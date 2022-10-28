@@ -1,15 +1,14 @@
-import json
 import random
 from pathlib import Path
 from typing import Any
 
 import torch
+from emma_datasets.constants.simbot.simbot import get_arena_definitions
 from emma_datasets.datamodels.datasets.simbot import SimBotAction, SimBotInstructionInstance
 from overrides import overrides
 from torchvision.ops import masks_to_boxes
 from transformers import PreTrainedTokenizer
 
-from emma_policy.common.settings import Settings
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
 from emma_policy.datamodules.emma_dataclasses import (
     EmmaDatasetItem,
@@ -18,12 +17,6 @@ from emma_policy.datamodules.emma_dataclasses import (
 )
 from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.utils import decompress_simbot_mask, get_logger
-
-
-settings = Settings()
-ARENA_DICT_FILE = settings.paths.constants.joinpath("arena_definitions.json")
-IMAGE_WIDTH = 300
-IMAGE_HEIGHT = 300
 
 
 logger = get_logger(__name__)
@@ -71,9 +64,10 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             "With clarification: {question} and answer: {answer}.",
             "With question and answer: {question} {answer}.",
         ]
-        with open(ARENA_DICT_FILE) as in_file:
-            arena_constants = json.load(in_file)
-            self._object_assets_to_names = arena_constants["asset_to_name"]
+        arena_definitions = get_arena_definitions()
+        self._object_assets_to_names = arena_definitions["asset_to_name"]
+        self._image_width = arena_definitions["image_width"]
+        self._image_height = arena_definitions["image_height"]
 
     @overrides(check_signature=False)
     def __getitem__(self, index: int) -> EmmaDatasetItem:
@@ -325,8 +319,8 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             gt_binary_mask = decompress_simbot_mask(gt_object_dict["object"]["mask"])
             ground_truth_bbox = masks_to_boxes(torch.tensor(gt_binary_mask).unsqueeze(0))
 
-        ground_truth_bbox[:, (0, 2)] /= IMAGE_WIDTH
-        ground_truth_bbox[:, (1, 3)] /= IMAGE_HEIGHT
+        ground_truth_bbox[:, (0, 2)] /= self._image_width
+        ground_truth_bbox[:, (1, 3)] /= self._image_height
 
         matched_indices, ground_truth_flags = self._best_match_features(
             ground_truth_bbox=ground_truth_bbox,

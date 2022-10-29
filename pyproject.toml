@@ -107,6 +107,10 @@ requests-mock = "^1.9.3"
 [tool.poetry.group.demo.dependencies]
 gradio = "^3.7"
 
+
+[tool.poetry.group.web.dependencies]
+fastapi = {extras = ["all"], version = "^0.85.1"}
+
 [tool.black]
 line-length = 99
 

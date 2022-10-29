@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.1](https://github.com/emma-simbot/policy/compare/v1.1.0...v1.1.1) (2022-10-29)
+
+
+### Bug Fixes
+
+* re-add fastapi as a web dependency and update the dockerfile ([cf2c778](https://github.com/emma-simbot/policy/commit/cf2c77806cee2308180bd409afcae1810bb20e2e))
+
 ## [1.1.0](https://github.com/emma-simbot/policy/compare/v1.0.0...v1.1.0) (2022-10-28)
 
 

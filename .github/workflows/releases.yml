@@ -61,23 +61,6 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
 
-      - name: Install PoethePoet
-        run: poetry self add 'poethepoet[poetry_plugin]'
-
-      - name: Load cached Python
-        uses: tespkg/actions-cache@v1
-        id: python-cache
-        with:
-          path: ~/.cache/pypoetry/virtualenvs
-          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}-${{ hashFiles('pyproject.toml') }}
-          bucket: ${{ secrets.AWS_S3_BUCKET_NAME }}
-          accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-      - name: Install dependencies
-        run: |
-          poetry install --all-extras
-
       - name: Get npm cache directory
         id: npm-cache-dir
         run: |

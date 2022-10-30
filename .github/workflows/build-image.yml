@@ -48,11 +48,12 @@ jobs:
       - name: Build, tag, and push the docker image
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_BASE_NAME: ${{ steps.login-ecr.outputs.registry }}/emma/base
+          BASE_IMAGE_NAME: ${{ steps.login-ecr.outputs.registry }}/emma/base
+          BUILDER_IMAGE_NAME: ${{ steps.login-ecr.outputs.registry }}/emma/builder
           RELEASE_VERSION: ${{ steps.release-tag.outputs.release }}
           TORCH_VERSION_SUFFIX: ${{ matrix.torch_version_suffix }}
         run: |
           IMAGE_TAG=$(echo "$RELEASE_VERSION" | cut -d v -f 2)
           IMAGE_TAG=$(echo "$IMAGE_TAG$TORCH_VERSION_SUFFIX" | tr + -)
-          docker build --build-arg IMAGE_BASE_NAME --build-arg TORCH_VERSION_SUFFIX --load -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker build --build-arg BUILDER_IMAGE_NAME --build-arg BASE_IMAGE_NAME --build-arg TORCH_VERSION_SUFFIX --load -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
           docker push -a $REGISTRY/$REPOSITORY

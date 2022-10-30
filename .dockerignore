@@ -4,6 +4,7 @@ tests/
 demos/
 logs/
 notebooks/
+scripts/
 **/*_*cache*_*
 /.*
 *.lock
@@ -13,3 +14,4 @@ notebooks/
 !pyproject.toml
 !poetry.lock
 !README.md
+Dockerfile

@@ -146,7 +146,7 @@ class SimBotActionInputBuilder:
         The input text follows the same template as with the action execution with the addition of
         the clarification question and answer (if provided).
         """
-        source_text = self._action_execution_prompt.format(instruction)
+        source_text = self._action_execution_prompt.format(instruction=instruction)
         return self._tokenizer.encode_plus(source_text, return_tensors="pt", truncation=True)
 
     def _create_emma_dataset_item(

@@ -62,3 +62,6 @@ def test_simbot_action_builder_parses_dialogue_history(
     builder = SimBotActionInputBuilder(tokenizer=tokenizer)
     output = builder._parse_dialogue_from_request(input_request)
     assert output == target
+    if output is not None:
+        input_text = builder._prepare_input_text(instruction=output)
+        assert input_text

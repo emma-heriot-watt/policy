@@ -50,14 +50,14 @@ shell = """
 		"""
 interpreter = "bash"
 
-[[tool.poe.tasks.install-everything-else]]
-help = 'Download the spacy pipeline'
-shell = """python -m spacy download en_core_web_lg"""
+[[tool.poe.tasks.download-training-data]]
+help = "Download mscoco_resplit_train.json"
+shell = "wget -O storage/constants/mscoco_resplit_train.json https://www.dropbox.com/sh/m26a281y97ok6wm/AAA-97WOmyvcWLaaf2jFRrT8a/mscoco_resplit_train.json\\?dl\\=0"
 interpreter = "bash"
 
 [[tool.poe.tasks.install-everything-else]]
-help = "Download mscoco_resplit_train.json"
-shell = "wget -O storage/constants/mscoco_resplit_train.json https://www.dropbox.com/sh/m26a281y97ok6wm/AAA-97WOmyvcWLaaf2jFRrT8a/mscoco_resplit_train.json\\?dl\\=0"
+help = 'Download the spacy pipeline'
+shell = """python -m spacy download en_core_web_lg"""
 interpreter = "bash"
 
 [tool.poetry.dependencies]
@@ -109,7 +109,7 @@ gradio = "^3.7"
 
 
 [tool.poetry.group.web.dependencies]
-fastapi = {extras = ["all"], version = "^0.85.1"}
+fastapi = { extras = ["all"], version = "^0.85.1" }
 
 [tool.black]
 line-length = 99

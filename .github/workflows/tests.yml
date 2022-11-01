@@ -59,6 +59,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install --all-extras
+          poe download-training-data
 
       - name: Run test suite
         run: |

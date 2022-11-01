@@ -75,6 +75,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install --all-extras
+          poe download-training-data
 
       - name: Load mypy cache
         uses: tespkg/actions-cache@v1
@@ -151,6 +152,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install --all-extras
+          poe download-training-data
 
       - name: Run flake8
         env:

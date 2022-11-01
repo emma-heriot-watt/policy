@@ -1,5 +1,4 @@
 storage/
-!storage/constants
 tests/
 demos/
 logs/

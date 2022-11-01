@@ -21,7 +21,8 @@ RUN poetry install --only main,web \
 # hadolint ignore=DL3006
 FROM ${BASE_IMAGE_NAME} as runner
 
-COPY --from=builder ${PYSETUP_PATH} ${PYSETUP_PATH}
+COPY --from=builder ${PYSETUP_PATH}/repo ${PYSETUP_PATH}/repo
+COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 WORKDIR ${PYSETUP_PATH}/repo
 

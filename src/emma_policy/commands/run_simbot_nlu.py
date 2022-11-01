@@ -59,6 +59,22 @@ def load_model(checkpoint_path: str, model_name: str, device: str) -> SimBotNLUE
     return model
 
 
+def rule_based_ambiguity_check(action: str, frame_features: list[dict[str, Any]]) -> str:
+    """Change clarification to action if you can't find multiples of the predicted object."""
+    split_parts = action.split(" ")
+    object_name = " ".join(split_parts[1:]) if len(split_parts) > 1 else None
+    class_labels = frame_features[0].get("class_labels", None)
+    if object_name is None or class_labels is None:
+        return action
+    found_objects = [object_class.lower() == object_name for object_class in class_labels]
+    # For now, overwrite the NLU only if there are no multiples in front of you
+    # So if there's only one object that you are looking at, assume no ambiguity
+    if sum(found_objects) == 1:
+        action = "<act>"
+
+    return action
+
+
 @app.on_event("startup")
 async def startup_event() -> None:
     """Run specific functions when starting up the API."""
@@ -115,6 +131,10 @@ async def generate(request: Request, response: Response) -> str:
         try:
             with torch.no_grad():
                 action = api_store["model"].inference_step(batch)[0]
+            action = rule_based_ambiguity_check(
+                action=action,
+                frame_features=simbot_request.environment_history[-1].features,
+            )
 
         except Exception as err:
             # TODO: report session ID for better debugging

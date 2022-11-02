@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.3.0](https://github.com/emma-simbot/policy/compare/v1.2.0...v1.3.0) (2022-11-02)
+
+
+### Features
+
+* Decode images ([#618](https://github.com/emma-simbot/policy/issues/618)) ([a02f41b](https://github.com/emma-simbot/policy/commit/a02f41bdcf1eee4e09a5827609e17f9123064466))
+
 ## [1.2.0](https://github.com/emma-simbot/policy/compare/v1.1.2...v1.2.0) (2022-11-01)
 
 

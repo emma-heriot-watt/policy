@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.4.1](https://github.com/emma-simbot/policy/compare/v1.4.0...v1.4.1) (2022-11-03)
+
+
+### Bug Fixes
+
+* Fix bug from NLU imports ([#621](https://github.com/emma-simbot/policy/issues/621)) ([26cbdca](https://github.com/emma-simbot/policy/commit/26cbdca4618e0371471ae4e7ede67427b2f67d6b))
+
 ## [1.4.0](https://github.com/emma-simbot/policy/compare/v1.3.0...v1.4.0) (2022-11-03)
 
 

@@ -8,6 +8,10 @@ from emma_datasets.datamodels.datasets.simbot import (
     SimBotClarificationTypes,
     SimBotInstructionInstance,
     SimBotQA,
+    get_arena_definitions,
+)
+from emma_datasets.datamodels.datasets.utils.simbot.instruction_processing import (
+    get_object_from_action_object_metadata,
 )
 from overrides import overrides
 from transformers import PreTrainedTokenizer
@@ -65,6 +69,8 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             self.dataset_size = dataset_size
         else:
             self.dataset_size = len(self.db)
+        arena_definitions = get_arena_definitions()
+        self._object_assets_to_names = arena_definitions["asset_to_name"]
 
     @overrides(check_signature=False)
     def __len__(self) -> int:
@@ -168,16 +174,46 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
     def _get_nlu_questions(
         self, instance: SimBotInstructionInstance
     ) -> tuple[list[str], torch.Tensor]:
+        """question_type_labels is a one-hot encoding of the question type."""
+        questions: list[str] = []
+        question_type_labels = torch.zeros(len(self.question_type_to_id), dtype=torch.int)
+        if not instance.synthetic and instance.instruction.question_answers is not None:
+            questions, question_type_labels = self._get_nlu_human_questions(instance)
+        elif instance.ambiguous:
+            questions, question_type_labels = self._get_nlu_synthetic_questions(instance)
+
+        return questions, question_type_labels
+
+    def _get_nlu_human_questions(
+        self, instance: SimBotInstructionInstance
+    ) -> tuple[list[str], torch.Tensor]:
         questions = []
         question_type_labels = torch.zeros(len(self.question_type_to_id), dtype=torch.int)
-        if instance.instruction.question_answers is not None:
-            for question in instance.instruction.question_answers:
-                if self._skip_question(question):
-                    continue
-                questions.append(self._prepare_question_nlu_target(question))
-                index = self.question_type_to_id[question.question_type]
-                question_type_labels[index] = 1
+        for question in instance.instruction.question_answers:
+            if self._skip_question(question):
+                continue
+            questions.append(self._prepare_question_nlu_target(question))
+            index = self.question_type_to_id[question.question_type]
+            question_type_labels[index] = 1
         return questions, question_type_labels
+
+    def _get_nlu_synthetic_questions(
+        self, instance: SimBotInstructionInstance
+    ) -> tuple[list[str], torch.Tensor]:
+        question_type = SimBotClarificationTypes.disambiguation
+        question = f"<clarify><{question_type.name}>"
+        action_type = instance.actions[-1].type
+        action_metadata = getattr(instance.actions[-1], action_type.lower())
+        object_metadata = action_metadata.get("object", None)["id"]
+        if object_metadata is not None:
+            question_target = get_object_from_action_object_metadata(
+                object_metadata, self._object_assets_to_names
+            )
+            question = f"{question} {question_target.lower()}"
+        # Question 1-hot encoding
+        question_type_labels = torch.zeros(len(self.question_type_to_id), dtype=torch.int)
+        question_type_labels[self.question_type_to_id[question_type]] = 1
+        return [question], question_type_labels
 
     def _prepare_question_nlu_target(self, question: SimBotQA) -> str:
         question_as_target = f"<clarify><{question.question_type.name}>"

@@ -114,14 +114,17 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             action_metadata = action.goto
             action_object_metadata = action_metadata.get("object", None)
 
-            proba = random.random() > self._goto_proba
-            if action_object_metadata is not None and "id" in action_object_metadata and proba:
+            if instance.keep_only_target_frame:
+                ignore = True
+            else:
+                ignore = random.random() > self._goto_proba
+
+            if action_object_metadata is not None and "id" in action_object_metadata and ignore:
                 source_text, target_text, visual_features = self._ignore_goto_redundant_frames(
                     action=action,
                     source_text=source_text,
                     target_text=target_text,
                     visual_features=visual_features,
-                    frames=frames,
                     objects_per_frame=objects_per_frame,
                 )
 
@@ -341,7 +344,6 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         source_text: str,
         target_text: str,
         visual_features: EmmaVisualFeatures,
-        frames: list[str],
         objects_per_frame: list[int],
     ) -> tuple[str, str, EmmaVisualFeatures]:
         """Remove the additional input frames from the goto synthetic instructions."""

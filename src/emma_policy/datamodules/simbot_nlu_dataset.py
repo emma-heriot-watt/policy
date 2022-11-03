@@ -4,11 +4,11 @@ from pathlib import Path
 from typing import Union
 
 import torch
+from emma_datasets.constants.simbot.simbot import get_arena_definitions
 from emma_datasets.datamodels.datasets.simbot import (
     SimBotClarificationTypes,
     SimBotInstructionInstance,
     SimBotQA,
-    get_arena_definitions,
 )
 from emma_datasets.datamodels.datasets.utils.simbot.instruction_processing import (
     get_object_from_action_object_metadata,
@@ -63,14 +63,14 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         }
         self.is_train = is_train
         self.data_intents: list[SimBotNLUIntents] = []
+        arena_definitions = get_arena_definitions()
+        self._object_assets_to_names = arena_definitions["asset_to_name"]
         if is_train:
             index_db_map, dataset_size = self._unpack_annotations()
             self.index_db_map = index_db_map
             self.dataset_size = dataset_size
         else:
             self.dataset_size = len(self.db)
-        arena_definitions = get_arena_definitions()
-        self._object_assets_to_names = arena_definitions["asset_to_name"]
 
     @overrides(check_signature=False)
     def __len__(self) -> int:

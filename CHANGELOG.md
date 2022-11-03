@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.4.0](https://github.com/emma-simbot/policy/compare/v1.3.0...v1.4.0) (2022-11-03)
+
+
+### Features
+
+* Update NLU and Action Prediction with synthetic ambiguous go-to instructions ([#614](https://github.com/emma-simbot/policy/issues/614)) ([85381fe](https://github.com/emma-simbot/policy/commit/85381fe779751cf32abb0c651f9f88d384905f9f))
+
 ## [1.3.0](https://github.com/emma-simbot/policy/compare/v1.2.0...v1.3.0) (2022-11-02)
 
 

@@ -105,6 +105,7 @@ class SimBotNLUDataModule(LightningDataModule):
             dataset_db_path=self._train_db_file,
             tokenizer=self.tokenizer,
             is_train=True,
+            allow_paraphrasing=True,
         )
 
         if self.balance_dataset:
@@ -114,12 +115,14 @@ class SimBotNLUDataModule(LightningDataModule):
             dataset_db_path=self._valid_db_file,
             tokenizer=self.tokenizer,
             is_train=False,
+            allow_paraphrasing=False,
         )
 
         self._test_dataset = SimBotNLUDataset(
             dataset_db_path=self._test_db_file,
             tokenizer=self.tokenizer,
             is_train=False,
+            allow_paraphrasing=False,
         )
 
     def train_dataloader(self) -> DataLoader[EmmaDatasetBatch]:

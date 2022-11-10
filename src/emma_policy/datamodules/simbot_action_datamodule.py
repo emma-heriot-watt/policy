@@ -6,7 +6,7 @@ from typing import Literal, Optional, Union
 import numpy as np
 from emma_datasets.constants.simbot.simbot import get_arena_definitions
 from emma_datasets.datamodels.datasets.simbot import SimBotAction, SimBotInstructionInstance
-from emma_datasets.datamodels.datasets.utils.simbot.instruction_processing import (
+from emma_datasets.datamodels.datasets.utils.simbot_utils.instruction_processing import (
     get_object_from_action_object_metadata,
 )
 from emma_datasets.db import DatasetDb
@@ -113,6 +113,7 @@ class SimBotActionDataModule(LightningDataModule):
             tokenizer=self._tokenizer,
             max_frames=self._max_frames,
             iou_threshold=self._iou_threshold,
+            allow_paraphrasing=True,
         )
 
         self._training_sampler_weights: Optional[list[float]] = None
@@ -122,6 +123,7 @@ class SimBotActionDataModule(LightningDataModule):
             tokenizer=self._tokenizer,
             max_frames=self._max_frames,
             iou_threshold=self._iou_threshold,
+            allow_paraphrasing=False,
         )
 
         self._test_dataset = SimBotActionDataset(
@@ -129,6 +131,7 @@ class SimBotActionDataModule(LightningDataModule):
             tokenizer=self._tokenizer,
             max_frames=self._max_frames,
             iou_threshold=self._iou_threshold,
+            allow_paraphrasing=False,
         )
 
     def train_dataloader(self) -> DataLoader[EmmaDatasetBatch]:

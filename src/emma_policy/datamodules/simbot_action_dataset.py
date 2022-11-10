@@ -1,10 +1,18 @@
 import random
 from pathlib import Path
-from typing import Any
 
 import torch
 from emma_datasets.constants.simbot.simbot import get_arena_definitions
-from emma_datasets.datamodels.datasets.simbot import SimBotAction, SimBotInstructionInstance
+from emma_datasets.datamodels.datasets.utils.simbot_utils.instruction_processing import (
+    get_object_from_action_object_metadata,
+)
+from emma_datasets.datamodels.datasets.utils.simbot_utils.paraphrasers import (
+    InstructionParaphraser,
+)
+from emma_datasets.datamodels.datasets.utils.simbot_utils.simbot_datamodels import (
+    SimBotAction,
+    SimBotInstructionInstance,
+)
 from overrides import overrides
 from torchvision.ops import masks_to_boxes
 from transformers import PreTrainedTokenizer
@@ -34,6 +42,19 @@ def mask_past_target_actions(
     return target_token_ids
 
 
+def get_simbot_instruction_paraphrase(
+    paraphraser: InstructionParaphraser, instance: SimBotInstructionInstance
+) -> str:
+    """Paraphrase a SimBot instruction."""
+    action_type = instance.actions[0].type.lower()
+    action_metadata = instance.actions[0].get_action_data()
+    return paraphraser(
+        action_type=action_type,
+        object_id=action_metadata["object"]["id"],
+        object_attributes=action_metadata["object"]["attributes"],
+    )
+
+
 class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
     """Dataset for SimBotAction.
 
@@ -48,6 +69,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         iou_threshold: float = 0.5,
         max_frames: int = 15,
         use_only_necessary_questions: bool = True,
+        allow_paraphrasing: bool = False,
     ) -> None:
 
         super().__init__(
@@ -56,13 +78,14 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
 
         self._iou_threshold = iou_threshold
         self._goto_proba = 0.5
-        self._goto_paraphrases = ["go to", "move to", "find", "head to", "approach", "locate"]
         self._use_only_necessary_questions = use_only_necessary_questions
         self.question_answer_prompt = "<<driver>> {question} <<commander>> {answer}"
         arena_definitions = get_arena_definitions()
         self._object_assets_to_names = arena_definitions["asset_to_name"]
         self._image_width = arena_definitions["image_width"]
         self._image_height = arena_definitions["image_height"]
+        self._paraphraser = InstructionParaphraser()
+        self._allow_paraphrasing = allow_paraphrasing
 
     @overrides(check_signature=False)
     def __getitem__(self, index: int) -> EmmaDatasetItem:
@@ -74,14 +97,10 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         instance = SimBotInstructionInstance.parse_raw(instance_str)
         return self.simbot_action_execution(instance)
 
-    def simbot_action_execution(  # noqa: WPS231
-        self, instance: SimBotInstructionInstance
-    ) -> EmmaDatasetItem:
+    def simbot_action_execution(self, instance: SimBotInstructionInstance) -> EmmaDatasetItem:
         """Process the instance for the SimBot action task."""
         if instance.instruction is None:
-            raise AssertionError(
-                "Instructions for this instance must exist. Make sure this instance is connected to the right task!"
-            )
+            raise AssertionError("Instructions for this instance must exist.")
         actions_ids_in_instruction = instance.instruction.actions
         action_ids_in_instance = [action.id for action in instance.actions]
         if action_ids_in_instance != actions_ids_in_instruction:
@@ -92,22 +111,10 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         visual_features = self._load_visual_features(
             features_path=instance.features_path, modality=instance.modality
         )
-        frames = []
-        objects_per_frame = []
-        for fpath in instance.features_path:
-            for fdict in torch.load(fpath)["frames"]:
-                frames.append(fdict["image"])
-                objects_per_frame.append(fdict["features"]["bbox_coords"].shape[0])
 
-        source_text = self._prepare_source_text(instance=instance)
+        frames, objects_per_frame = self._get_frames_and_objects(instance.features_path)
 
-        target_text = self._prepare_target_text(
-            instance=instance,
-            visual_features=visual_features,
-            frames=frames,
-            objects_per_frame=objects_per_frame,
-        )
-
+        paraphrase_instruction = instance.paraphrasable
         if instance.synthetic and "goto" in instance.actions[-1].type.lower():
             # action_metadata["object"]["colorImageIndex"]
             action = instance.actions[-1]
@@ -120,13 +127,24 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 ignore = random.random() > self._goto_proba
 
             if action_object_metadata is not None and "id" in action_object_metadata and ignore:
-                source_text, target_text, visual_features = self._ignore_goto_redundant_frames(
+                paraphrase_instruction = True
+                visual_features, frames, objects_per_frame = self._ignore_goto_redundant_frames(
                     action=action,
-                    source_text=source_text,
-                    target_text=target_text,
                     visual_features=visual_features,
+                    frames=frames,
                     objects_per_frame=objects_per_frame,
                 )
+
+        source_text = self._prepare_source_text(
+            instance=instance, paraphrase_instruction=paraphrase_instruction
+        )
+
+        target_text = self._prepare_target_text(
+            instance=instance,
+            visual_features=visual_features,
+            frames=frames,
+            objects_per_frame=objects_per_frame,
+        )
 
         input_encoding = self.tokenizer.encode_plus(
             source_text, return_tensors=self._return_tensor_type, truncation=True
@@ -170,7 +188,9 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             raw_target=raw_target,
         )
 
-    def _prepare_source_text(self, instance: SimBotInstructionInstance) -> str:
+    def _prepare_source_text(
+        self, instance: SimBotInstructionInstance, paraphrase_instruction: bool
+    ) -> str:
         """Prepare the source text.
 
         The source text allows the same template as the action execution task
@@ -180,7 +200,11 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             source_text = Execute the instruction: go to the desk with a hammer on it. With question
             and answer: where is the hammer? the hammer is on the table in the robotics lab.
         """
-        source_text = f"<<commander>> {instance.instruction.instruction}"
+        if self._allow_paraphrasing and paraphrase_instruction:
+            instruction = get_simbot_instruction_paraphrase(self._paraphraser, instance)
+        else:
+            instruction = instance.instruction.instruction
+        source_text = f"<<commander>> {instruction}"
         source_text = self._get_random_template_for_task(Task.action_execution).format(
             instruction=source_text
         )
@@ -220,22 +244,27 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         target_text = []
         for action in instance.actions:
             action_type = action.type
-            action_metadata = getattr(action, action_type.lower())
+            action_metadata = action.get_action_data()
             action_object_metadata = action_metadata.get("object", None)
             # case 1: navigation actions except GoTo
             if action_type in {"Look", "Move", "Rotate", "Turn"}:
                 target_text.append(f"{action_type} {action_metadata['direction']}.")
             # case 2: room/object navigation or interaction action
             elif action_object_metadata is not None:
+                object_id = action_object_metadata.get("id", None)
                 # action with a specific object
-                if "id" in action_object_metadata:
-                    object_name = self._get_object_from_action_object_metadata(
-                        action_object_metadata
+                if object_id is not None:
+                    object_name = get_object_from_action_object_metadata(
+                        object_asset=action_object_metadata["id"],
+                        object_assets_to_names=self._object_assets_to_names,
+                    )
+                    image_index = min(
+                        action_metadata["object"]["colorImageIndex"], len(frames) - 1
                     )
                     object_name_with_tokens = self._map_object_to_visual_token(
                         object_name=object_name,
                         action=action,
-                        image_index=action_metadata["object"]["colorImageIndex"],
+                        image_index=image_index,
                         visual_features=visual_features,
                         frames=frames,
                         objects_per_frame=objects_per_frame,
@@ -253,34 +282,6 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         if instance.actions[-1].final:
             target_text[-1] = f"{target_text[-1][:-1]} <stop>."
         return " ".join(target_text).lower()
-
-    def _get_object_from_action_object_metadata(
-        self, action_object_metadata: dict[str, Any]
-    ) -> str:
-        """Map the object asset for a given action to its readable name.
-
-        Example:
-            (object_asset, object_name) = (Desk_01_1000, Desk)
-        """
-        object_asset = action_object_metadata["id"]
-        # Case1: Object asset in action matches exactly with object assets
-        object_name_candidate = self._object_assets_to_names.get(object_asset, None)
-        if object_name_candidate is not None:
-            return object_name_candidate
-
-        # Case2: The object asset in action contains a substring that matches with the object assests
-        # Example: Desk_01_1000
-        # Because the assets can have additional tags we need to remove these tags
-        # and check if they asset after removing the tags match an object label
-        object_asset_components = object_asset.split("_")
-
-        for idx in range(len(object_asset_components), 0, -1):
-            # tries to match the longest sub-string first
-            object_name_candidate = "_".join(object_asset_components[:idx])
-            object_name_candidate = self._object_assets_to_names.get(object_name_candidate, None)
-            if object_name_candidate is not None:
-                return object_name_candidate
-        return object_asset
 
     def _map_object_to_visual_token(
         self,
@@ -304,7 +305,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             offset_idx : offset_idx + objects_per_frame[frame_index], :
         ]
 
-        gt_object_dict = getattr(action, action.type.lower())
+        gt_object_dict = action.get_action_data()
         # If the groundtruth object is a sticky note, the groundtruth bbox
         # coordinates are currently provided directly in the mask
         # TODO: this could potentially be improved if we have the segmentation masks for the sticky notes as well instead of the bounding boxes
@@ -341,28 +342,11 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
     def _ignore_goto_redundant_frames(
         self,
         action: SimBotAction,
-        source_text: str,
-        target_text: str,
         visual_features: EmmaVisualFeatures,
+        frames: list[str],
         objects_per_frame: list[int],
-    ) -> tuple[str, str, EmmaVisualFeatures]:
+    ) -> tuple[EmmaVisualFeatures, list[str], list[int]]:
         """Remove the additional input frames from the goto synthetic instructions."""
-        # paraphrase the goto synthetic instruction
-        # all these instructions have the form go to OBJECT_NAME
-        paraphrase = random.choice(self._goto_paraphrases)
-        source_text = source_text.replace("go to", paraphrase)
-
-        # replace the <frame_token_X> with <frame_token_1> in the target_text
-        # target_text = "goto table <frame_token_2> <vis_token_1> <stop>."
-        target_text_list = []
-        for text in target_text.split(" "):
-            if "frame_token" in text:
-                target_text_list.append("<frame_token_1>")
-            else:
-                target_text_list.append(text)
-        # target_text = "goto table <frame_token_1> <vis_token_1> <stop>."
-        target_text = " ".join(target_text_list)
-
         # remove the irrelevant frames from the visual features
         # find the number of objects for the golden frame and keep only
         # the relevant object features, classes, coordinates, visual tokens, and masks
@@ -404,4 +388,15 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             original_frame_order=torch.tensor([0]),
         )
 
-        return source_text, target_text, truncated_visual_features
+        return truncated_visual_features, [frames[frame_index]], [objects_per_frame[frame_index]]
+
+    def _get_frames_and_objects(self, features_paths: list[Path]) -> tuple[list[str], list[int]]:
+        """Get a the image names and the number of detected object per frame."""
+        frames = []
+        objects_per_frame = []
+        for fpath in features_paths:
+            frames = torch.load(fpath)["frames"]
+            for fdict in frames:
+                frames.append(fdict["image"])
+                objects_per_frame.append(fdict["features"]["bbox_coords"].shape[0])
+        return frames, objects_per_frame

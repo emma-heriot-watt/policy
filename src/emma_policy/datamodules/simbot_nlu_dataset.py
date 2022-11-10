@@ -5,19 +5,23 @@ from typing import Union
 
 import torch
 from emma_datasets.constants.simbot.simbot import get_arena_definitions
-from emma_datasets.datamodels.datasets.simbot import (
+from emma_datasets.datamodels.datasets.utils.simbot_utils.instruction_processing import (
+    get_object_from_action_object_metadata,
+)
+from emma_datasets.datamodels.datasets.utils.simbot_utils.paraphrasers import (
+    InstructionParaphraser,
+)
+from emma_datasets.datamodels.datasets.utils.simbot_utils.simbot_datamodels import (
     SimBotClarificationTypes,
     SimBotInstructionInstance,
     SimBotQA,
-)
-from emma_datasets.datamodels.datasets.utils.simbot.instruction_processing import (
-    get_object_from_action_object_metadata,
 )
 from overrides import overrides
 from transformers import PreTrainedTokenizer
 
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
+from emma_policy.datamodules.simbot_action_dataset import get_simbot_instruction_paraphrase
 from emma_policy.utils import get_logger
 
 
@@ -45,6 +49,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         max_frames: int = 4,
         merged_annotations: bool = True,
         is_train: bool = True,
+        allow_paraphrasing: bool = False,
     ) -> None:
 
         if not merged_annotations:
@@ -71,6 +76,8 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             self.dataset_size = dataset_size
         else:
             self.dataset_size = len(self.db)
+        self._allow_paraphrasing = allow_paraphrasing
+        self._paraphraser = InstructionParaphraser()
 
     @overrides(check_signature=False)
     def __len__(self) -> int:
@@ -105,7 +112,11 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         question_type_labels: torch.Tensor,
     ) -> EmmaDatasetItem:
         """Process the instance for the Simbot NLU task."""
-        source_text = f"Predict the system act: {instance.instruction.instruction}"
+        if self._allow_paraphrasing and instance.paraphrasable:
+            instruction = get_simbot_instruction_paraphrase(self._paraphraser, instance)
+        else:
+            instruction = instance.instruction.instruction
+        source_text = f"Predict the system act: {instruction}"
         input_encoding = self.tokenizer.encode_plus(
             source_text, return_tensors=self._return_tensor_type, truncation=True
         )

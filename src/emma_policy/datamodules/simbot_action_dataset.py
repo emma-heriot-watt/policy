@@ -12,6 +12,7 @@ from emma_datasets.datamodels.datasets.utils.simbot_utils.paraphrasers import (
 from emma_datasets.datamodels.datasets.utils.simbot_utils.simbot_datamodels import (
     SimBotAction,
     SimBotInstructionInstance,
+    SimBotObjectAttributes,
 )
 from overrides import overrides
 from torchvision.ops import masks_to_boxes
@@ -43,15 +44,19 @@ def mask_past_target_actions(
 
 
 def get_simbot_instruction_paraphrase(
-    paraphraser: InstructionParaphraser, instance: SimBotInstructionInstance
+    paraphraser: InstructionParaphraser, instance: SimBotInstructionInstance, object_name: str
 ) -> str:
     """Paraphrase a SimBot instruction."""
     action_type = instance.actions[0].type.lower()
-    action_metadata = instance.actions[0].get_action_data()
+    action_metadata = instance.actions[0].get_action_data
+    attributes = SimBotObjectAttributes(
+        **action_metadata["object"].get("attributes", {"readable_name": object_name})
+    )
+
     return paraphraser(
         action_type=action_type,
         object_id=action_metadata["object"]["id"],
-        object_attributes=action_metadata["object"]["attributes"],
+        object_attributes=attributes,
     )
 
 
@@ -77,7 +82,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         )
 
         self._iou_threshold = iou_threshold
-        self._goto_proba = 0.5
+        self._goto_proba = 0
         self._use_only_necessary_questions = use_only_necessary_questions
         self.question_answer_prompt = "<<driver>> {question} <<commander>> {answer}"
         arena_definitions = get_arena_definitions()
@@ -201,7 +206,14 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             and answer: where is the hammer? the hammer is on the table in the robotics lab.
         """
         if self._allow_paraphrasing and paraphrase_instruction:
-            instruction = get_simbot_instruction_paraphrase(self._paraphraser, instance)
+            action_metadata = instance.actions[0].get_action_data["object"]
+            object_name = get_object_from_action_object_metadata(
+                object_asset=action_metadata["id"],
+                object_assets_to_names=self._object_assets_to_names,
+            )
+            instruction = get_simbot_instruction_paraphrase(
+                self._paraphraser, instance, object_name
+            )
         else:
             instruction = instance.instruction.instruction
         source_text = f"<<commander>> {instruction}"
@@ -244,7 +256,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         target_text = []
         for action in instance.actions:
             action_type = action.type
-            action_metadata = action.get_action_data()
+            action_metadata = action.get_action_data
             action_object_metadata = action_metadata.get("object", None)
             # case 1: navigation actions except GoTo
             if action_type in {"Look", "Move", "Rotate", "Turn"}:
@@ -258,9 +270,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                         object_asset=action_object_metadata["id"],
                         object_assets_to_names=self._object_assets_to_names,
                     )
-                    image_index = min(
-                        action_metadata["object"]["colorImageIndex"], len(frames) - 1
-                    )
+                    image_index = action_metadata["object"]["colorImageIndex"]
                     object_name_with_tokens = self._map_object_to_visual_token(
                         object_name=object_name,
                         action=action,
@@ -305,7 +315,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             offset_idx : offset_idx + objects_per_frame[frame_index], :
         ]
 
-        gt_object_dict = action.get_action_data()
+        gt_object_dict = action.get_action_data
         # If the groundtruth object is a sticky note, the groundtruth bbox
         # coordinates are currently provided directly in the mask
         # TODO: this could potentially be improved if we have the segmentation masks for the sticky notes as well instead of the bounding boxes
@@ -395,8 +405,8 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         frames = []
         objects_per_frame = []
         for fpath in features_paths:
-            frames = torch.load(fpath)["frames"]
-            for fdict in frames:
+            frame_feats = torch.load(fpath)["frames"]
+            for fdict in frame_feats:
                 frames.append(fdict["image"])
                 objects_per_frame.append(fdict["features"]["bbox_coords"].shape[0])
         return frames, objects_per_frame

@@ -113,7 +113,14 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
     ) -> EmmaDatasetItem:
         """Process the instance for the Simbot NLU task."""
         if self._allow_paraphrasing and instance.paraphrasable:
-            instruction = get_simbot_instruction_paraphrase(self._paraphraser, instance)
+            action_metadata = instance.actions[0].get_action_data["object"]
+            object_name = get_object_from_action_object_metadata(
+                object_asset=action_metadata["id"],
+                object_assets_to_names=self._object_assets_to_names,
+            )
+            instruction = get_simbot_instruction_paraphrase(
+                self._paraphraser, instance, object_name
+            )
         else:
             instruction = instance.instruction.instruction
         source_text = f"Predict the system act: {instruction}"

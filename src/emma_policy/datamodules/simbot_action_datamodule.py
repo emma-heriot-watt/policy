@@ -14,12 +14,13 @@ from emma_datasets.datamodels.datasets.utils.simbot_utils.simbot_datamodels impo
 )
 from emma_datasets.db import DatasetDb
 from pytorch_lightning import LightningDataModule
-from torch.utils.data import DataLoader, WeightedRandomSampler
+from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from emma_policy.datamodules.collate import collate_fn
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
 from emma_policy.datamodules.simbot_action_dataset import SimBotActionDataset
+from emma_policy.utils import DistributedWeightedSampler
 
 
 SimBotAction_SPECIAL_TOKENS = [
@@ -119,8 +120,6 @@ class SimBotActionDataModule(LightningDataModule):
             allow_paraphrasing=True,
         )
 
-        self._training_sampler_weights: Optional[list[float]] = None
-
         self._valid_dataset = SimBotActionDataset(
             dataset_db_path=self._simbot_action_valid_db_file,
             tokenizer=self._tokenizer,
@@ -140,7 +139,7 @@ class SimBotActionDataModule(LightningDataModule):
     def train_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
         """Generate train dataloader for SimBot action instances."""
         if self._weighted_sampling:
-            self._training_sampler_weights = self._compute_sample_weights(
+            training_sampler_weights = self._compute_sample_weights(
                 self._simbot_action_train_db_file
             )
             return DataLoader(
@@ -149,8 +148,8 @@ class SimBotActionDataModule(LightningDataModule):
                 num_workers=self._num_workers,
                 collate_fn=collate_fn,
                 pin_memory=True,
-                sampler=WeightedRandomSampler(
-                    self._training_sampler_weights, num_samples=len(self._train_dataset)
+                sampler=DistributedWeightedSampler(
+                    training_sampler_weights, num_samples=len(self._train_dataset)
                 ),
             )
         return DataLoader(

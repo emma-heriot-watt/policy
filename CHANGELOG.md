@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.6.0](https://github.com/emma-simbot/policy/compare/v1.5.2...v1.6.0) (2022-11-24)
+
+
+### Features
+
+* Add distributed weighted sampler ([#634](https://github.com/emma-simbot/policy/issues/634)) ([3f0f82b](https://github.com/emma-simbot/policy/commit/3f0f82baad94d4037b95ea824cb7beee9e0e594b))
+
+
+### Bug Fixes
+
+* test case of all zero weights ([#636](https://github.com/emma-simbot/policy/issues/636)) ([2313f20](https://github.com/emma-simbot/policy/commit/2313f20a9491d2cc168620cfebf7581d1fa35ec8))
+
 ## [1.5.2](https://github.com/emma-simbot/policy/compare/v1.5.1...v1.5.2) (2022-11-17)
 
 

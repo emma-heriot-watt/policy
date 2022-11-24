@@ -67,6 +67,8 @@ def test_distributed_weighted_sampler(len_weights: int) -> None:
     """Test that the distributed weighted sampler will only sample from positive weights."""
     # Get a random binary vector of size len_weights
     weights = torch.bernoulli(torch.randn(len_weights).uniform_(0, 1)).tolist()
+    while sum(weights) == 0:
+        weights = torch.bernoulli(torch.randn(len_weights).uniform_(0, 1)).tolist()
     sampler = DistributedWeightedSampler(weights, len(weights), num_replicas=1, rank=0)
     total_iterations = len_weights * 10
     # All samples should have weights > 0

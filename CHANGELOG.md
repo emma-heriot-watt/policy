@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.8.0](https://github.com/emma-simbot/policy/compare/v1.7.0...v1.8.0) (2022-11-30)
+
+
+### Features
+
+* Create find endpoint ([#641](https://github.com/emma-simbot/policy/issues/641)) ([5737b55](https://github.com/emma-simbot/policy/commit/5737b558a9984f73bbeedf30a32a69b155d50b6d))
+
 ## [1.7.0](https://github.com/emma-simbot/policy/compare/v1.6.0...v1.7.0) (2022-11-30)
 
 

@@ -3,6 +3,7 @@ from typing import Optional
 from pytest_cases import parametrize
 from transformers import AutoTokenizer
 
+from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.inference.api.simbot_state import GenerateRequest, RequestUtterance, SpeakerRole
 from emma_policy.inference.model_wrapper.simbot_action_input_builder import (
     SimBotActionInputBuilder,
@@ -63,5 +64,5 @@ def test_simbot_action_builder_parses_dialogue_history(
     output = builder._parse_dialogue_from_request(input_request)
     assert output == target
     if output is not None:
-        input_text = builder._prepare_input_text(instruction=output)
+        input_text = builder._prepare_input_text(instruction=output, task=Task.action_execution)
         assert input_text

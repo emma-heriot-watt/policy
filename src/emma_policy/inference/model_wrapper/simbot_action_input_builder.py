@@ -25,10 +25,13 @@ class SimBotActionInputBuilder:
     def __init__(self, tokenizer: PreTrainedTokenizer, device: str = "cpu") -> None:
         self._tokenizer = tokenizer
         self._device = device
-        self._action_execution_prompt = TASK_TEMPLATES_MAP[Task.action_execution][0]
+        self._input_prompt = {
+            Task.action_execution: TASK_TEMPLATES_MAP[Task.action_execution][0],
+            Task.visual_grounding: TASK_TEMPLATES_MAP[Task.visual_grounding][0],
+        }
 
     def __call__(
-        self, request: GenerateRequest
+        self, request: GenerateRequest, task: Task
     ) -> tuple[Optional[EmmaDatasetBatch], Optional[torch.Tensor]]:
         """Process the environment output into a batch for the model.
 
@@ -43,22 +46,47 @@ class SimBotActionInputBuilder:
         if instruction is not None and instruction:
             logger.debug(f"Predicting action for instruction: {instruction}")
 
-            encoded_inputs = self._prepare_input_text(instruction=instruction)
-            visual_features = prepare_emma_visual_features(
-                feature_dicts=feature_dicts,
-                tokenizer=self._tokenizer,
-            )
+            encoded_inputs = self._prepare_input_text(instruction=instruction, task=task)
+            if task == Task.action_execution:
+                visual_features = prepare_emma_visual_features(
+                    feature_dicts=feature_dicts,
+                    tokenizer=self._tokenizer,
+                )
 
-            dataset_item = self._create_emma_dataset_item(
-                visual_features=visual_features,
-                encoded_inputs=encoded_inputs,
-                minimum_frame_index=self._get_minimum_predicted_frame_index(
-                    feature_dicts=feature_dicts, request=request
-                ),
-            )
-            decoder_input_ids = self._prepare_decoder_input_ids(previous_actions=previous_actions)
+                dataset_item = self._create_emma_dataset_item(
+                    visual_features=visual_features,
+                    encoded_inputs=encoded_inputs,
+                    minimum_frame_index=self._get_minimum_predicted_frame_index(
+                        feature_dicts=feature_dicts, request=request
+                    ),
+                )
+                decoder_input_ids = self._prepare_decoder_input_ids(
+                    previous_actions=previous_actions
+                )
 
-            batch = self._create_emma_dataset_batch(dataset_item)
+                batch = self._create_emma_dataset_batch([dataset_item])
+            elif task == Task.visual_grounding:
+                dataset_items = []
+                for feature_dict in feature_dicts:
+                    visual_features = prepare_emma_visual_features(
+                        feature_dicts=[feature_dict],
+                        tokenizer=self._tokenizer,
+                    )
+
+                    dataset_item = self._create_emma_dataset_item(
+                        visual_features=visual_features,
+                        encoded_inputs=encoded_inputs,
+                        minimum_frame_index=1,
+                    )
+                    dataset_items.append(dataset_item)
+
+                batch = self._create_emma_dataset_batch(dataset_items)  # type: ignore[arg-type]
+
+                decoder_input_ids = self._prepare_decoder_input_ids(
+                    previous_actions=previous_actions
+                )
+            else:
+                logger.error(f"Found unsupported task: {task}")
         return (batch, decoder_input_ids)
 
     def _prepare_decoder_input_ids(
@@ -114,7 +142,6 @@ class SimBotActionInputBuilder:
                 msg = "Found unexpected 'None' as a previous action. Verify that the received request contains string values for previous actions."
                 logger.debug(msg)
 
-            # TODO: fix this when porting the causal mask
             for features in step.features:
                 feature_dict: dict[str, Union[torch.Tensor, int]] = {
                     "bbox_features": torch.tensor(features["bbox_features"]),
@@ -137,16 +164,22 @@ class SimBotActionInputBuilder:
             previous_actions_str = " ".join(previous_actions[:-1])  # type: ignore[arg-type]
         return (feature_dicts, previous_actions_str)
 
-    def _prepare_input_text(
-        self,
-        instruction: str,
-    ) -> BatchEncoding:
+    def _prepare_input_text(self, instruction: str, task: Task) -> BatchEncoding:
         """Prepare the input text for the SimBotAction model.
 
         The input text follows the same template as with the action execution with the addition of
         the clarification question and answer (if provided).
         """
-        source_text = self._action_execution_prompt.format(instruction=instruction)
+        if task == Task.action_execution:
+            source_text = self._input_prompt[task].format(instruction=instruction)
+        elif task == Task.visual_grounding:
+            source_text = self._input_prompt[task].format(caption=instruction)
+        else:
+            logger.error(
+                f"Found unsupported task: {task}. Using empty string as input to the model"
+            )
+            source_text = ""
+
         return self._tokenizer.encode_plus(source_text, return_tensors="pt", truncation=True)
 
     def _create_emma_dataset_item(
@@ -175,10 +208,10 @@ class SimBotActionInputBuilder:
 
     def _create_emma_dataset_batch(
         self,
-        dataset_item: EmmaDatasetItem,
+        dataset_items: list[Optional[EmmaDatasetItem]],
     ) -> EmmaDatasetBatch:
         """Create the `EmmaDatasetBatch` for a given set of observations and actions."""
-        batch = collate_fn([dataset_item])
+        batch = collate_fn(dataset_items)
         prev_device = batch.input_token_ids.device
         batch = move_data_to_device(batch, self._device)
         logger.debug(f"Moved batch from {prev_device} to {batch.input_token_ids.device}")

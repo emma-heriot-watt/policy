@@ -89,7 +89,7 @@ class SimBotActionDataModule(LightningDataModule):
         self._model_name = model_name
 
         arena_definitions = get_arena_definitions()
-        self._object_assets_to_names = arena_definitions["asset_to_name"]
+        self._object_assets_to_names = arena_definitions["asset_to_label"]
         self._image_width = arena_definitions["image_width"]
         self._image_height = arena_definitions["image_height"]
 
@@ -125,7 +125,7 @@ class SimBotActionDataModule(LightningDataModule):
             tokenizer=self._tokenizer,
             max_frames=self._max_frames,
             iou_threshold=self._iou_threshold,
-            allow_paraphrasing=False,
+            allow_paraphrasing=True,
         )
 
         self._test_dataset = SimBotActionDataset(
@@ -133,7 +133,7 @@ class SimBotActionDataModule(LightningDataModule):
             tokenizer=self._tokenizer,
             max_frames=self._max_frames,
             iou_threshold=self._iou_threshold,
-            allow_paraphrasing=False,
+            allow_paraphrasing=True,
         )
 
     def train_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
@@ -149,7 +149,7 @@ class SimBotActionDataModule(LightningDataModule):
                 collate_fn=collate_fn,
                 pin_memory=True,
                 sampler=DistributedWeightedSampler(
-                    training_sampler_weights, num_samples=len(self._train_dataset)
+                    training_sampler_weights, total_size=len(self._train_dataset)
                 ),
             )
         return DataLoader(

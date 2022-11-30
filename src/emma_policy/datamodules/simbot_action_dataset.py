@@ -1,5 +1,6 @@
 import random
 from pathlib import Path
+from typing import Union
 
 import torch
 from emma_datasets.constants.simbot.simbot import get_arena_definitions
@@ -48,14 +49,14 @@ def get_simbot_instruction_paraphrase(
 ) -> str:
     """Paraphrase a SimBot instruction."""
     action_type = instance.actions[0].type.lower()
-    action_metadata = instance.actions[0].get_action_data
+    action_object_metadata = instance.actions[0].get_action_data["object"]
     attributes = SimBotObjectAttributes(
-        **action_metadata["object"].get("attributes", {"readable_name": object_name})
+        **action_object_metadata.get("attributes", {"readable_name": object_name})
     )
 
     return paraphraser(
         action_type=action_type,
-        object_id=action_metadata["object"]["id"],
+        object_id=action_object_metadata["id"],
         object_attributes=attributes,
     )
 
@@ -86,7 +87,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         self._use_only_necessary_questions = use_only_necessary_questions
         self.question_answer_prompt = "<<driver>> {question} <<commander>> {answer}"
         arena_definitions = get_arena_definitions()
-        self._object_assets_to_names = arena_definitions["asset_to_name"]
+        self._object_assets_to_names = arena_definitions["asset_to_label"]
         self._image_width = arena_definitions["image_width"]
         self._image_height = arena_definitions["image_height"]
         self._paraphraser = InstructionParaphraser()
@@ -98,8 +99,127 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         instance_str: str
         with self.db:
             instance_str = self.db[index]
-
         instance = SimBotInstructionInstance.parse_raw(instance_str)
+        if instance.vision_augmentation:
+            return self.simbot_vision_augmentation(instance)
+        return self.simbot_action_execution(instance)
+
+    def simbot_vision_augmentation(  # noqa: WPS210
+        self, instance: SimBotInstructionInstance
+    ) -> EmmaDatasetItem:
+        """Process a visual augmentation instance for the SimBot action task."""
+        action_type = instance.actions[0].type
+        if action_type.lower() == "search":
+            action_object_metadata = instance.actions[0].get_action_data["object"]
+
+            object_candidates = len(action_object_metadata["id"])
+            object_candidate_idx = random.choice(range(object_candidates))
+
+            if self._allow_paraphrasing:
+                instruction = self._paraphraser(
+                    action_type=action_type.lower(),
+                    object_id=action_object_metadata["id"][object_candidate_idx],
+                    object_attributes=SimBotObjectAttributes(
+                        **action_object_metadata["attributes"][object_candidate_idx]
+                    ),
+                )
+            else:
+                instruction = instance.instruction.instruction
+
+            source_text = f"<<commander>> {instruction}"
+            source_text = self._get_random_template_for_task(Task.visual_grounding).format(
+                caption=source_text
+            )
+
+            object_name = get_object_from_action_object_metadata(
+                object_asset=action_object_metadata["id"][object_candidate_idx],
+                object_assets_to_names=self._object_assets_to_names,
+            )
+
+            target_frames = [
+                action.get_action_data.get("colorImageIndex", 0) for action in instance.actions
+            ]
+
+            visual_features, _, _ = self._load_visual_features(
+                features_path=instance.features_path,
+                target_frames=target_frames,
+            )
+
+            ground_truth_bboxes = action_object_metadata["mask"]
+            if ground_truth_bboxes is None:
+                target_text = f"no {object_name} <stop>"
+            else:
+                ground_truth_bbox = ground_truth_bboxes[object_candidate_idx]
+                ground_truth_bbox = torch.tensor(
+                    ground_truth_bbox,
+                    dtype=torch.float32,
+                ).unsqueeze(0)
+
+                ground_truth_bbox[:, (0, 2)] /= self._image_width
+                ground_truth_bbox[:, (1, 3)] /= self._image_height
+
+                matched_indices, ground_truth_flags = self._best_match_features(
+                    ground_truth_bbox=ground_truth_bbox,
+                    object_coordinates_bbox=visual_features.object_coordinates,
+                    threshold=self._iou_threshold,
+                )
+                # If there is a matching bounding box, append its visual token to the target text
+                if ground_truth_flags[0]:
+                    object_token = self.tokenizer.decode(
+                        visual_features.visual_token_ids[matched_indices[0]]
+                    )
+                    scene_frame_token = self.tokenizer.decode(
+                        visual_features.scene_frame_tokens[0]
+                    )
+                    target_text = f"{scene_frame_token} {object_token} <stop>"
+                else:
+                    target_text = f"no {object_name} <stop>"
+
+            target_text = target_text.lower()
+
+            input_encoding = self.tokenizer.encode_plus(
+                source_text, return_tensors=self._return_tensor_type, truncation=True
+            )
+
+            target_encoding = self.tokenizer.encode_plus(
+                target_text, return_tensors=self._return_tensor_type, truncation=True
+            )
+
+            full_target_token_ids = target_encoding.input_ids.squeeze(0)
+
+            target_token_ids = mask_past_target_actions(
+                full_target_token_ids,
+                sep_token_id=self.tokenizer.sep_token_id,  # type: ignore[arg-type]
+                masking_value=EmmaDatasetPadding.target_token_ids,
+            )
+            decoder_input_ids = torch.full_like(
+                full_target_token_ids,
+                fill_value=self.tokenizer.eos_token_id,  # type: ignore[arg-type]
+            )
+            # Now shift them to the right
+            decoder_input_ids[1:] = full_target_token_ids[:-1].clone()  # noqa: WPS362
+            decoder_attention_mask = torch.ones_like(decoder_input_ids)
+            raw_target = f"mission{instance.mission_id}_instr{instance.instruction_id}_ann{instance.annotation_id}_action{instance.actions[-1].type}"  # noqa: WPS221
+
+            return EmmaDatasetItem(
+                input_token_ids=input_encoding.input_ids.squeeze(0),
+                text_attention_mask=input_encoding.attention_mask.squeeze(0),
+                target_token_ids=target_token_ids,
+                decoder_input_ids=decoder_input_ids,
+                decoder_attention_mask=decoder_attention_mask,
+                object_attention_mask=visual_features.object_attention_mask,
+                object_coordinates=visual_features.object_coordinates,
+                object_features=visual_features.object_features,
+                object_frame_tokens=visual_features.object_frame_tokens,
+                scene_attention_mask=visual_features.scene_attention_mask,
+                scene_coordinates=visual_features.scene_coordinates,
+                scene_features=visual_features.scene_features,
+                scene_frame_tokens=visual_features.scene_frame_tokens,
+                visual_token_ids=visual_features.visual_token_ids,
+                task=self._get_task_as_tensor(Task.visual_grounding),
+                raw_target=raw_target,
+            )
+        # All other augmentations are covered by the action execution
         return self.simbot_action_execution(instance)
 
     def simbot_action_execution(self, instance: SimBotInstructionInstance) -> EmmaDatasetItem:
@@ -113,32 +233,30 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 f"Instructions have {instance.instruction.actions} but found {action_ids_in_instance}."
             )
 
-        visual_features = self._load_visual_features(
-            features_path=instance.features_path, modality=instance.modality
+        target_frames = []
+        for action in instance.actions:
+            action_object_metadata = action.get_action_data.get("object", None)
+            if action_object_metadata is not None:
+                target_frames.append(action_object_metadata.get("colorImageIndex", 0))
+            else:
+                target_frames.append(0)
+
+        visual_features, frames, objects_per_frame = self._load_visual_features(
+            features_path=instance.features_path,
+            target_frames=target_frames,
         )
 
-        frames, objects_per_frame = self._get_frames_and_objects(instance.features_path)
-
         paraphrase_instruction = instance.paraphrasable
-        if instance.synthetic and "goto" in instance.actions[-1].type.lower():
-            # action_metadata["object"]["colorImageIndex"]
-            action = instance.actions[-1]
-            action_metadata = action.goto
-            action_object_metadata = action_metadata.get("object", None)
 
-            if instance.keep_only_target_frame:
-                ignore = True
-            else:
-                ignore = random.random() > self._goto_proba
-
-            if action_object_metadata is not None and "id" in action_object_metadata and ignore:
-                paraphrase_instruction = True
-                visual_features, frames, objects_per_frame = self._ignore_goto_redundant_frames(
-                    action=action,
-                    visual_features=visual_features,
-                    frames=frames,
-                    objects_per_frame=objects_per_frame,
-                )
+        target_action = instance.actions[-1]
+        target_action_metadata = target_action.get_action_data.get("object", None)
+        # Synthetic goto room instructions are not paraphrasable
+        if (  # noqa: WPS337
+            instance.synthetic
+            and action_object_metadata is not None
+            and "id" not in target_action_metadata
+        ):
+            paraphrase_instruction = False
 
         source_text = self._prepare_source_text(
             instance=instance, paraphrase_instruction=paraphrase_instruction
@@ -174,6 +292,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         decoder_input_ids[1:] = full_target_token_ids[:-1].clone()  # noqa: WPS362
         decoder_attention_mask = torch.ones_like(decoder_input_ids)
         raw_target = f"mission{instance.mission_id}_instr{instance.instruction_id}_ann{instance.annotation_id}_action{instance.actions[-1].type}"  # noqa: WPS221
+
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
@@ -206,16 +325,18 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             and answer: where is the hammer? the hammer is on the table in the robotics lab.
         """
         if self._allow_paraphrasing and paraphrase_instruction:
-            action_metadata = instance.actions[0].get_action_data["object"]
+            action_object_metadata = instance.actions[0].get_action_data["object"]
             object_name = get_object_from_action_object_metadata(
-                object_asset=action_metadata["id"],
+                object_asset=action_object_metadata["id"],
                 object_assets_to_names=self._object_assets_to_names,
             )
+
             instruction = get_simbot_instruction_paraphrase(
                 self._paraphraser, instance, object_name
             )
         else:
             instruction = instance.instruction.instruction
+
         source_text = f"<<commander>> {instruction}"
         source_text = self._get_random_template_for_task(Task.action_execution).format(
             instruction=source_text
@@ -270,7 +391,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                         object_asset=action_object_metadata["id"],
                         object_assets_to_names=self._object_assets_to_names,
                     )
-                    image_index = action_metadata["object"]["colorImageIndex"]
+                    image_index = action_object_metadata["colorImageIndex"]
                     object_name_with_tokens = self._map_object_to_visual_token(
                         object_name=object_name,
                         action=action,
@@ -279,6 +400,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                         frames=frames,
                         objects_per_frame=objects_per_frame,
                     )
+
                     target_text.append(f"{action_type} {object_name_with_tokens}.")
                 # action without an object (e.g, Goto Office)
                 else:
@@ -319,14 +441,16 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         # If the groundtruth object is a sticky note, the groundtruth bbox
         # coordinates are currently provided directly in the mask
         # TODO: this could potentially be improved if we have the segmentation masks for the sticky notes as well instead of the bounding boxes
+        object_mask = gt_object_dict["object"]["mask"]
         if object_name == "Sticky Note":
-            ground_truth_bbox = (
-                torch.tensor(gt_object_dict["object"]["mask"][0]).unsqueeze(0).float()
-            )
+            ground_truth_bbox = torch.tensor(object_mask[0]).float()
 
         else:
-            gt_binary_mask = decompress_simbot_mask(gt_object_dict["object"]["mask"])
-            ground_truth_bbox = masks_to_boxes(torch.tensor(gt_binary_mask).unsqueeze(0))
+            if self._compressed_mask_is_bbox(object_mask):
+                ground_truth_bbox = torch.tensor(object_mask, dtype=torch.float32).unsqueeze(0)
+            else:
+                gt_binary_mask = decompress_simbot_mask(object_mask)
+                ground_truth_bbox = masks_to_boxes(torch.tensor(gt_binary_mask).unsqueeze(0))
 
         ground_truth_bbox[:, (0, 2)] /= self._image_width
         ground_truth_bbox[:, (1, 3)] /= self._image_height
@@ -336,7 +460,6 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             object_coordinates_bbox=object_coordinates_bbox,
             threshold=self._iou_threshold,
         )
-
         scene_frame_token = self.tokenizer.decode(visual_features.scene_frame_tokens[frame_index])
 
         # If there is a matching bounding box, append its visual token to the target text
@@ -400,13 +523,27 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
 
         return truncated_visual_features, [frames[frame_index]], [objects_per_frame[frame_index]]
 
-    def _get_frames_and_objects(self, features_paths: list[Path]) -> tuple[list[str], list[int]]:
-        """Get a the image names and the number of detected object per frame."""
-        frames = []
+    def _compressed_mask_is_bbox(self, mask: Union[list[int], list[list[int]]]) -> bool:
+        only_coords = len(mask) == 4
+        not_list = not all([isinstance(x, list) for x in mask])
+        return only_coords and not_list
+
+    @overrides(check_signature=False)
+    def _load_visual_features(
+        self,
+        features_path: list[Path],
+        target_frames: list[int],
+    ) -> tuple[EmmaVisualFeatures, list[str], list[int]]:
+        """Get all the visual features from the given instance."""
+        feature_dicts = []
         objects_per_frame = []
-        for fpath in features_paths:
-            frame_feats = torch.load(fpath)["frames"]
-            for fdict in frame_feats:
-                frames.append(fdict["image"])
-                objects_per_frame.append(fdict["features"]["bbox_coords"].shape[0])
-        return frames, objects_per_frame
+        frames = []
+        for fpath, target_frame in zip(features_path, target_frames):
+            frame_dict = torch.load(fpath)["frames"][target_frame]
+            feature_dicts.append(frame_dict["features"])
+            objects_per_frame.append(frame_dict["features"]["bbox_coords"].shape[0])
+            frames.append(frame_dict["image"])
+
+        visual_features = self._prepare_emma_visual_features(feature_dicts=feature_dicts)
+
+        return visual_features, frames, objects_per_frame

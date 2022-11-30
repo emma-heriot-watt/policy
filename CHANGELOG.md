@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.7.0](https://github.com/emma-simbot/policy/compare/v1.6.0...v1.7.0) (2022-11-30)
+
+
+### Features
+
+* Keep only target frame for each action ([#640](https://github.com/emma-simbot/policy/issues/640)) ([96a30a4](https://github.com/emma-simbot/policy/commit/96a30a40546a2d4fd3101369550c0422d3b4d0d1))
+
 ## [1.6.0](https://github.com/emma-simbot/policy/compare/v1.5.2...v1.6.0) (2022-11-24)
 
 

@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.9.0](https://github.com/emma-simbot/policy/compare/v1.8.0...v1.9.0) (2022-12-05)
+
+
+### Features
+
+* Add new act types (low level and search) to NLU ([#630](https://github.com/emma-simbot/policy/issues/630)) ([97406fc](https://github.com/emma-simbot/policy/commit/97406fc26d3776d90af41519d5c2720c7f6406a2))
+
 ## [1.8.0](https://github.com/emma-simbot/policy/compare/v1.7.0...v1.8.0) (2022-11-30)
 
 

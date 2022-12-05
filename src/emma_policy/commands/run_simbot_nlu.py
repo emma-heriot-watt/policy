@@ -17,6 +17,7 @@ from emma_policy.models.simbot_nlu_policy import SimBotNLUEmmaPolicy
 
 
 logger = logging.getLogger(__name__)
+DEFAULT_ACTION = "<act><low_level>"
 
 
 class ApiSettings(BaseSettings):
@@ -70,7 +71,7 @@ def rule_based_ambiguity_check(action: str, frame_features: list[dict[str, Any]]
     # For now, overwrite the NLU only if there are no multiples in front of you
     # So if there's only one object that you are looking at, assume no ambiguity
     if sum(found_objects) == 1:
-        action = "<act>"
+        action = DEFAULT_ACTION
 
     return action
 
@@ -143,7 +144,7 @@ async def generate(request: Request, response: Response) -> str:
             response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
             raise err
     else:
-        action = "<act>"
+        action = DEFAULT_ACTION
     return action
 
 

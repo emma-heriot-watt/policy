@@ -1,7 +1,7 @@
-import dataclasses
+import random
 from enum import Enum
 from pathlib import Path
-from typing import Union
+from typing import Optional
 
 import torch
 from emma_datasets.constants.simbot.simbot import get_arena_definitions
@@ -12,8 +12,10 @@ from emma_datasets.datamodels.datasets.utils.simbot_utils.paraphrasers import (
     InstructionParaphraser,
 )
 from emma_datasets.datamodels.datasets.utils.simbot_utils.simbot_datamodels import (
+    SimBotAction,
     SimBotClarificationTypes,
     SimBotInstructionInstance,
+    SimBotObjectAttributes,
     SimBotQA,
 )
 from overrides import overrides
@@ -47,118 +49,68 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         dataset_db_path: Path,
         tokenizer: PreTrainedTokenizer,
         max_frames: int = 4,
-        merged_annotations: bool = True,
         is_train: bool = True,
         allow_paraphrasing: bool = False,
     ) -> None:
-
-        if not merged_annotations:
-            raise NotImplementedError(
-                "Expecting dbs where every instance is an image associated with all of its question-answer pairs."
-            )
-
         super().__init__(
             dataset_db_path=dataset_db_path, tokenizer=tokenizer, max_frames=max_frames
         )
-
         self.question_type_to_id = {
-            question_type: index
-            for index, question_type in enumerate(SimBotClarificationTypes)
-            if question_type != SimBotClarificationTypes.other
+            SimBotClarificationTypes.location: 0,
+            SimBotClarificationTypes.disambiguation: 1,
+            SimBotClarificationTypes.description: 2,
+            SimBotClarificationTypes.direction: 3,
         }
         self.is_train = is_train
         self.data_intents: list[SimBotNLUIntents] = []
-        arena_definitions = get_arena_definitions()
-        self._object_assets_to_names = arena_definitions["asset_to_name"]
         if is_train:
-            index_db_map, dataset_size = self._unpack_annotations()
-            self.index_db_map = index_db_map
-            self.dataset_size = dataset_size
-        else:
-            self.dataset_size = len(self.db)
+            self._prepare_data_intents()
+
+        arena_definitions = get_arena_definitions()
+        self._object_assets_to_names = arena_definitions["asset_to_label"]
         self._allow_paraphrasing = allow_paraphrasing
         self._paraphraser = InstructionParaphraser()
 
     @overrides(check_signature=False)
     def __len__(self) -> int:
         """Return the total number of instances within the database."""
-        return self.dataset_size
+        return len(self.db)
 
     @overrides(check_signature=False)
     def __getitem__(self, index: int) -> EmmaDatasetItem:
         """Get the SimBot NLU instance at the given index as an instance of `EmmaDatasetItem`."""
-        if self.is_train:
-            db_map = self.index_db_map[index]
-            index = db_map["db_index"]
         with self.db:
             instance_str = self.db[index]
         instance = SimBotInstructionInstance.parse_raw(instance_str)
-        target_text, question_type_labels = self._get_target_text(instance=instance)
-
-        if self.is_train:
-            return self.nlu_instance(
-                instance,
-                target_text=target_text[db_map["question_index"]],
-                question_type_labels=question_type_labels,
-            )
-        return self.nlu_instance(
-            instance, target_text=target_text, question_type_labels=question_type_labels
-        )
-
-    def nlu_instance(
-        self,
-        instance: SimBotInstructionInstance,
-        target_text: Union[str, list[str]],
-        question_type_labels: torch.Tensor,
-    ) -> EmmaDatasetItem:
-        """Process the instance for the Simbot NLU task."""
-        if self._allow_paraphrasing and instance.paraphrasable:
-            action_metadata = instance.actions[0].get_action_data["object"]
-            object_name = get_object_from_action_object_metadata(
-                object_asset=action_metadata["id"],
-                object_assets_to_names=self._object_assets_to_names,
-            )
-            instruction = get_simbot_instruction_paraphrase(
-                self._paraphraser, instance, object_name
-            )
-        else:
-            instruction = instance.instruction.instruction
-        source_text = f"Predict the system act: {instruction}"
+        source_text = self._get_source_text(instance)
         input_encoding = self.tokenizer.encode_plus(
             source_text, return_tensors=self._return_tensor_type, truncation=True
         )
+        target_text, question_type_labels = self._get_target_text(instance=instance)
+        target_encoding = self.tokenizer.encode_plus(
+            target_text, return_tensors=self._return_tensor_type, truncation=True
+        )
 
+        frame_idx = 0
+        if instance.synthetic or "location" not in target_text:
+            action_object_metadata = instance.actions[0].get_action_data.get("object", None)
+            if action_object_metadata is not None:
+                frame_idx = action_object_metadata.get("colorImageIndex", 0)
         visual_features = self._load_visual_features(
-            features_path=instance.features_path,
-            modality=instance.modality,
-            truncation_side="right",  # Do not remove this
+            features_path=instance.features_path[0], frame_idx=frame_idx
         )
-        visual_features = self._keep_visual_features_for_first_action(
-            visual_features=visual_features, num_frames=len(instance.actions[0].color_images)
-        )
-        if self.is_train:
 
-            target_encoding = self.tokenizer.encode_plus(
-                target_text, return_tensors=self._return_tensor_type, truncation=True
-            )
-            raw_target = None
-        elif isinstance(target_text, list):
-            # will use this to compute the score for act/clarify prediction
-            target_encoding = self.tokenizer.encode_plus(
-                target_text[0], return_tensors=self._return_tensor_type, truncation=True
-            )
-            raw_target = {"references": target_text, "question_type_labels": question_type_labels}
-        else:
-            raise AssertionError("Validation/Test target_text should be a list.")
-
-        target_token_ids = target_encoding.input_ids.squeeze(0)
-        decoder_attention_mask = target_encoding.attention_mask.squeeze(0)
+        raw_target = {
+            "example_id": f"{instance.mission_id}_{instance.annotation_id}_{instance.instruction_id}",
+            "references": target_text,
+            "question_type_labels": question_type_labels,
+        }
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
-            target_token_ids=target_token_ids,
-            decoder_attention_mask=decoder_attention_mask,
+            target_token_ids=target_encoding.input_ids.squeeze(0),
+            decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
             object_attention_mask=visual_features.object_attention_mask,
             object_coordinates=visual_features.object_coordinates,
             object_features=visual_features.object_features,
@@ -171,53 +123,103 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             raw_target=raw_target,
         )
 
-    def _keep_visual_features_for_first_action(
-        self, visual_features: EmmaVisualFeatures, num_frames: int
-    ) -> EmmaVisualFeatures:
-        visual_features_dict = {
-            field.name: getattr(visual_features, field.name)[:num_frames]
-            for field in dataclasses.fields(EmmaVisualFeatures)
-        }
-        return EmmaVisualFeatures(**visual_features_dict)
+    def _get_source_text(self, instance: SimBotInstructionInstance) -> str:
+        """Process the source text for the Simbot NLU task."""
+        if instance.actions[0].type == "Search":
+            instruction = self._get_source_text_for_search(instance)
 
-    def _get_target_text(
-        self, instance: SimBotInstructionInstance
-    ) -> tuple[list[str], torch.Tensor]:
+        else:
+            instruction = self._get_source_text_for_low_level_action(instance)
+        return f"Predict the system act: {instruction}"
+
+    def _get_source_text_for_search(self, instance: SimBotInstructionInstance) -> str:
+        """Get source text for Search instructions."""
+        action_object_metadata = instance.actions[0].get_action_data["object"]
+        object_candidates = len(action_object_metadata["id"])
+        object_candidate_idx = random.choice(range(object_candidates))
+        # Always paraphrase after selecting a target for search
+        instruction = self._paraphraser(
+            action_type="search",
+            object_id=action_object_metadata["id"][object_candidate_idx],
+            object_attributes=SimBotObjectAttributes(
+                **action_object_metadata["attributes"][object_candidate_idx]
+            ),
+        )
+        return instruction
+
+    def _get_source_text_for_low_level_action(self, instance: SimBotInstructionInstance) -> str:
+        """Get source text for all actions except Search."""
+        if self._allow_paraphrasing and instance.paraphrasable:
+            action_metadata = instance.actions[0].get_action_data["object"]
+            object_name = get_object_from_action_object_metadata(
+                object_asset=action_metadata["id"],
+                object_assets_to_names=self._object_assets_to_names,
+            )
+            instruction = get_simbot_instruction_paraphrase(
+                self._paraphraser, instance, object_name
+            )
+        else:
+            instruction = instance.instruction.instruction
+        return instruction
+
+    def _get_target_text(self, instance: SimBotInstructionInstance) -> tuple[str, torch.Tensor]:
+        # First try to get the target for a clarification
         target_text, question_type_labels = self._get_nlu_questions(instance=instance)
+        # If target_text is an empty list, we have an action
         if not target_text:
-            target_text = ["<act>"]
+            target_text = self._prepare_action_nlu_target(first_action=instance.actions[0])
 
         return target_text, question_type_labels
 
+    def _prepare_action_nlu_target(self, first_action: SimBotAction) -> str:
+        if first_action.type == "Search":
+            target_text = "<act><search>"
+        else:
+            target_text = "<act><low_level>"
+        return target_text
+
     def _get_nlu_questions(
         self, instance: SimBotInstructionInstance
-    ) -> tuple[list[str], torch.Tensor]:
+    ) -> tuple[Optional[str], torch.Tensor]:
         """question_type_labels is a one-hot encoding of the question type."""
-        questions: list[str] = []
+        question: Optional[str] = None
         question_type_labels = torch.zeros(len(self.question_type_to_id), dtype=torch.int)
         if not instance.synthetic and instance.instruction.question_answers is not None:
-            questions, question_type_labels = self._get_nlu_human_questions(instance)
+            question, question_type_labels = self._get_nlu_human_question(instance)
         elif instance.ambiguous:
-            questions, question_type_labels = self._get_nlu_synthetic_questions(instance)
+            question, question_type_labels = self._get_nlu_synthetic_question(instance)
 
-        return questions, question_type_labels
+        return question, question_type_labels
 
-    def _get_nlu_human_questions(
+    def _get_nlu_human_question(
         self, instance: SimBotInstructionInstance
-    ) -> tuple[list[str], torch.Tensor]:
-        questions = []
+    ) -> tuple[Optional[str], torch.Tensor]:
+        """Get the target text and question type vector from a human question.
+
+        Examples to avoid:
+        1. water: Fill mug with water --> Where is the water?
+        2. door: Close the fridge door/ --> Where is the door?
+        3. Where is the office / room?
+        """
+        if len(instance.instruction.necessary_question_answers) > 1:
+            raise AssertionError("Expected one question per instance.")
+        question: Optional[str] = None
         question_type_labels = torch.zeros(len(self.question_type_to_id), dtype=torch.int)
-        for question in instance.instruction.question_answers:
-            if self._skip_question(question):
+        for qa_pair in instance.instruction.necessary_question_answers:
+            if qa_pair.question_type not in self.question_type_to_id:
                 continue
-            questions.append(self._prepare_question_nlu_target(question))
-            index = self.question_type_to_id[question.question_type]
+            if qa_pair.question_target in {"water", "door", "office", "room"}:
+                continue
+            question = self._prepare_question_nlu_target(qa_pair)
+            index = self.question_type_to_id[qa_pair.question_type]
             question_type_labels[index] = 1
-        return questions, question_type_labels
 
-    def _get_nlu_synthetic_questions(
+        return question, question_type_labels
+
+    def _get_nlu_synthetic_question(
         self, instance: SimBotInstructionInstance
-    ) -> tuple[list[str], torch.Tensor]:
+    ) -> tuple[str, torch.Tensor]:
+        """Get the target text and question type vector from a synthetic question."""
         question_type = SimBotClarificationTypes.disambiguation
         question = f"<clarify><{question_type.name}>"
         action_type = instance.actions[-1].type
@@ -231,7 +233,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         # Question 1-hot encoding
         question_type_labels = torch.zeros(len(self.question_type_to_id), dtype=torch.int)
         question_type_labels[self.question_type_to_id[question_type]] = 1
-        return [question], question_type_labels
+        return question, question_type_labels
 
     def _prepare_question_nlu_target(self, question: SimBotQA) -> str:
         question_as_target = f"<clarify><{question.question_type.name}>"
@@ -239,42 +241,24 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             question_as_target = f"{question_as_target} {question.question_target}"
         return question_as_target
 
-    def _skip_question(self, question: SimBotQA) -> bool:
-        skip = not question.question_necessary
-        if question.question_type == SimBotClarificationTypes.other:
-            skip = True
-        return skip
-
-    def _num_necessary_questions(self, instance: SimBotInstructionInstance) -> int:
-        return len(self._get_nlu_questions(instance)[0])
-
-    def _unpack_annotations(
-        self,
-    ) -> tuple[dict[int, dict[str, int]], int]:
-        """Unpack the annotations from the db."""
+    def _prepare_data_intents(self) -> None:
+        """Prepare data intents for balancing."""
         db_size = len(self.db)
-        unpacked2packed: dict[int, dict[str, int]] = {}
-        offset = 0
-        dataset_size = 0
         with self.db:
             for index in range(db_size):
                 instance_str: str = self.db[index]
                 instance = SimBotInstructionInstance.parse_raw(instance_str)
-                num_questions = self._num_necessary_questions(instance)
-                if num_questions == 0:
-                    self.data_intents.append(SimBotNLUIntents.act)
+                if instance.instruction.necessary_question_answers:
+                    self.data_intents.append(SimBotNLUIntents.clarify)
                 else:
-                    self.data_intents.extend(
-                        [SimBotNLUIntents.clarify for _ in range(num_questions)]
-                    )
-                individual_instances = [instance for _ in range(max(num_questions, 1))]
+                    self.data_intents.append(SimBotNLUIntents.act)
 
-                for num_question, _ in enumerate(individual_instances):
-                    unpacked2packed[offset + index + num_question] = {
-                        "db_index": index,
-                        "question_index": num_question,
-                    }
-                    dataset_size += 1
+    @overrides(check_signature=False)
+    def _load_visual_features(self, features_path: Path, frame_idx: int = 0) -> EmmaVisualFeatures:
+        """Get the visual features just for the first frame."""
+        frame_dict = torch.load(features_path)["frames"][frame_idx]
+        feature_dicts = [frame_dict["features"]]
 
-                offset += len(individual_instances) - 1
-        return unpacked2packed, dataset_size
+        visual_features = self._prepare_emma_visual_features(feature_dicts=feature_dicts)
+
+        return visual_features

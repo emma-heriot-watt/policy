@@ -18,9 +18,10 @@ SimBotNLU_SPECIAL_TOKENS = [
     "<clarify>",
     "<decription>",
     "<location>",
-    "<null>",
+    "<low_level>",
     "<disambiguation>",
     "<direction>",
+    "<search>",
 ]
 
 

@@ -49,16 +49,16 @@ model:
   optimizer: adamw
   lr_scheduler: linear_with_warmup
   num_warmup_steps: 0.1
-  label_smoothing: 0.0
+  label_smoothing: 0.05
   resize_embeddings: True
 
 datamodule:
   _target_: emma_policy.datamodules.simbot_nlu_datamodule.SimBotNLUDataModule
 
   model_name: heriot-watt/emma-base
-  train_db_file: /scratch/mn2002/simbot/simbot_instructions_train.db
-  valid_db_file: /scratch/mn2002/simbot/simbot_instructions_valid.db
-  test_db_file: /scratch/mn2002/simbot/simbot_instructions_valid.db
+  train_db_file: storage/db/simbot_clarifications_train.db
+  valid_db_file: storage/db/simbot_clarifications_valid.db
+  test_db_file: storage/db/simbot_clarifications_valid.db
   train_batch_size: 64
   val_batch_size: 64
   num_workers: 4

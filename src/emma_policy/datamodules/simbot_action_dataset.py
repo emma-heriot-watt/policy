@@ -108,23 +108,19 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         self, instance: SimBotInstructionInstance
     ) -> EmmaDatasetItem:
         """Process a visual augmentation instance for the SimBot action task."""
-        action_type = instance.actions[0].type
-        if action_type.lower() == "search":
+        if instance.actions[0].type == "Search":
             action_object_metadata = instance.actions[0].get_action_data["object"]
 
             object_candidates = len(action_object_metadata["id"])
             object_candidate_idx = random.choice(range(object_candidates))
 
-            if self._allow_paraphrasing:
-                instruction = self._paraphraser(
-                    action_type=action_type.lower(),
-                    object_id=action_object_metadata["id"][object_candidate_idx],
-                    object_attributes=SimBotObjectAttributes(
-                        **action_object_metadata["attributes"][object_candidate_idx]
-                    ),
-                )
-            else:
-                instruction = instance.instruction.instruction
+            instruction = self._paraphraser(
+                action_type="search",
+                object_id=action_object_metadata["id"][object_candidate_idx],
+                object_attributes=SimBotObjectAttributes(
+                    **action_object_metadata["attributes"][object_candidate_idx]
+                ),
+            )
 
             source_text = f"<<commander>> {instruction}"
             source_text = self._get_random_template_for_task(Task.visual_grounding).format(
@@ -136,9 +132,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 object_assets_to_names=self._object_assets_to_names,
             )
 
-            target_frames = [
-                action.get_action_data.get("colorImageIndex", 0) for action in instance.actions
-            ]
+            target_frames = [0 for _ in instance.actions]
 
             visual_features, _, _ = self._load_visual_features(
                 features_path=instance.features_path,
@@ -246,21 +240,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             target_frames=target_frames,
         )
 
-        paraphrase_instruction = instance.paraphrasable
-
-        target_action = instance.actions[-1]
-        target_action_metadata = target_action.get_action_data.get("object", None)
-        # Synthetic goto room instructions are not paraphrasable
-        if (  # noqa: WPS337
-            instance.synthetic
-            and action_object_metadata is not None
-            and "id" not in target_action_metadata
-        ):
-            paraphrase_instruction = False
-
-        source_text = self._prepare_source_text(
-            instance=instance, paraphrase_instruction=paraphrase_instruction
-        )
+        source_text = self._prepare_source_text(instance=instance)
 
         target_text = self._prepare_target_text(
             instance=instance,
@@ -312,9 +292,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             raw_target=raw_target,
         )
 
-    def _prepare_source_text(
-        self, instance: SimBotInstructionInstance, paraphrase_instruction: bool
-    ) -> str:
+    def _prepare_source_text(self, instance: SimBotInstructionInstance) -> str:
         """Prepare the source text.
 
         The source text allows the same template as the action execution task
@@ -324,7 +302,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             source_text = Execute the instruction: go to the desk with a hammer on it. With question
             and answer: where is the hammer? the hammer is on the table in the robotics lab.
         """
-        if self._allow_paraphrasing and paraphrase_instruction:
+        if self._allow_paraphrasing and instance.paraphrasable:
             action_object_metadata = instance.actions[0].get_action_data["object"]
             object_name = get_object_from_action_object_metadata(
                 object_asset=action_object_metadata["id"],

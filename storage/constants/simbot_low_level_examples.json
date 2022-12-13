@@ -28,7 +28,7 @@
 			"move to the robotics lab",
 			"move to the robotics rap"
 		],
-		"command": "Goto Lab2"
+		"command": "Goto Lab1"
 	},
 
 	"GoToBreakRoom": {
@@ -306,13 +306,13 @@
 
 	"LookUp": {
 		"examples": [
-			"look up.",
-			"look up to the ceiling.",
-			"look to the roof.",
-			"look to the ceiling.",
-			"look at the roof.",
-			"look at the ceiling.",
-			"look upwards."
+			"look up",
+			"look up to the ceiling",
+			"look to the roof",
+			"look to the ceiling",
+			"look at the roof",
+			"look at the ceiling",
+			"look upwards"
 		],
 		"command": "Look Up"
 	},

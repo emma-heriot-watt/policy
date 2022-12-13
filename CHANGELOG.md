@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.10.1](https://github.com/emma-simbot/policy/compare/v1.10.0...v1.10.1) (2022-12-13)
+
+
+### Bug Fixes
+
+* append stop token in raw text match ([#646](https://github.com/emma-simbot/policy/issues/646)) ([399e65f](https://github.com/emma-simbot/policy/commit/399e65fbb687783338b92f7654cbf814f31166e9))
+* reception name ([#645](https://github.com/emma-simbot/policy/issues/645)) ([c687f25](https://github.com/emma-simbot/policy/commit/c687f25e9493788b80635407a2ef72597aaef3cd))
+
 ## [1.10.0](https://github.com/emma-simbot/policy/compare/v1.9.0...v1.10.0) (2022-12-13)
 
 

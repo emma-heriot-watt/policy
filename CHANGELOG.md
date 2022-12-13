@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.10.2](https://github.com/emma-simbot/policy/compare/v1.10.1...v1.10.2) (2022-12-13)
+
+
+### Bug Fixes
+
+* wrong room names, remove fullstop from lookup ([#647](https://github.com/emma-simbot/policy/issues/647)) ([0d45b67](https://github.com/emma-simbot/policy/commit/0d45b6797ddd868b440f75d1662653001525e54d))
+
 ## [1.10.1](https://github.com/emma-simbot/policy/compare/v1.10.0...v1.10.1) (2022-12-13)
 
 

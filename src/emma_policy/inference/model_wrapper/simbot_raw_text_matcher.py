@@ -71,4 +71,4 @@ class SimBotActionRawTextMatcher:
 
         This should return a string that is suitable to handle by the experience hub.
         """
-        return f"{output_string.lower()}.</s>"
+        return f"{output_string.lower()} <stop>.</s>"

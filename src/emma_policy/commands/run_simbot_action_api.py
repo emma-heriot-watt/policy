@@ -1,7 +1,7 @@
 import logging
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any, Optional, TypedDict
 
 import torch
 from fastapi import FastAPI, Request, Response, status
@@ -16,6 +16,7 @@ from emma_policy.inference.api.simbot_state import GenerateRequest
 from emma_policy.inference.model_wrapper.simbot_action_input_builder import (
     SimBotActionInputBuilder,
 )
+from emma_policy.inference.model_wrapper.simbot_raw_text_matcher import SimBotActionRawTextMatcher
 from emma_policy.models.simbot_emma_policy import SimBotEmmaPolicy
 
 
@@ -31,12 +32,15 @@ class ApiSettings(BaseSettings):
     model_checkpoint_path: FilePath = Path("storage/model/checkpoints/simbot/action.ckpt")
     model_name: str = "heriot-watt/emma-base"
     device: str = "cpu"
+    raw_text_match_json: Path = Path("storage/constants/simbot_low_level_examples.json")
+    raw_distance_threshold: int = 2
 
 
 class ApiStore(TypedDict, total=False):
     """Common state for the API."""
 
     input_builder: SimBotActionInputBuilder
+    raw_text_matcher: SimBotActionRawTextMatcher
     tokenizer: PreTrainedTokenizer
     model: SimBotEmmaPolicy
     max_length_per_action_sequence: int
@@ -95,6 +99,11 @@ async def startup_event() -> None:
     logging.info(f"Model is on device: {api_store['model'].device}")
     logging.info("Inference service is setup!")
 
+    api_store["raw_text_matcher"] = SimBotActionRawTextMatcher(
+        raw_text_match_json=settings.raw_text_match_json,
+        distance_threshold=settings.raw_distance_threshold,
+    )
+
 
 @app.get("/")
 @app.get("/ping")
@@ -114,6 +123,20 @@ async def healthcheck(response: Response) -> str:
     logger.info(f"Policy API Response: {policy_response}")
 
     return "success"
+
+
+@app.post("/generate_raw_text_match", status_code=status.HTTP_200_OK)
+async def generate_raw_text_match(request: Request, response: Response) -> Optional[str]:
+    """Endpoint for simple raw text matching."""
+    try:
+        simbot_request = GenerateRequest.parse_obj(await request.json())
+    except Exception as request_err:
+        logging.exception("Unable to parse request", exc_info=request_err)
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        raise request_err
+
+    output_string = api_store["raw_text_matcher"](simbot_request)
+    return output_string
 
 
 @app.post("/generate_find", status_code=status.HTTP_200_OK)

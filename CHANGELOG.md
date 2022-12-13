@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.10.0](https://github.com/emma-simbot/policy/compare/v1.9.0...v1.10.0) (2022-12-13)
+
+
+### Features
+
+* Add low level action predictor with raw text match ([#644](https://github.com/emma-simbot/policy/issues/644)) ([a8ad897](https://github.com/emma-simbot/policy/commit/a8ad897a28cf76f5150d27eb40766c750887873f))
+
 ## [1.9.0](https://github.com/emma-simbot/policy/compare/v1.8.0...v1.9.0) (2022-12-05)
 
 

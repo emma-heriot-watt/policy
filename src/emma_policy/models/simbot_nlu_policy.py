@@ -1,5 +1,7 @@
+import json
 import logging
-from typing import Any, Union
+from pathlib import Path
+from typing import Any, Optional, Union
 
 import torch
 from overrides import overrides
@@ -16,8 +18,6 @@ from emma_policy.models.emma_policy import EmmaPolicy
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
 from emma_policy.utils.simbot_nlu_metrics import SimbotActionTypeF1, SimbotNLUExactMatch
 
-
-# import pandas as pd
 
 PredictType = Union[
     GreedySearchOutput,
@@ -38,8 +38,8 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
         self,
         model_name: str,
         num_beams: int = 5,
-        max_generated_text_length: int = 8,
-        num_acts: int = 2,
+        max_generated_text_length: int = 16,
+        save_results_path: Optional[Path] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model_name=f"{model_name}-nlu", **kwargs)
@@ -50,25 +50,51 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
         self._tokenizer = prepare_nlu_tokenizer(model_name=model_name)
         self._min_length = 1
         self._max_generated_text_length = max_generated_text_length
-        # For the type of force_words_ids see: https://huggingface.co/docs/transformers/v4.20.1/en/main_classes/text_generation#transformers.generation_utils.GenerationMixin.generate.force_words_ids(List[List[int]]
+
+        # For the type of force_words_ids see: https://huggingfac.co/docs/transformers/v4.20.1/en/main_classes/text_generation#transformers.generation_utils.GenerationMixin.generate.force_words_ids(List[List[int]]
         # force_words_ids lists will have lengths:
         # lengths number of constraints (1), number of visual tokens (100), number of tokens per forced word (1)
-        self.force_words_ids = [
-            [
-                [self._tokenizer.convert_tokens_to_ids(forced_word)]
-                for forced_word in ("<act>", "<clarify>")
-            ]
+        action = [
+            [self._tokenizer.convert_tokens_to_ids(forced_word)]
+            for forced_word in ("<act>", "<search>")
         ]
+
+        ambiguity = [
+            [self._tokenizer.convert_tokens_to_ids(forced_word)]
+            for forced_word in ("<one_match>", "<no_match>", "<too_many_matches>")
+        ]
+        self.force_words_ids = [action, ambiguity]
         if self._num_beams == 1:
             self._num_beams += 1  # constrains need num_beams > 1
         self.task_metrics = None  # type: ignore[assignment]
         self.validation_action_type_F1 = SimbotActionTypeF1(tokenizer=self._tokenizer)
         self.validation_accuracy = SimbotNLUExactMatch()
-        # self.validation_question_types = SimbotQuestionTypeConfusionMatrix(
-        #     tokenizer=self._tokenizer
-        # )
-        # self.validation_question_type_F1 = SimbotNLUAccuracy("question_type")
-        # self.validation_question_target_accuracy = SimbotNLUAccuracy("question_target")
+
+        self._results_path = save_results_path
+        self._test_results: dict[str, list[str]] = {
+            "example_ids": [],
+            "instructions": [],
+            "predictions": [],
+            "groundtruths": [],
+        }
+
+    def on_test_epoch_end(self) -> None:
+        """Save predictions at the end of the evaluation."""
+        if self._results_path is None:
+            return super().on_test_epoch_end()
+        all_example_ids = self._test_results["example_ids"]
+        instructions = self._test_results["instructions"]
+        groundtruth_actions = self._test_results["groundtruths"]
+        predictions = self._test_results["predictions"]
+        outputs = {
+            example_id: {"input": instr, "prediction": pred, "groundtruth": gt}
+            for example_id, pred, gt, instr in zip(
+                all_example_ids, predictions, groundtruth_actions, instructions
+            )
+        }
+        with open(self._results_path, "w") as fp:
+            json.dump(outputs, fp, indent=4)
+        return super().on_test_epoch_end()
 
     @overrides(check_signature=False)
     def training_step(self, batch: EmmaDatasetBatch, batch_idx: int) -> EmmaSeq2SeqLMOutput:
@@ -101,11 +127,23 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
         return prediction_output
 
     @overrides(check_signature=False)
-    def test_step(self, batch: EmmaDatasetBatch, batch_idx: int) -> PredictType:
+    def test_step(self, batch: EmmaDatasetBatch, batch_idx: int) -> None:
         """Inference step."""
         prediction_output = self.predict_step(batch=batch, batch_idx=batch_idx)
-        self.compute_metrics(prediction_output, batch)
-        return prediction_output
+        # Prepare the results
+        if self._results_path:
+            self._test_results["example_ids"].extend(
+                [sample["example_id"] for sample in batch.raw_target]  # type: ignore[union-attr]
+            )
+            self._test_results["instructions"].extend(
+                [sample["instruction"] for sample in batch.raw_target]  # type: ignore[union-attr]
+            )
+            self._test_results["groundtruths"].extend(
+                [sample["references"] for sample in batch.raw_target]  # type: ignore[union-attr]
+            )
+            for sent in self._tokenizer.batch_decode(prediction_output, skip_special_tokens=False):
+                sent = self._remove_sequence_special_tokens(sent)
+                self._test_results["predictions"].append(sent)
 
     @overrides(check_signature=False)
     def predict_step(self, batch: EmmaDatasetBatch, batch_idx: int) -> PredictType:
@@ -146,23 +184,8 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
         references = [
             sample["references"] for sample in batch.raw_target  # type: ignore[union-attr]
         ]
-        # question_type_labels = [
-        #     sample["question_type_labels"] for sample in batch.raw_target  # type: ignore[union-attr]
-        # ]
         self.validation_accuracy(predictions, references)
         self.log("validation_accuracy", self.validation_accuracy)
-        # cm_targets = torch.vstack(question_type_labels)
-        # self.validation_question_types(prediction_output, batch.target_token_ids, cm_targets)
-
-    # def on_validation_epoch_end(self) -> None:
-    #     """Compute score and reset metrics after each validation epoch."""
-    # cm = self.validation_question_types.compute()
-    # classes = self.validation_question_types.class_tokens
-    # df_cm = pd.DataFrame(cm.tolist(), index=classes, columns=["Pred False", "Pred True"])
-    # self.logger.experiment[0].log({"valid_question_types_conf_mat": df_cm})
-    # Reseting internal state such that metric ready for new data
-    # self.validation_question_types.reset()
-    # return super().on_validation_epoch_end()
 
     def _postprocess_nlu_output(self, output: list[str]) -> list[str]:
         """Remove special tokens from predicted outputs."""

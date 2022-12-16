@@ -1,28 +1,14 @@
-from collections import Counter
 from pathlib import Path
-from random import shuffle
 from typing import Literal, Optional, Union
 
-from emma_datasets.datamodels import DatasetSplit
 from pytorch_lightning import LightningDataModule
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from emma_policy.datamodules.collate import collate_fn
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
 from emma_policy.datamodules.simbot_nlu_dataset import SimBotNLUDataset, SimBotNLUIntents
-
-
-SimBotNLU_SPECIAL_TOKENS = [
-    "<act>",
-    "<clarify>",
-    "<decription>",
-    "<location>",
-    "<low_level>",
-    "<disambiguation>",
-    "<direction>",
-    "<search>",
-]
+from emma_policy.utils import DistributedWeightedSampler, compute_weights
 
 
 def prepare_nlu_tokenizer(
@@ -32,14 +18,19 @@ def prepare_nlu_tokenizer(
 ) -> PreTrainedTokenizer:
     """Add special tokens to tokenizer."""
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    tokenizer.add_special_tokens(
-        {"additional_special_tokens": SimBotNLU_SPECIAL_TOKENS}
-    )  # doesn't add if they are already there
+    special_tokens = [intent.value for intent in SimBotNLUIntents if intent.is_special_token]
+    # doesn't add if they are already there
+    tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
     tokenizer.truncation_side = tokenizer_truncation_side
 
     if max_lang_tokens:
         tokenizer.model_max_length = max_lang_tokens
     return tokenizer
+
+
+def get_nlu_classes() -> list[str]:
+    """Get the NLU classes."""
+    return [intent.name for intent in SimBotNLUIntents if intent.is_nlu_output]
 
 
 class SimBotNLUDataModule(LightningDataModule):
@@ -56,7 +47,8 @@ class SimBotNLUDataModule(LightningDataModule):
         model_name: str = "heriot-watt/emma-base",
         max_lang_tokens: Optional[int] = None,
         tokenizer_truncation_side: Literal["left", "right"] = "right",
-        balance_dataset: bool = False,
+        weighted_sampling: bool = True,
+        weight_temperature: float = 1.5,
     ) -> None:
         super().__init__()
         if isinstance(train_db_file, str):
@@ -81,7 +73,8 @@ class SimBotNLUDataModule(LightningDataModule):
         # Model
         self._model_name = model_name
 
-        self.balance_dataset = balance_dataset
+        self._weighted_sampling = weighted_sampling
+        self._weight_temperature = weight_temperature
 
     def prepare_data(self) -> None:
         """Perform any preparation steps necessary before loading the data to the model."""
@@ -109,9 +102,6 @@ class SimBotNLUDataModule(LightningDataModule):
             allow_paraphrasing=True,
         )
 
-        if self.balance_dataset:
-            self.balanced_num_samples = self._get_balanced_dataset_length(DatasetSplit.train)
-
         self._valid_dataset = SimBotNLUDataset(
             dataset_db_path=self._valid_db_file,
             tokenizer=self.tokenizer,
@@ -128,18 +118,28 @@ class SimBotNLUDataModule(LightningDataModule):
 
     def train_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
         """Generate train dataloader for SimBot NLU instances."""
-        if self.balance_dataset:
-            # Resample at the beginning of each epoch.
-            train_dataset = self._get_balanced_train_datasets()
-        else:
-            train_dataset = self._train_dataset
-
+        if self._weighted_sampling:
+            training_sampler_weights = compute_weights(
+                self._train_dataset.data_intents,
+                temperature=self._weight_temperature,
+            )
+            return DataLoader(
+                self._train_dataset,  # type: ignore[arg-type]
+                batch_size=self._train_batch_size,
+                num_workers=self._num_workers,
+                collate_fn=collate_fn,
+                pin_memory=True,
+                sampler=DistributedWeightedSampler(
+                    training_sampler_weights, total_size=len(self._train_dataset)
+                ),
+            )
         return DataLoader(
-            train_dataset,  # type: ignore[arg-type]
+            self._train_dataset,  # type: ignore[arg-type]
             batch_size=self._train_batch_size,
             num_workers=self._num_workers,
             collate_fn=collate_fn,
             shuffle=True,
+            pin_memory=True,
         )
 
     def val_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
@@ -161,26 +161,3 @@ class SimBotNLUDataModule(LightningDataModule):
             collate_fn=collate_fn,
             shuffle=False,
         )
-
-    def _get_balanced_dataset_length(self, dataset_split: DatasetSplit) -> int:
-        """Balance the number of samples from datasets of different tasks."""
-        if dataset_split != DatasetSplit.train:
-            raise AssertionError("Balancing only supported for training datasets.")
-        dataset_lengths = list(Counter(self._train_dataset.data_intents).values())
-        return min(dataset_lengths)
-
-    def _get_balanced_train_datasets(
-        self,
-    ) -> SimBotNLUDataset:
-        """Create the dataset for each enabled task."""
-        train_indices = []
-        for nlu_intent in SimBotNLUIntents:
-            class_indices = [
-                index
-                for index, intent in enumerate(self._train_dataset.data_intents)
-                if intent == nlu_intent
-            ]
-            shuffle(class_indices)
-            train_indices.extend(class_indices[: self.balanced_num_samples])
-        dataset = Subset(self._train_dataset, train_indices)
-        return dataset  # type: ignore[return-value]

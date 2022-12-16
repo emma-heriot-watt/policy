@@ -1,12 +1,10 @@
 import random
-from collections import Counter
 from pathlib import Path
 from typing import Literal, Optional, Union
 
-import numpy as np
 from emma_datasets.constants.simbot.simbot import get_arena_definitions
 from emma_datasets.datamodels.datasets.utils.simbot_utils.instruction_processing import (
-    get_object_from_action_object_metadata,
+    get_object_label_from_object_id,
 )
 from emma_datasets.datamodels.datasets.utils.simbot_utils.simbot_datamodels import (
     SimBotAction,
@@ -20,7 +18,7 @@ from transformers import AutoTokenizer, PreTrainedTokenizer
 from emma_policy.datamodules.collate import collate_fn
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
 from emma_policy.datamodules.simbot_action_dataset import SimBotActionDataset
-from emma_policy.utils import DistributedWeightedSampler
+from emma_policy.utils import DistributedWeightedSampler, compute_weights
 
 
 SimBotAction_SPECIAL_TOKENS = [
@@ -197,23 +195,10 @@ class SimBotActionDataModule(LightningDataModule):
                 subsampled_weight.append(1)
             actions.append(self._get_action_type(instance.actions[-1]))
 
-        action_types = [
-            action for weight, action in zip(subsampled_weight, actions) if weight == 1
-        ]
-        counts = Counter(actions)
-        action_types = list(counts.keys())
-        action_counts = np.array([counts[action] for action in action_types])
-        probas = 1 / action_counts
+        data_weights = compute_weights(
+            actions, temperature=self._weight_temperature, subsampled_weight=subsampled_weight
+        )
 
-        # Update the sampling probabilities through temperature scaling
-        scaled_probas = probas ** (1 / self._weight_temperature)
-        scaled_probas = scaled_probas / scaled_probas.sum()
-        action_type_weights = dict(zip(action_types, scaled_probas))
-
-        # Second pass to get the final weight of each sample
-        data_weights = []
-        for weight, action_type in zip(subsampled_weight, actions):
-            data_weights.append(float(weight) * action_type_weights[action_type])
         return data_weights
 
     def _get_action_type(self, action: SimBotAction) -> str:
@@ -238,7 +223,7 @@ class SimBotActionDataModule(LightningDataModule):
         if action_is_look_around:
             return skip_instance
         # Skip Goto Desk or Table
-        target_object = get_object_from_action_object_metadata(
+        target_object = get_object_label_from_object_id(
             action.goto["object"]["id"], self._object_assets_to_names
         )
         skip_target_object = target_object in self._skip_goto_objects

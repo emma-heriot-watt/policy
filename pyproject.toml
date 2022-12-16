@@ -77,7 +77,7 @@ loguru = "^0.6.0"
 spacy = "^3.2.4"
 scipy = "^1.8.0"
 rich = "^12.4.4"
-emma-datasets = { git = "https://github.com/emma-simbot/datasets" }
+emma-datasets = { git = "https://github.com/emma-simbot/datasets", branch = "main" }
 emma-common = { git = "https://github.com/emma-simbot/common" }
 pydantic = { extras = ["dotenv"], version = "^1.10.2" }
 

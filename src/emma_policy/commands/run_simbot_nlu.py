@@ -10,6 +10,7 @@ from transformers import PreTrainedTokenizer
 from uvicorn import Config, Server
 
 from emma_policy.datamodules.simbot_nlu_datamodule import prepare_nlu_tokenizer
+from emma_policy.datamodules.simbot_nlu_dataset import SimBotNLUIntents
 from emma_policy.inference.api.logger import setup_logger
 from emma_policy.inference.api.simbot_state import GenerateRequest
 from emma_policy.inference.model_wrapper.simbot_nlu_input_builder import SimBotNLUInputBuilder
@@ -17,7 +18,7 @@ from emma_policy.models.simbot_nlu_policy import SimBotNLUEmmaPolicy
 
 
 logger = logging.getLogger(__name__)
-DEFAULT_ACTION = "<act><low_level>"
+DEFAULT_ACTION = SimBotNLUIntents.act_match.value
 
 
 class ApiSettings(BaseSettings):
@@ -40,6 +41,7 @@ class ApiStore(TypedDict, total=False):
     num_beams: int
     no_repeat_ngram_size: int
     max_generated_text_length: int
+    valid_action_types: list[str]
 
 
 settings = ApiSettings()
@@ -76,6 +78,18 @@ def rule_based_ambiguity_check(action: str, frame_features: list[dict[str, Any]]
     return action
 
 
+def process_nlu_output(action: str, valid_action_types: list[str]) -> str:
+    """Process the NLU output to a valid form."""
+    # For search intents only return <search>
+    if action.startswith(SimBotNLUIntents.search.value):
+        return SimBotNLUIntents.search.value
+    # Make sure to return a valid format
+    action_type = action.split(" ")[0]
+    if action_type not in valid_action_types:
+        action = DEFAULT_ACTION
+    return action
+
+
 @app.on_event("startup")
 async def startup_event() -> None:
     """Run specific functions when starting up the API."""
@@ -87,6 +101,9 @@ async def startup_event() -> None:
         tokenizer=api_store["tokenizer"],
         device=settings.device,
     )
+    api_store["valid_action_types"] = [
+        intent.value for intent in SimBotNLUIntents if intent.is_nlu_output
+    ]
     logging.info(f"Loading model on device `{settings.device}`")
     api_store["model"] = load_model(
         checkpoint_path=str(settings.model_checkpoint_path),
@@ -132,10 +149,7 @@ async def generate(request: Request, response: Response) -> str:
         try:
             with torch.no_grad():
                 action = api_store["model"].inference_step(batch)[0]
-            action = rule_based_ambiguity_check(
-                action=action,
-                frame_features=simbot_request.environment_history[-1].features,
-            )
+            action = process_nlu_output(action, api_store["valid_action_types"])
 
         except Exception as err:
             # TODO: report session ID for better debugging

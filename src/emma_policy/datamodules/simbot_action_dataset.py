@@ -5,7 +5,7 @@ from typing import Union
 import torch
 from emma_datasets.constants.simbot.simbot import get_arena_definitions
 from emma_datasets.datamodels.datasets.utils.simbot_utils.instruction_processing import (
-    get_object_from_action_object_metadata,
+    get_object_label_from_object_id,
 )
 from emma_datasets.datamodels.datasets.utils.simbot_utils.paraphrasers import (
     InstructionParaphraser,
@@ -59,6 +59,14 @@ def get_simbot_instruction_paraphrase(
         object_id=action_object_metadata["id"],
         object_attributes=attributes,
     )
+
+
+def check_punctuation(text: str) -> str:
+    """Make sure the instruction ends in a fullstop."""
+    if not text.endswith(("?", ".")):
+        text = f"{text}."
+    text = text.replace("..", ".")
+    return text
 
 
 class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
@@ -127,8 +135,8 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 caption=source_text
             )
 
-            object_name = get_object_from_action_object_metadata(
-                object_asset=action_object_metadata["id"][object_candidate_idx],
+            object_name = get_object_label_from_object_id(
+                object_id=action_object_metadata["id"][object_candidate_idx],
                 object_assets_to_names=self._object_assets_to_names,
             )
 
@@ -304,8 +312,8 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         """
         if self._allow_paraphrasing and instance.paraphrasable:
             action_object_metadata = instance.actions[0].get_action_data["object"]
-            object_name = get_object_from_action_object_metadata(
-                object_asset=action_object_metadata["id"],
+            object_name = get_object_label_from_object_id(
+                object_id=action_object_metadata["id"],
                 object_assets_to_names=self._object_assets_to_names,
             )
 
@@ -332,9 +340,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 )
                 source_text = f"{source_text}. {question_answer_text}"
 
-        if not source_text.endswith("."):
-            source_text = f"{source_text}."
-        source_text = source_text.replace("..", ".")
+        source_text = check_punctuation(source_text)
 
         return source_text
 
@@ -365,8 +371,8 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 object_id = action_object_metadata.get("id", None)
                 # action with a specific object
                 if object_id is not None:
-                    object_name = get_object_from_action_object_metadata(
-                        object_asset=action_object_metadata["id"],
+                    object_name = get_object_label_from_object_id(
+                        object_id=action_object_metadata["id"],
                         object_assets_to_names=self._object_assets_to_names,
                     )
                     image_index = action_object_metadata["colorImageIndex"]

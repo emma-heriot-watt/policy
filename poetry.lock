@@ -1260,7 +1260,7 @@ hydra-core = ">=1.0.0"
 
 [[package]]
 name = "hydra-core"
-version = "1.2.0"
+version = "1.3.0"
 description = "A framework for elegantly configuring complex applications"
 category = "main"
 optional = false
@@ -4972,8 +4972,8 @@ hydra-colorlog = [
     {file = "hydra_colorlog-1.2.0-py3-none-any.whl", hash = "sha256:33d05fc11ca9bc7a5d69cfb3c8fb395a1bc52fa1dfe7aca6a6f5ffb57f6e7c4b"},
 ]
 hydra-core = [
-    {file = "hydra-core-1.2.0.tar.gz", hash = "sha256:4990721ce4ac69abafaffee566d6b63a54faa6501ecce65b338d3251446ff634"},
-    {file = "hydra_core-1.2.0-py3-none-any.whl", hash = "sha256:b6614fd6d6a97a9499f7ddbef02c9dd38f2fec6a9bc83c10e248db1dae50a528"},
+    {file = "hydra-core-1.3.0.tar.gz", hash = "sha256:4e54420c3304c6f91c69b3dd9a04ac18d7e134464557ccab88474b4064a309f3"},
+    {file = "hydra_core-1.3.0-py3-none-any.whl", hash = "sha256:47dac77149992ce3f4f36491f52d98e85f249b156410f4e1b99eea77a0a6674b"},
 ]
 identify = [
     {file = "identify-2.5.7-py2.py3-none-any.whl", hash = "sha256:7a67b2a6208d390fd86fd04fb3def94a3a8b7f0bcbd1d1fcd6736f4defe26390"},

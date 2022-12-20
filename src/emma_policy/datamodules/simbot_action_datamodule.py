@@ -186,7 +186,7 @@ class SimBotActionDataModule(LightningDataModule):
         db = DatasetDb(dataset_db)
         # First pass through the dataset to get action type counts
         actions = []
-        subsampled_weight: list[int] = []
+        subsampled_weight: list[float] = []
         for _, _, instance_str in db:
             instance = SimBotInstructionInstance.parse_raw(instance_str)
             if self._skip_instance(instance.actions[-1]):

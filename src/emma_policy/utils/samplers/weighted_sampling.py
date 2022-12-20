@@ -1,11 +1,11 @@
 from collections import Counter
-from typing import Any, Optional
+from typing import Optional
 
 import numpy as np
 
 
 def compute_weights(
-    data_list: list[Any], temperature: float = 1.0, subsampled_weight: Optional[list[int]] = None
+    data_list: list[str], temperature: float = 1.0, subsampled_weight: Optional[list[int]] = None
 ) -> list[float]:
     """Proportional temperature scaling to mitigate action type imbalance.
 

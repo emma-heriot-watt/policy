@@ -72,8 +72,11 @@ hydra-core = "^1.1.2"
 hydra-colorlog = "^1.1.0"
 overrides = "^6.1.0"
 numpy = "^1.22.2"
+httpx = "^0.23.0"
+loguru = "^0.6.0"
 spacy = "^3.2.4"
 scipy = "^1.8.0"
+rich = "^12.4.4"
 emma-datasets = { git = "https://github.com/emma-simbot/datasets", branch = "main" }
 emma-common = { git = "https://github.com/emma-simbot/common" }
 pydantic = { extras = ["dotenv"], version = "^1.10.2" }
@@ -104,6 +107,9 @@ requests-mock = "^1.9.3"
 [tool.poetry.group.demo.dependencies]
 gradio = "^3.7"
 
+
+[tool.poetry.group.web.dependencies]
+fastapi = { extras = ["all"], version = "^0.85.1" }
 
 [tool.black]
 line-length = 99

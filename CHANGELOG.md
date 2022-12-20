@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.12.0](https://github.com/emma-simbot/policy/compare/v1.11.0...v1.12.0) (2022-12-20)
+
+
+### Features
+
+* tracing enabled for all the web services ([#651](https://github.com/emma-simbot/policy/issues/651)) ([082b211](https://github.com/emma-simbot/policy/commit/082b2111612e4afd1ad6b1aea437eaedf962b621))
+
 ## [1.11.0](https://github.com/emma-simbot/policy/compare/v1.10.2...v1.11.0) (2022-12-16)
 
 

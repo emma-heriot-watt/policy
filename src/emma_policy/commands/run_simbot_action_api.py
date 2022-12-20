@@ -4,14 +4,15 @@ from pathlib import Path
 from typing import Any, Optional, TypedDict
 
 import torch
+from emma_common.logging import logger
 from fastapi import FastAPI, Request, Response, status
 from pydantic import BaseSettings, FilePath
 from transformers import PreTrainedTokenizer
 from uvicorn import Config, Server
 
+from emma_policy.api.instrumentation import get_tracer
 from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.datamodules.simbot_action_datamodule import prepare_action_tokenizer
-from emma_policy.inference.api.logger import setup_logger
 from emma_policy.inference.api.simbot_state import GenerateRequest
 from emma_policy.inference.model_wrapper.simbot_action_input_builder import (
     SimBotActionInputBuilder,
@@ -20,7 +21,7 @@ from emma_policy.inference.model_wrapper.simbot_raw_text_matcher import SimBotAc
 from emma_policy.models.simbot_emma_policy import SimBotEmmaPolicy
 
 
-logger = logging.getLogger(__name__)
+tracer = get_tracer(__name__)
 
 
 class ApiSettings(BaseSettings):
@@ -28,12 +29,23 @@ class ApiSettings(BaseSettings):
 
     port: int = 6000
     host: str = "0.0.0.0"  # noqa: S104
+    workers: int = 1
     log_level: str = "debug"
     model_checkpoint_path: FilePath = Path("storage/model/checkpoints/simbot/action.ckpt")
     model_name: str = "heriot-watt/emma-base"
     device: str = "cpu"
     raw_text_match_json: Path = Path("storage/constants/simbot_low_level_examples.json")
     raw_distance_threshold: int = 2
+
+    # Observability
+    traces_to_opensearch: bool = False
+    log_to_cloudwatch: bool = False
+    aws_profile: str = "TeamProfile"
+    watchtower_log_group_name: str = "simbot_challenge"
+    watchtower_log_stream_name: str = "policy/{machine_name}/{logger_name}/{process_id}"
+
+    otlp_endpoint: str = "localhost:4317"
+    opensearch_service_name: str = "policy"
 
 
 class ApiStore(TypedDict, total=False):
@@ -134,8 +146,8 @@ async def generate_raw_text_match(request: Request, response: Response) -> Optio
         logging.exception("Unable to parse request", exc_info=request_err)
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         raise request_err
-
-    output_string = api_store["raw_text_matcher"](simbot_request)
+    with tracer.start_as_current_span("Raw text match"):
+        output_string = api_store["raw_text_matcher"](simbot_request)
     return output_string
 
 
@@ -149,51 +161,55 @@ async def generate_find(request: Request, response: Response) -> list[str]:
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         raise request_err
 
-    (batch, decoder_input_ids) = api_store["input_builder"](
-        simbot_request, task=Task.visual_grounding
-    )
-    if batch is not None:
-        max_length = api_store["max_length_per_action_sequence"]
-        if decoder_input_ids is not None:
-            max_length += decoder_input_ids.shape[1]
-            len_decode = decoder_input_ids.shape[1]
+    with tracer.start_as_current_span("Model inference"):
+        (batch, decoder_input_ids) = api_store["input_builder"](
+            simbot_request, task=Task.visual_grounding
+        )
+        if batch is not None:
+            max_length = api_store["max_length_per_action_sequence"]
+            if decoder_input_ids is not None:
+                max_length += decoder_input_ids.shape[1]
+                len_decode = decoder_input_ids.shape[1]
+            else:
+                len_decode = 0
+            try:
+                with torch.no_grad():
+                    model_output = api_store["model"].inference_step(
+                        batch,
+                        decoder_input_ids=decoder_input_ids,
+                        max_length=max_length,
+                        num_beams=api_store["num_beams"],
+                        no_repeat_ngram_size=api_store["no_repeat_ngram_size"],
+                    )
+                    actions = api_store["tokenizer"].batch_decode(
+                        model_output[:, len_decode:], skip_special_tokens=False
+                    )
+
+            except Exception as err:
+                # TODO: report session ID for better debugging
+                error_message = f"Failed to get next action for request `{simbot_request}"
+                logger.error(error_message, exc_info=err)
+                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                raise err
+
         else:
-            len_decode = 0
-        try:
-            with torch.no_grad():
-                model_output = api_store["model"].inference_step(
-                    batch,
-                    decoder_input_ids=decoder_input_ids,
-                    max_length=max_length,
-                    num_beams=api_store["num_beams"],
-                    no_repeat_ngram_size=api_store["no_repeat_ngram_size"],
+            actions = [""]
+            logger.debug(f"Empty action for request: {simbot_request}")
+
+    with tracer.start_as_current_span("Post processing"):
+        post_processed_actions = []
+        for idx, action in enumerate(actions, 1):
+            # Append only positive predictions, in case of no object return None
+            if "token" in action:
+                processed_action = post_process_action(action)
+                # Fix the frame token in the case of multiple images
+                processed_action = processed_action.replace(
+                    "<frame_token_1>", f"<frame_token_{idx}>"
                 )
-                actions = api_store["tokenizer"].batch_decode(
-                    model_output[:, len_decode:], skip_special_tokens=False
-                )
-
-        except Exception as err:
-            # TODO: report session ID for better debugging
-            error_message = f"Failed to get next action for request `{simbot_request}"
-            logger.error(error_message, exc_info=err)
-            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-            raise err
-
-    else:
-        actions = [""]
-        logger.debug(f"Empty action for request: {simbot_request}")
-
-    post_processed_actions = []
-    for idx, action in enumerate(actions, 1):
-        # Append only positive predictions, in case of no object return None
-        if "token" in action:
-            processed_action = post_process_action(action)
-            # Fix the frame token in the case of multiple images
-            processed_action = processed_action.replace("<frame_token_1>", f"<frame_token_{idx}>")
-            # Replace the <stop></s> at the end of the prediction
-            # We know that the model has finished predicting in visual grounding.
-            processed_action = processed_action.replace("<stop></s>", "").strip()
-            post_processed_actions.append(processed_action)
+                # Replace the <stop></s> at the end of the prediction
+                # We know that the model has finished predicting in visual grounding.
+                processed_action = processed_action.replace("<stop></s>", "").strip()
+                post_processed_actions.append(processed_action)
     logger.debug(f"Predicted actions: {post_processed_actions}")
     return post_processed_actions
 
@@ -213,41 +229,43 @@ async def generate(request: Request, response: Response) -> str:
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         raise request_err
 
-    (batch, decoder_input_ids) = api_store["input_builder"](
-        simbot_request, task=Task.action_execution
-    )
-    if batch is not None:
-        max_length = api_store["max_length_per_action_sequence"]
-        if decoder_input_ids is not None:
-            max_length += decoder_input_ids.shape[1]
-            len_decode = decoder_input_ids.shape[1]
+    with tracer.start_as_current_span("Model inference"):
+        (batch, decoder_input_ids) = api_store["input_builder"](
+            simbot_request, task=Task.action_execution
+        )
+        if batch is not None:
+            max_length = api_store["max_length_per_action_sequence"]
+            if decoder_input_ids is not None:
+                max_length += decoder_input_ids.shape[1]
+                len_decode = decoder_input_ids.shape[1]
+            else:
+                len_decode = 0
+            try:
+                with torch.no_grad():
+                    model_output = api_store["model"].inference_step(
+                        batch,
+                        decoder_input_ids=decoder_input_ids,
+                        max_length=max_length,
+                        num_beams=api_store["num_beams"],
+                        no_repeat_ngram_size=api_store["no_repeat_ngram_size"],
+                    )
+                    action = api_store["tokenizer"].batch_decode(
+                        model_output[:, len_decode:], skip_special_tokens=False
+                    )[0]
+
+            except Exception as err:
+                # TODO: report session ID for better debugging
+                error_message = f"Failed to get next action for request `{simbot_request}"
+                logger.error(error_message, exc_info=err)
+                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                raise err
+
         else:
-            len_decode = 0
-        try:
-            with torch.no_grad():
-                model_output = api_store["model"].inference_step(
-                    batch,
-                    decoder_input_ids=decoder_input_ids,
-                    max_length=max_length,
-                    num_beams=api_store["num_beams"],
-                    no_repeat_ngram_size=api_store["no_repeat_ngram_size"],
-                )
-                action = api_store["tokenizer"].batch_decode(
-                    model_output[:, len_decode:], skip_special_tokens=False
-                )[0]
+            action = ""
+            logger.debug(f"Empty action for request: {simbot_request}")
 
-        except Exception as err:
-            # TODO: report session ID for better debugging
-            error_message = f"Failed to get next action for request `{simbot_request}"
-            logger.error(error_message, exc_info=err)
-            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-            raise err
-
-    else:
-        action = ""
-        logger.debug(f"Empty action for request: {simbot_request}")
-
-    action = post_process_action(action)
+    with tracer.start_as_current_span("Post processing"):
+        action = post_process_action(action)
     logger.debug(f"Predicted action: {action}")
     return action
 
@@ -262,10 +280,6 @@ def main() -> None:
             log_level=settings.log_level,
         )
     )
-
-    # Separately adjust the log level for EMMA-related modules
-    setup_logger(emma_log_level=settings.log_level)
-
     server.run()
 
 

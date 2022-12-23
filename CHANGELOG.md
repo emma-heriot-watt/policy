@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.13.0](https://github.com/emma-simbot/policy/compare/v1.12.1...v1.13.0) (2022-12-23)
+
+
+### Features
+
+* added tracing for policy and NLU model ([#654](https://github.com/emma-simbot/policy/issues/654)) ([9894b18](https://github.com/emma-simbot/policy/commit/9894b1813294cf07242deecb0f4fa6a149607b82))
+
 ## [1.12.1](https://github.com/emma-simbot/policy/compare/v1.12.0...v1.12.1) (2022-12-20)
 
 

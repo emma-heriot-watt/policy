@@ -1,23 +1,32 @@
 import logging
+import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Any, TypedDict
 
 import torch
+from emma_common.api.instrumentation import instrument_app
+from emma_common.aws.cloudwatch import add_cloudwatch_handler_to_logger
+from emma_common.logging import (
+    InstrumentedInterceptHandler,
+    logger,
+    setup_logging,
+    setup_rich_logging,
+)
 from fastapi import FastAPI, Request, Response, status
 from pydantic import BaseSettings, FilePath
 from transformers import PreTrainedTokenizer
 from uvicorn import Config, Server
 
+from emma_policy.api.instrumentation import get_tracer
 from emma_policy.datamodules.simbot_nlu_datamodule import prepare_nlu_tokenizer
 from emma_policy.datamodules.simbot_nlu_dataset import SimBotNLUIntents
-from emma_policy.inference.api.logger import setup_logger
 from emma_policy.inference.api.simbot_state import GenerateRequest
 from emma_policy.inference.model_wrapper.simbot_nlu_input_builder import SimBotNLUInputBuilder
 from emma_policy.models.simbot_nlu_policy import SimBotNLUEmmaPolicy
 
 
-logger = logging.getLogger(__name__)
+tracer = get_tracer(__name__)
 DEFAULT_ACTION = SimBotNLUIntents.act_match.value
 
 
@@ -26,10 +35,21 @@ class ApiSettings(BaseSettings):
 
     port: int = 6000
     host: str = "0.0.0.0"  # noqa: S104
+    workers: int = 1
     log_level: str = "debug"
     model_checkpoint_path: FilePath = Path("storage/model/checkpoints/simbot/nlu.ckpt")
     model_name: str = "heriot-watt/emma-base"
     device: str = "cpu"
+
+    # Observability
+    traces_to_opensearch: bool = False
+    log_to_cloudwatch: bool = False
+    aws_profile: str = "TeamProfile"
+    watchtower_log_group_name: str = "simbot_challenge"
+    watchtower_log_stream_name: str = "nlu/{machine_name}/{logger_name}/{process_id}"
+
+    otlp_endpoint: str = "localhost:4317"
+    opensearch_service_name: str = "nlu"
 
 
 class ApiStore(TypedDict, total=False):
@@ -141,40 +161,52 @@ async def generate(request: Request, response: Response) -> str:
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         raise request_err
 
-    logger.debug("Preparing the model input")
-    # If the environment history is greater than 1,
-    # the agent has already clarified or acted.
-    if len(simbot_request.environment_history) == 1:
-        batch = api_store["input_builder"](simbot_request)
-        try:
-            with torch.no_grad():
-                action = api_store["model"].inference_step(batch)[0]
-            action = process_nlu_output(action, api_store["valid_action_types"])
+    with tracer.start_as_current_span("Model inference"):
+        logger.debug("Preparing the model input")
+        # If the environment history is greater than 1,
+        # the agent has already clarified or acted.
+        if len(simbot_request.environment_history) == 1:
+            batch = api_store["input_builder"](simbot_request)
+            try:
+                with torch.no_grad():
+                    action = api_store["model"].inference_step(batch)[0]
+                action = process_nlu_output(action, api_store["valid_action_types"])
 
-        except Exception as err:
-            # TODO: report session ID for better debugging
-            error_message = f"Failed to get next action for request `{simbot_request}"
-            logger.error(error_message, exc_info=err)
-            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-            raise err
-    else:
-        action = DEFAULT_ACTION
+            except Exception as err:
+                # TODO: report session ID for better debugging
+                error_message = f"Failed to get next action for request `{simbot_request}"
+                logger.error(error_message, exc_info=err)
+                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                raise err
+        else:
+            action = DEFAULT_ACTION
     return action
 
 
 def main() -> None:
     """Runs a server that serves any instance of an EMMA policy model."""
+    if settings.traces_to_opensearch:
+        instrument_app(app, settings.opensearch_service_name, settings.otlp_endpoint)
+        setup_logging(sys.stdout, InstrumentedInterceptHandler())
+    else:
+        setup_rich_logging(rich_traceback_show_locals=False)
+
+    if settings.log_to_cloudwatch:
+        add_cloudwatch_handler_to_logger(
+            boto3_profile_name=settings.aws_profile,
+            log_stream_name=settings.watchtower_log_stream_name,
+            log_group_name=settings.watchtower_log_group_name,
+            send_interval=1,
+            enable_trace_logging=settings.traces_to_opensearch,
+        )
     server = Server(
         Config(
-            "emma_policy.commands.run_simbot_nlu:app",
+            app,
             host=settings.host,
             port=settings.port,
             log_level=settings.log_level,
         )
     )
-
-    # Separately adjust the log level for EMMA-related modules
-    setup_logger(emma_log_level=settings.log_level)
 
     server.run()
 

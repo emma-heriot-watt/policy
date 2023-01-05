@@ -170,7 +170,7 @@ async def generate_find(request: Request, response: Response) -> list[str]:
         raise request_err
 
     with tracer.start_as_current_span("Model inference"):
-        (batch, decoder_input_ids) = api_store["input_builder"](
+        (batch, decoder_input_ids, step_index) = api_store["input_builder"](
             simbot_request, task=Task.visual_grounding
         )
         if batch is not None:
@@ -199,7 +199,6 @@ async def generate_find(request: Request, response: Response) -> list[str]:
                 logger.error(error_message, exc_info=err)
                 response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
                 raise err
-
         else:
             actions = [""]
             logger.debug(f"Empty action for request: {simbot_request}")
@@ -222,6 +221,68 @@ async def generate_find(request: Request, response: Response) -> list[str]:
     return post_processed_actions
 
 
+@app.post("/grab_from_history", status_code=status.HTTP_200_OK)
+async def grab_from_history(request: Request, response: Response) -> Optional[int]:
+    """Endpoint for find."""
+    try:
+        simbot_request = GenerateRequest.parse_obj(await request.json())
+    except Exception as request_err:
+        logging.exception("Unable to parse request", exc_info=request_err)
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        raise request_err
+
+    (batch, decoder_input_ids, step_index) = api_store["input_builder"](
+        simbot_request, task=Task.visual_grounding
+    )
+    with tracer.start_as_current_span("Model inference"):
+        if batch is not None:
+            max_length = api_store["max_length_per_action_sequence"]
+            if decoder_input_ids is not None:
+                max_length += decoder_input_ids.shape[1]
+                len_decode = decoder_input_ids.shape[1]
+            else:
+                len_decode = 0
+            try:
+                with torch.no_grad():
+                    model_output = api_store["model"].inference_step(
+                        batch,
+                        decoder_input_ids=decoder_input_ids,
+                        max_length=max_length,
+                        num_beams=api_store["num_beams"],
+                        no_repeat_ngram_size=api_store["no_repeat_ngram_size"],
+                    )
+                    actions = api_store["tokenizer"].batch_decode(
+                        model_output[:, len_decode:], skip_special_tokens=False
+                    )
+
+            except Exception as err:
+                # TODO: report session ID for better debugging
+                error_message = f"Failed to get next action for request `{simbot_request}"
+                logger.error(error_message, exc_info=err)
+                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                raise err
+        else:
+            actions = [""]
+            logger.debug(f"Empty action for request: {simbot_request}")
+
+    with tracer.start_as_current_span("Post processing"):
+        # Select all step_indexes with an object
+        filtered_step_idx = [
+            step_index[idx]
+            for idx, action in enumerate(actions)
+            if "_token" in action and step_index
+        ]
+        logger.debug(f"Filtered steps: {filtered_step_idx}")
+
+        unique_ordered_steps = sorted(set(filtered_step_idx))
+        logger.debug(f"Sorted ordered steps: {unique_ordered_steps}")
+
+        # most recent timestep with object
+        most_recent_step = unique_ordered_steps[0] if unique_ordered_steps else None
+    logger.debug(f"most recent step: {most_recent_step}")
+    return most_recent_step
+
+
 @app.post("/generate", status_code=status.HTTP_200_OK)
 async def generate(request: Request, response: Response) -> str:
     """Get the next action from the model for the given instruction, question, and answer.
@@ -238,7 +299,7 @@ async def generate(request: Request, response: Response) -> str:
         raise request_err
 
     with tracer.start_as_current_span("Model inference"):
-        (batch, decoder_input_ids) = api_store["input_builder"](
+        (batch, decoder_input_ids, step_index) = api_store["input_builder"](
             simbot_request, task=Task.action_execution
         )
         if batch is not None:
@@ -267,7 +328,6 @@ async def generate(request: Request, response: Response) -> str:
                 logger.error(error_message, exc_info=err)
                 response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
                 raise err
-
         else:
             action = ""
             logger.debug(f"Empty action for request: {simbot_request}")

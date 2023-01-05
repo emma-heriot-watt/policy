@@ -32,15 +32,21 @@ class SimBotActionInputBuilder:
 
     def __call__(
         self, request: GenerateRequest, task: Task
-    ) -> tuple[Optional[EmmaDatasetBatch], Optional[torch.Tensor]]:
+    ) -> tuple[Optional[EmmaDatasetBatch], Optional[torch.Tensor], Optional[list[int]]]:
         """Process the environment output into a batch for the model.
 
         The sample batch provides the set of previous observations and previous actions taken by
         the agent in the environment.
         """
-        instruction = self._parse_dialogue_from_request(request)
-        (feature_dicts, previous_actions) = self._parse_environment_history_from_request(request)
-
+        instruction = self._parse_dialogue_from_request(
+            request
+        )  # @TODO check whether gfh should change instructions
+        (
+            feature_dicts,
+            previous_actions,
+            step_index,
+        ) = self._parse_environment_history_from_request(request)
+        # assert len(feature_dicts) == len(step_index)
         batch: Optional[EmmaDatasetBatch] = None
         decoder_input_ids: Optional[torch.Tensor] = None
         if instruction is not None and instruction:
@@ -87,7 +93,7 @@ class SimBotActionInputBuilder:
                 )
             else:
                 logger.error(f"Found unsupported task: {task}")
-        return (batch, decoder_input_ids)
+        return (batch, decoder_input_ids, step_index)
 
     def _prepare_decoder_input_ids(
         self, previous_actions: Optional[str] = None
@@ -132,9 +138,10 @@ class SimBotActionInputBuilder:
 
     def _parse_environment_history_from_request(
         self, request: GenerateRequest
-    ) -> tuple[list[dict[str, Any]], Optional[str]]:
+    ) -> tuple[list[dict[str, Any]], Optional[str], Optional[list[int]]]:
         """Parse the feature dicts and actions from the current request."""
         feature_dicts = []
+        step_index = []
         previous_actions = []
         total_steps = len(request.environment_history)
         for idx, step in enumerate(request.environment_history, 1):
@@ -152,6 +159,7 @@ class SimBotActionInputBuilder:
                     "height": features["height"],
                 }
                 feature_dicts.append(feature_dict)
+                step_index.append(idx - 1)  # step_index is zero based
             if idx < total_steps:
                 previous_actions.append(step.output)
 
@@ -162,7 +170,7 @@ class SimBotActionInputBuilder:
             # Currently the implementation allows None previous actios
             # but in practice this should never happen.
             previous_actions_str = " ".join(previous_actions[:-1])  # type: ignore[arg-type]
-        return (feature_dicts, previous_actions_str)
+        return (feature_dicts, previous_actions_str, step_index)
 
     def _prepare_input_text(self, instruction: str, task: Task) -> BatchEncoding:
         """Prepare the input text for the SimBotAction model.

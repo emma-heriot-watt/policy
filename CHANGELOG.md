@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.14.0](https://github.com/emma-simbot/policy/compare/v1.13.0...v1.14.0) (2023-01-05)
+
+
+### Features
+
+* GFH Implementaion ([#648](https://github.com/emma-simbot/policy/issues/648)) ([850cedf](https://github.com/emma-simbot/policy/commit/850cedfa564648fe6328a1446bd9a75cadcd2c86))
+
 ## [1.13.0](https://github.com/emma-simbot/policy/compare/v1.12.1...v1.13.0) (2022-12-23)
 
 

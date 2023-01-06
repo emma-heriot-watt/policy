@@ -29,7 +29,7 @@ from emma_policy.inference.model_wrapper.simbot_action_input_builder import (
                 ],
                 environment_history=[],
             ),
-            ("<<commander>> Instruction. <<driver>> Is this a question? <<commander>> Maybe."),
+            ("<<commander>> instruction. <<driver>> is this a question? <<commander>> maybe."),
         ),
         (
             GenerateRequest(
@@ -38,7 +38,7 @@ from emma_policy.inference.model_wrapper.simbot_action_input_builder import (
                 ],
                 environment_history=[],
             ),
-            "<<commander>> Instruction.",
+            "<<commander>> instruction.",
         ),
         (
             GenerateRequest(
@@ -50,7 +50,7 @@ from emma_policy.inference.model_wrapper.simbot_action_input_builder import (
                 ],
                 environment_history=[],
             ),
-            "<<commander>> Instruction1. <<driver>> Is this a question? <<commander>> Maybe. <<commander>> Instruction2.",
+            "<<commander>> instruction1. <<driver>> is this a question? <<commander>> maybe. <<commander>> instruction2.",
         ),
     ],
 )

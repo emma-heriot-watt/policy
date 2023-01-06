@@ -130,7 +130,7 @@ class SimBotActionInputBuilder:
             dialogue.append(utterance_text)
 
         if dialogue:
-            instruction = " ".join(dialogue)
+            instruction = " ".join(dialogue).lower()
             logger.debug(f"Found instruction: {instruction}")
         else:
             logger.debug(f"No instruction for request: {request}")

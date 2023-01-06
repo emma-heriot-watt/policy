@@ -33,7 +33,7 @@ class SimBotNLUInputBuilder:
         The sample batch provides the set of previous observations and previous actions taken by
         the agent in the environment.
         """
-        instruction = request.dialogue_history[-1].utterance
+        instruction = request.dialogue_history[-1].utterance.lower()
         logger.debug(f"Preparing NLU input for instruction: {instruction}")
         encoded_inputs = self._prepare_input_text(instruction)
         feature_dicts = self._prepare_feature_dicts(request.environment_history[-1].features)

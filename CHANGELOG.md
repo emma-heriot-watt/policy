@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.14.1](https://github.com/emma-simbot/policy/compare/v1.14.0...v1.14.1) (2023-01-06)
+
+
+### Bug Fixes
+
+* lowercase in input builder before tokenization ([#662](https://github.com/emma-simbot/policy/issues/662)) ([474fca2](https://github.com/emma-simbot/policy/commit/474fca22078bdb741af67a53dfa9d5532f12f0e4))
+
 ## [1.14.0](https://github.com/emma-simbot/policy/compare/v1.13.0...v1.14.0) (2023-01-05)
 
 

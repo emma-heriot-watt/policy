@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.14.2](https://github.com/emma-simbot/policy/compare/v1.14.1...v1.14.2) (2023-01-10)
+
+
+### Bug Fixes
+
+* set decoder input ids to None in GFH ([#663](https://github.com/emma-simbot/policy/issues/663)) ([4e90a64](https://github.com/emma-simbot/policy/commit/4e90a64e13dafe58350b2d26869d742b7219b4be))
+
 ## [1.14.1](https://github.com/emma-simbot/policy/compare/v1.14.0...v1.14.1) (2023-01-06)
 
 

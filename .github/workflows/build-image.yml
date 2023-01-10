@@ -54,5 +54,4 @@ jobs:
         run: |
           IMAGE_TAG=$(echo "$RELEASE_VERSION" | cut -d v -f 2)
           IMAGE_TAG=$(echo "$IMAGE_TAG$TORCH_VERSION_SUFFIX" | tr + -)
-          docker build --build-arg BUILDER_IMAGE_NAME --build-arg BASE_IMAGE_NAME --build-arg TORCH_VERSION_SUFFIX --load -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
-          docker push -a $REGISTRY/$REPOSITORY
+          docker build --build-arg BUILDER_IMAGE_NAME --build-arg BASE_IMAGE_NAME --build-arg TORCH_VERSION_SUFFIX --push -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .

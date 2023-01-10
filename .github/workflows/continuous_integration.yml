@@ -14,7 +14,7 @@ env:
 jobs:
   changes:
     name: Check for Python file changes
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: ${{ !github.event.pull_request.draft }}
     outputs:
       python: ${{steps.filter.outputs.python}}

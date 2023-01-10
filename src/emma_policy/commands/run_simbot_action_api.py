@@ -246,7 +246,7 @@ async def grab_from_history(request: Request, response: Response) -> Optional[in
                 with torch.no_grad():
                     model_output = api_store["model"].inference_step(
                         batch,
-                        decoder_input_ids=decoder_input_ids,
+                        decoder_input_ids=None,
                         max_length=max_length,
                         num_beams=api_store["num_beams"],
                         no_repeat_ngram_size=api_store["no_repeat_ngram_size"],

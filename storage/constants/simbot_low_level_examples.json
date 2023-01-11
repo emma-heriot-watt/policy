@@ -2,15 +2,20 @@
 	"GoToQuantumLab": {
 		"examples": [
 			"go to the quantum lab",
-			"head to the quantum lab",
 			"go to the quantum rap",
+			"go to the quantum app",
+			"go back to the quantum lab",
+			"go back to the quantum rap",
+			"go back to the quantum app",
+			"head to the quantum lab",
+			"head to the quantum app",
 			"head to the quantum rap",
 			"return to the quantum lab",
 			"return to the quantum rap",
-			"go back to the quantum lab",
-			"go back to the quantum rap",
+			"return to the quantum app",
 			"move to the quantum lab",
-			"move to the quantum rap"
+			"move to the quantum rap",
+			"move to the quantum app"
 		],
 		"command": "Goto Lab2"
 	},
@@ -18,15 +23,20 @@
 	"GoToRoboticsLab": {
 		"examples": [
 			"go to the robotics lab",
-			"head to the robotics lab",
 			"go to the robotics rap",
-			"head to the robotics rap",
-			"return to the robotics lab",
-			"return to the robotics rap",
+			"go to the robotics app",
 			"go back to the robotics lab",
 			"go back to the robotics rap",
+			"go back to the robotics app",
+			"head to the robotics lab",
+			"head to the robotics rap",
+			"head to the robotics app",
+			"return to the robotics lab",
+			"return to the robotics rap",
+			"return to the robotics app",
 			"move to the robotics lab",
-			"move to the robotics rap"
+			"move to the robotics rap",
+			"move to the robotics app"
 		],
 		"command": "Goto Lab1"
 	},

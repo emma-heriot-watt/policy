@@ -14,11 +14,12 @@ from emma_common.logging import (
     setup_rich_logging,
 )
 from fastapi import FastAPI, Request, Response, status
+from opentelemetry import trace
 from pydantic import BaseSettings, FilePath
 from transformers import PreTrainedTokenizer
 from uvicorn import Config, Server
 
-from emma_policy.api.instrumentation import get_tracer
+from emma_policy._version import __version__  # noqa: WPS436
 from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.datamodules.simbot_action_datamodule import prepare_action_tokenizer
 from emma_policy.inference.api.simbot_state import GenerateRequest
@@ -29,7 +30,7 @@ from emma_policy.inference.model_wrapper.simbot_raw_text_matcher import SimBotAc
 from emma_policy.models.simbot_emma_policy import SimBotEmmaPolicy
 
 
-tracer = get_tracer(__name__)
+tracer = trace.get_tracer(__name__)
 
 
 class ApiSettings(BaseSettings):
@@ -169,10 +170,10 @@ async def generate_find(request: Request, response: Response) -> list[str]:
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         raise request_err
 
+    (batch, decoder_input_ids, step_index) = api_store["input_builder"](
+        simbot_request, task=Task.visual_grounding
+    )
     with tracer.start_as_current_span("Model inference"):
-        (batch, decoder_input_ids, step_index) = api_store["input_builder"](
-            simbot_request, task=Task.visual_grounding
-        )
         if batch is not None:
             max_length = api_store["max_length_per_action_sequence"]
             if decoder_input_ids is not None:
@@ -298,10 +299,10 @@ async def generate(request: Request, response: Response) -> str:
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         raise request_err
 
+    (batch, decoder_input_ids, step_index) = api_store["input_builder"](
+        simbot_request, task=Task.action_execution
+    )
     with tracer.start_as_current_span("Model inference"):
-        (batch, decoder_input_ids, step_index) = api_store["input_builder"](
-            simbot_request, task=Task.action_execution
-        )
         if batch is not None:
             max_length = api_store["max_length_per_action_sequence"]
             if decoder_input_ids is not None:
@@ -341,10 +342,25 @@ async def generate(request: Request, response: Response) -> str:
 def main() -> None:
     """Runs the server."""
     if settings.traces_to_opensearch:
-        instrument_app(app, settings.opensearch_service_name, settings.otlp_endpoint)
+        instrument_app(
+            app,
+            otlp_endpoint=settings.otlp_endpoint,
+            service_name=settings.opensearch_service_name,
+            service_version=__version__,
+            service_namespace="SimBot",
+        )
         setup_logging(sys.stdout, InstrumentedInterceptHandler())
     else:
         setup_rich_logging(rich_traceback_show_locals=False)
+
+    server = Server(
+        Config(
+            app,
+            host=settings.host,
+            port=settings.port,
+            log_level=settings.log_level,
+        )
+    )
 
     if settings.log_to_cloudwatch:
         add_cloudwatch_handler_to_logger(
@@ -354,14 +370,7 @@ def main() -> None:
             send_interval=1,
             enable_trace_logging=settings.traces_to_opensearch,
         )
-    server = Server(
-        Config(
-            app,
-            host=settings.host,
-            port=settings.port,
-            log_level=settings.log_level,
-        )
-    )
+
     server.run()
 
 

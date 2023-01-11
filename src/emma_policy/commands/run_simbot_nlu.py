@@ -14,11 +14,12 @@ from emma_common.logging import (
     setup_rich_logging,
 )
 from fastapi import FastAPI, Request, Response, status
+from opentelemetry import trace
 from pydantic import BaseSettings, FilePath
 from transformers import PreTrainedTokenizer
 from uvicorn import Config, Server
 
-from emma_policy.api.instrumentation import get_tracer
+from emma_policy._version import __version__  # noqa: WPS436
 from emma_policy.datamodules.simbot_nlu_datamodule import prepare_nlu_tokenizer
 from emma_policy.datamodules.simbot_nlu_dataset import SimBotNLUIntents
 from emma_policy.inference.api.simbot_state import GenerateRequest
@@ -26,7 +27,7 @@ from emma_policy.inference.model_wrapper.simbot_nlu_input_builder import SimBotN
 from emma_policy.models.simbot_nlu_policy import SimBotNLUEmmaPolicy
 
 
-tracer = get_tracer(__name__)
+tracer = trace.get_tracer(__name__)
 DEFAULT_ACTION = SimBotNLUIntents.act_match.value
 
 
@@ -186,19 +187,17 @@ async def generate(request: Request, response: Response) -> str:
 def main() -> None:
     """Runs a server that serves any instance of an EMMA policy model."""
     if settings.traces_to_opensearch:
-        instrument_app(app, settings.opensearch_service_name, settings.otlp_endpoint)
+        instrument_app(
+            app,
+            otlp_endpoint=settings.otlp_endpoint,
+            service_name=settings.opensearch_service_name,
+            service_version=__version__,
+            service_namespace="SimBot",
+        )
         setup_logging(sys.stdout, InstrumentedInterceptHandler())
     else:
         setup_rich_logging(rich_traceback_show_locals=False)
 
-    if settings.log_to_cloudwatch:
-        add_cloudwatch_handler_to_logger(
-            boto3_profile_name=settings.aws_profile,
-            log_stream_name=settings.watchtower_log_stream_name,
-            log_group_name=settings.watchtower_log_group_name,
-            send_interval=1,
-            enable_trace_logging=settings.traces_to_opensearch,
-        )
     server = Server(
         Config(
             app,
@@ -207,6 +206,14 @@ def main() -> None:
             log_level=settings.log_level,
         )
     )
+    if settings.log_to_cloudwatch:
+        add_cloudwatch_handler_to_logger(
+            boto3_profile_name=settings.aws_profile,
+            log_stream_name=settings.watchtower_log_stream_name,
+            log_group_name=settings.watchtower_log_group_name,
+            send_interval=1,
+            enable_trace_logging=settings.traces_to_opensearch,
+        )
 
     server.run()
 

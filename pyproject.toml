@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "emma-policy"
-version = "1.15.0"
+version = "1.15.1"
 description = ""
 authors = ["Amit Parekh <amit.parekh@hw.ac.uk>"]
 readme = "README.md"

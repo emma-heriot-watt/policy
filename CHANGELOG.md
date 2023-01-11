@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.15.1](https://github.com/emma-simbot/policy/compare/v1.15.0...v1.15.1) (2023-01-11)
+
+
+### Bug Fixes
+
+* instrumentation for simbot apis ([d4cf9f6](https://github.com/emma-simbot/policy/commit/d4cf9f66f31bd22ada4a220f576ec9fa580fbe3a))
+
 ## [1.15.0](https://github.com/emma-simbot/policy/compare/v1.14.2...v1.15.0) (2023-01-11)
 
 

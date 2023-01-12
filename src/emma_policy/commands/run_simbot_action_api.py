@@ -238,11 +238,7 @@ async def grab_from_history(request: Request, response: Response) -> Optional[in
     with tracer.start_as_current_span("Model inference"):
         if batch is not None:
             max_length = api_store["max_length_per_action_sequence"]
-            if decoder_input_ids is not None:
-                max_length += decoder_input_ids.shape[1]
-                len_decode = decoder_input_ids.shape[1]
-            else:
-                len_decode = 0
+            len_decode = 0
             try:
                 with torch.no_grad():
                     model_output = api_store["model"].inference_step(

@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.15.2](https://github.com/emma-simbot/policy/compare/v1.15.1...v1.15.2) (2023-01-12)
+
+
+### Bug Fixes
+
+* Remove decoder length setting in GFH ([#664](https://github.com/emma-simbot/policy/issues/664)) ([fbc8ba6](https://github.com/emma-simbot/policy/commit/fbc8ba69486a27e61335ed127ed4aa6a2dfad6d5))
+
 ## [1.15.1](https://github.com/emma-simbot/policy/compare/v1.15.0...v1.15.1) (2023-01-11)
 
 

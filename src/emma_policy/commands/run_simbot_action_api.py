@@ -275,7 +275,7 @@ async def grab_from_history(request: Request, response: Response) -> Optional[in
         logger.debug(f"Sorted ordered steps: {unique_ordered_steps}")
 
         # most recent timestep with object
-        most_recent_step = unique_ordered_steps[0] if unique_ordered_steps else None
+        most_recent_step = unique_ordered_steps[-1] if unique_ordered_steps else None
     logger.debug(f"most recent step: {most_recent_step}")
     return most_recent_step
 

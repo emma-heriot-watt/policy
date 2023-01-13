@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.16.1](https://github.com/emma-simbot/policy/compare/v1.16.0...v1.16.1) (2023-01-13)
+
+
+### Bug Fixes
+
+* Changes to deal with oldest to most recent input in GFH ([#666](https://github.com/emma-simbot/policy/issues/666)) ([d53d82e](https://github.com/emma-simbot/policy/commit/d53d82ed2ecf16095d191f4b3d7a6d09dc06429b))
+
 ## [1.16.0](https://github.com/emma-simbot/policy/compare/v1.15.2...v1.16.0) (2023-01-12)
 
 

@@ -8,13 +8,24 @@ from PIL import Image
 
 
 def decode_images(encoded_images: dict[str, str]) -> dict[str, Image.Image]:
-    """Decode the images for a single json file."""
+    """Decode the images from metadata dictionary."""
     ordered_encoded_images = sorted(encoded_images.items())
     decoded_images = {
         image_key: Image.open(BytesIO(b64decode(image_str)))
         for image_key, image_str in ordered_encoded_images
     }
     return decoded_images
+
+
+def decode_images_for_file(input_json_path: Path, output_image_directory: Path) -> None:
+    """Decode the images for a single json file."""
+    with open(input_json_path) as fp:
+        data = json.load(fp)
+
+    decoded_images = decode_images(data["encoded_images"])
+    for image_key, image in decoded_images.items():
+        image_path = output_image_directory.joinpath(f"{input_json_path.stem}_{image_key}.png")
+        image.save(image_path)
 
 
 def main(input_json_directory: Path, output_image_directory: Path) -> None:
@@ -25,13 +36,7 @@ def main(input_json_directory: Path, output_image_directory: Path) -> None:
         if not input_json_path.name.endswith(".json"):
             continue
 
-        with open(input_json_path) as fp:
-            data = json.load(fp)
-
-        decoded_images = decode_images(data["encoded_images"])
-        for image_key, image in decoded_images.items():
-            image_path = output_image_directory.joinpath(f"{input_json_path.stem}_{image_key}.png")
-            image.save(image_path)
+        decode_images_for_file(input_json_path, output_image_directory)
 
 
 def parse_api_args() -> argparse.Namespace:

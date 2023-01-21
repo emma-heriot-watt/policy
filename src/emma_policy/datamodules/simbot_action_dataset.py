@@ -122,18 +122,24 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             object_candidates = len(action_object_metadata["id"])
             object_candidate_idx = random.choice(range(object_candidates))
 
-            instruction = self._paraphraser(
-                action_type="search",
-                object_id=action_object_metadata["id"][object_candidate_idx],
-                object_attributes=SimBotObjectAttributes(
-                    **action_object_metadata["attributes"][object_candidate_idx]
-                ),
-            )
+            # All the instances comming from augmentations are paraphrasable
+            # The ones comming from annotations are not.
+            if self._allow_paraphrasing and instance.paraphrasable:
+                instruction = self._paraphraser(
+                    action_type="search",
+                    object_id=action_object_metadata["id"][object_candidate_idx],
+                    object_attributes=SimBotObjectAttributes(
+                        **action_object_metadata["attributes"][object_candidate_idx]
+                    ),
+                )
+            else:
+                instruction = instance.instruction.instruction
 
             source_text = f"<<commander>> {instruction}"
             source_text = self._get_random_template_for_task(Task.visual_grounding).format(
                 caption=source_text
             )
+            source_text = check_punctuation(source_text)
 
             object_name = get_object_label_from_object_id(
                 object_id=action_object_metadata["id"][object_candidate_idx],
@@ -149,7 +155,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
 
             ground_truth_bboxes = action_object_metadata["mask"]
             if ground_truth_bboxes is None:
-                target_text = f"no {object_name} <stop>"
+                target_text = f"no {object_name} <stop>."
             else:
                 ground_truth_bbox = ground_truth_bboxes[object_candidate_idx]
                 ground_truth_bbox = torch.tensor(
@@ -173,9 +179,9 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                     scene_frame_token = self.tokenizer.decode(
                         visual_features.scene_frame_tokens[0]
                     )
-                    target_text = f"{scene_frame_token} {object_token} <stop>"
+                    target_text = f"{scene_frame_token} {object_token} <stop>."
                 else:
-                    target_text = f"no {object_name} <stop>"
+                    target_text = f"no {object_name} <stop>."
 
             target_text = target_text.lower()
 

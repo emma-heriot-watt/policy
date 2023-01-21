@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.18.0](https://github.com/emma-simbot/policy/compare/v1.17.0...v1.18.0) (2023-01-21)
+
+
+### Features
+
+* Do not paraphrase annotations, fix punc and lowercasing ([#676](https://github.com/emma-simbot/policy/issues/676)) ([9fcb7ae](https://github.com/emma-simbot/policy/commit/9fcb7aeea24916f5cb3306ef8073921423b7152d))
+
 ## [1.17.0](https://github.com/emma-simbot/policy/compare/v1.16.1...v1.17.0) (2023-01-20)
 
 

@@ -12,6 +12,7 @@ from emma_policy.datamodules.emma_dataclasses import (
     EmmaDatasetItem,
     EmmaVisualFeatures,
 )
+from emma_policy.datamodules.simbot_action_dataset import check_punctuation
 from emma_policy.inference.api.simbot_state import GenerateRequest
 
 
@@ -33,7 +34,8 @@ class SimBotNLUInputBuilder:
         The sample batch provides the set of previous observations and previous actions taken by
         the agent in the environment.
         """
-        instruction = request.dialogue_history[-1].utterance.lower()
+        # Add a fullstop at the end and lowercase
+        instruction = check_punctuation(request.dialogue_history[-1].utterance)
         logger.debug(f"Preparing NLU input for instruction: {instruction}")
         encoded_inputs = self._prepare_input_text(instruction)
         feature_dicts = self._prepare_feature_dicts(request.environment_history[-1].features)

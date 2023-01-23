@@ -54,16 +54,15 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
         # For the type of force_words_ids see: https://huggingfac.co/docs/transformers/v4.20.1/en/main_classes/text_generation#transformers.generation_utils.GenerationMixin.generate.force_words_ids(List[List[int]]
         # force_words_ids lists will have lengths:
         # lengths number of constraints (1), number of visual tokens (100), number of tokens per forced word (1)
-        action = [
-            [self._tokenizer.convert_tokens_to_ids(forced_word)]
-            for forced_word in ("<act>", "<search>")
-        ]
-
-        ambiguity = [
-            [self._tokenizer.convert_tokens_to_ids(forced_word)]
-            for forced_word in ("<one_match>", "<no_match>", "<too_many_matches>")
-        ]
-        self.force_words_ids = [action, ambiguity]
+        force_words_ids = []
+        for forced_action_word in ("<act>", "<search>"):
+            for forced_ambiguity_word in ("<one_match>", "<no_match>", "<too_many_matches>"):
+                forced_phrase = [
+                    self._tokenizer.convert_tokens_to_ids(forced_action_word),
+                    self._tokenizer.convert_tokens_to_ids(forced_ambiguity_word),
+                ]
+                force_words_ids.append(forced_phrase)
+        self.force_words_ids = [force_words_ids]
         if self._num_beams == 1:
             self._num_beams += 1  # constrains need num_beams > 1
         self.task_metrics = None  # type: ignore[assignment]

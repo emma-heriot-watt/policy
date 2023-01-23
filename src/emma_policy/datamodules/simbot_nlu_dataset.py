@@ -1,7 +1,7 @@
 import random
 from enum import Enum
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 import torch
 from emma_datasets.constants.simbot.simbot import get_arena_definitions
@@ -42,11 +42,11 @@ class SimBotNLUIntents(Enum):
     no_match = "<no_match>"
     too_many_matches = "<too_many_matches>"
 
-    act_match = "<act><one_match>"
+    act_one_match = "<act><one_match>"
     act_no_match = "<act><no_match>"
     act_too_many_matches = "<act><too_many_matches>"
 
-    search_match = "<search><one_match>"
+    search_one_match = "<search><one_match>"
     search_no_match = "<search><no_match>"
     search_too_many_matches = "<search><too_many_matches>"
 
@@ -65,10 +65,10 @@ class SimBotNLUIntents(Enum):
     def is_nlu_output(self) -> bool:
         """Wether an intent is a valid output."""
         return self in {
-            self.act_match,
+            self.act_one_match,
             self.act_no_match,
             self.act_too_many_matches,
-            self.search_match,
+            self.search_one_match,
             self.search_no_match,
         }
 
@@ -86,7 +86,6 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         tokenizer: PreTrainedTokenizer,
         max_frames: int = 4,
         is_train: bool = True,
-        allow_paraphrasing: bool = False,
         iou_threshold: float = 0.5,
     ) -> None:
         super().__init__(
@@ -109,7 +108,6 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         self._image_width = arena_definitions["image_width"]
         self._image_height = arena_definitions["image_height"]
         self._paraphraser = InstructionParaphraser()
-        self._allow_paraphrasing = allow_paraphrasing
         self._iou_threshold = iou_threshold
 
     @overrides(check_signature=False)
@@ -125,11 +123,11 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         instance = SimBotInstructionInstance.parse_raw(instance_str)
         first_action = instance.actions[0]
         if first_action.type == "Search":
-            source_text, target_text = self.prepare_search_instance(instance)
+            instruction, target_text = self.prepare_search_instance(instance)
         else:
-            source_text, target_text = self.prepare_action_instance(instance)
-        source_text = check_punctuation(source_text)
-
+            instruction, target_text = self.prepare_action_instance(instance)
+        source_text = f"Predict the system act: {check_punctuation(instruction)}"
+        target_text = target_text.lower()
         input_encoding = self.tokenizer.encode_plus(
             source_text, return_tensors=self._return_tensor_type, truncation=True
         )
@@ -172,8 +170,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         else:
             instruction, target_text = self.prepare_human_action_instance(instance)
 
-        source_text = f"Predict the system act: {instruction}"
-        return source_text, target_text
+        return instruction, target_text
 
     def prepare_human_action_instance(
         self, instance: SimBotInstructionInstance
@@ -184,7 +181,14 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         target_text = self._get_nlu_human_question(instance)
         # If target_text is an empty list, we have an action
         if not target_text:
-            target_text = SimBotNLUIntents.act_match.value
+            target_text = SimBotNLUIntents.act_one_match.value
+            object_readable_name = self._get_target_object_name(
+                action=instance.actions[0],
+                name_type="readable",
+            )
+            if object_readable_name:
+                target_text = f"{target_text} {object_readable_name}"
+
         return instruction, target_text
 
     def prepare_synthetic_action_instance(
@@ -192,8 +196,10 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
     ) -> tuple[str, str]:
         """Prepare the instruction and target text for a synthetic instruction."""
         if instance.ambiguous:
-            instruction = self._get_synthectic_action_instruction(instance)
-            target_text = self._get_nlu_synthetic_question(instance)
+            instruction = self._get_synthectic_action_instruction(
+                instance, allow_paraphrasing=False
+            )
+            target_text = self._get_nlu_synthetic_too_many_matches(instance)
         else:
             instruction, target_text = self._augment_synthetic_action(instance)
         return instruction, target_text
@@ -203,18 +209,23 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         action_object_metadata = instance.actions[0].get_action_data["object"]
         object_candidates = len(action_object_metadata["id"])
         object_candidate_idx = random.choice(range(object_candidates))
-        object_name = action_object_metadata["id"][object_candidate_idx]
+        object_id = action_object_metadata["id"][object_candidate_idx]
         # Always paraphrase after selecting a target for search
         instruction = self._paraphraser(
             action_type="search",
-            object_id=object_name,
+            object_id=object_id,
             object_attributes=SimBotObjectAttributes(
                 **action_object_metadata["attributes"][object_candidate_idx]
             ),
         )
-        object_name = object_name.lower()
+        object_readable_name = get_object_readable_name_from_object_id(
+            object_id=object_id,
+            object_assets_to_names=self._object_assets_to_names,
+            special_name_cases=self._special_name_cases,
+        )
+
         if action_object_metadata["mask"] is None:
-            target_text = f"{SimBotNLUIntents.search_no_match.value} {object_name}"
+            target_text = f"{SimBotNLUIntents.search_no_match.value} {object_readable_name}"
         else:
             ground_truth_bboxes = action_object_metadata["mask"]
             ground_truth_bbox = ground_truth_bboxes[object_candidate_idx]
@@ -234,50 +245,65 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             )
             # If there is a matching bounding box, append its visual token to the target text
             if ground_truth_flags.shape[0] == 0:
-                target_text = f"{SimBotNLUIntents.search_no_match.value} {object_name}"
+                target_text = f"{SimBotNLUIntents.search_no_match.value} {object_readable_name}"
             elif ground_truth_flags.shape[0] == 1:
-                target_text = SimBotNLUIntents.search_match.value
+                target_text = f"{SimBotNLUIntents.search_one_match.value} {object_readable_name}"
             else:
-                target_text = f"{SimBotNLUIntents.search_too_many_matches.value} {object_name}"
+                target_text = (
+                    f"{SimBotNLUIntents.search_too_many_matches.value} {object_readable_name}"
+                )
 
-        source_text = f"Predict the system act: {instruction}"
-        return source_text, target_text
+        return instruction, target_text
 
     def _augment_synthetic_action(self, instance: SimBotInstructionInstance) -> tuple[str, str]:
         """Prepare the instruction and target text for a synthetic unambiguous instruction.
 
         With some probability sample an instruction that doesn't match the detected objects.
         """
-        if random.random() < 0.5:  # noqa: WPS459
-            instruction = self._get_synthectic_action_instruction(instance)
-            target_text = SimBotNLUIntents.act_match.value
+        if random.random() < 0.75:  # noqa: WPS432, WPS459
+            instruction = self._get_synthectic_action_instruction(
+                instance, allow_paraphrasing=True
+            )
+            target_text = SimBotNLUIntents.act_one_match.value
+            object_readable_name = self._get_target_object_name(
+                action=instance.actions[0], name_type="readable"
+            )
+            if object_readable_name:
+                target_text = f"{target_text} {object_readable_name}"
+
         else:
             visual_features = self._load_visual_features(features_path=instance.features_path[0])
             object_labels = visual_features.object_classes
             # Sample a negative candidate
             rand_idx = int(len(self._synthetic_negative_candidates) * random.random())
-            new_instruction, new_label = self._synthetic_act_no_match(rand_idx, object_labels)
+            new_instruction, new_object_readable_name, action_type = self._synthetic_act_no_match(
+                rand_idx, object_labels
+            )
             while new_instruction is None:
                 rand_idx = int(len(self._synthetic_negative_candidates) * random.random())
-                new_instruction, new_label = self._synthetic_act_no_match(rand_idx, object_labels)
+                (
+                    new_instruction,
+                    new_object_readable_name,
+                    action_type,
+                ) = self._synthetic_act_no_match(rand_idx, object_labels)
             instruction = new_instruction
-            target_text = f"{SimBotNLUIntents.act_no_match.value}"
-            if new_label:
-                target_text = f"{target_text} {new_label.lower()}"
+            instance.actions[0].type = action_type
+            target_text = SimBotNLUIntents.act_no_match.value
+            if new_object_readable_name:
+                target_text = f"{target_text} {new_object_readable_name.lower()}"
 
         return instruction, target_text
 
-    def _get_synthectic_action_instruction(self, instance: SimBotInstructionInstance) -> str:
+    def _get_synthectic_action_instruction(
+        self, instance: SimBotInstructionInstance, allow_paraphrasing: bool = False
+    ) -> str:
         """Get source text for all actions except Search."""
-        if self._allow_paraphrasing and instance.paraphrasable:
-            action_metadata = instance.actions[0].get_action_data["object"]
-            object_name = get_object_label_from_object_id(
-                object_id=action_metadata["id"],
-                object_assets_to_names=self._object_assets_to_names,
-            )
-            instruction = get_simbot_instruction_paraphrase(
-                self._paraphraser, instance, object_name
-            )
+        if allow_paraphrasing and instance.paraphrasable:
+            object_name = self._get_target_object_name(instance.actions[0], name_type="class")
+            if object_name:
+                instruction = get_simbot_instruction_paraphrase(
+                    self._paraphraser, instance, object_name
+                )
         else:
             instruction = instance.instruction.instruction
         return instruction
@@ -306,39 +332,32 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
 
         return question_as_target
 
-    def _get_nlu_synthetic_question(self, instance: SimBotInstructionInstance) -> str:
+    def _get_nlu_synthetic_too_many_matches(self, instance: SimBotInstructionInstance) -> str:
         """Get the target text and question type vector from a synthetic question."""
         question_as_target = SimBotNLUIntents.act_too_many_matches.value
-        object_metadata = instance.actions[0].get_action_data.get("object", None)
-        if object_metadata is not None:
-            question_target = get_object_label_from_object_id(
-                object_metadata["id"], self._object_assets_to_names
-            )
-            question_as_target = f"{question_as_target} {question_target.lower()}"
+        object_name = self._get_target_object_name(instance.actions[0], name_type="class")
+        if object_name:
+            question_as_target = f"{question_as_target} {object_name}"
         return question_as_target
 
     def _synthetic_act_no_match(
         self, rand_index: int, existing_objects: list[str]
-    ) -> tuple[Optional[str], Optional[str]]:
+    ) -> tuple[Optional[str], Optional[str], Optional[str]]:
         """Prepare a synthetic <act><no_match> instance."""
         db_index = self._synthetic_negative_candidates[rand_index]
         with self.db:
             new_instance = SimBotInstructionInstance.parse_raw(self.db[db_index])
-        object_metadata = new_instance.actions[0].get_action_data.get("object", None)
+
         # Get the corresponding bounding box label
-        label = get_object_label_from_object_id(
-            object_id=object_metadata["id"], object_assets_to_names=self._object_assets_to_names
-        )
+        label = self._get_target_object_name(new_instance.actions[0], name_type="class")
         # If there are matching bounding boxes in the current image, discard this candidate
         if self._label_to_idx[label] in existing_objects:
-            return None, None
-        readable_name = get_object_readable_name_from_object_id(
-            object_id=object_metadata["id"],
-            object_assets_to_names=self._object_assets_to_names,
-            special_name_cases=self._special_name_cases,
+            return None, None, None
+        new_instruction = self._get_synthectic_action_instruction(
+            new_instance, allow_paraphrasing=True
         )
-        new_insrtuction = self._get_synthectic_action_instruction(new_instance)
-        return new_insrtuction, readable_name.lower()
+        object_name = self._get_target_object_name(new_instance.actions[0], name_type="readable")
+        return new_instruction, object_name, new_instance.actions[0].type
 
     def _prepare_data(self) -> None:
         """Prepare the data intents and the negative candidates.
@@ -366,16 +385,16 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             action_object_metadata = instance.actions[0].get_action_data["object"]
             if action_object_metadata["mask"] is None:
                 return SimBotNLUIntents.search_no_match
-            return SimBotNLUIntents.search_match
+            return SimBotNLUIntents.search_one_match
         if instance.instruction.necessary_question_answers:
             qa_pair = instance.instruction.necessary_question_answers[0]
             return self._question_type_intent_map.get(
-                qa_pair.question_type, SimBotNLUIntents.act_match
+                qa_pair.question_type, SimBotNLUIntents.act_one_match
             )
 
         elif instance.ambiguous:
             return SimBotNLUIntents.act_too_many_matches
-        return SimBotNLUIntents.act_match
+        return SimBotNLUIntents.act_one_match
 
     def _is_object_interaction(self, action: SimBotAction) -> bool:
         """Check if an instruction is an object interaction.
@@ -393,10 +412,12 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
     def _get_instance_frame(self, instance: SimBotInstructionInstance, target_text: str) -> int:
         """Get either the image infront of you or the image with the target object."""
         frame_idx = 0
-        if instance.synthetic or SimBotNLUIntents.no_match.value not in target_text:
-            action_object_metadata = instance.actions[0].get_action_data.get("object", None)
-            if action_object_metadata is not None:
-                frame_idx = action_object_metadata.get("colorImageIndex", 0)
+        # Always return the first frame if the intent is no_match
+        if self._is_no_match(target_text):
+            return frame_idx
+        action_object_metadata = instance.actions[0].get_action_data.get("object", None)
+        if action_object_metadata is not None:
+            frame_idx = action_object_metadata.get("colorImageIndex", 0)
         return frame_idx
 
     @overrides(check_signature=False)
@@ -408,3 +429,31 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         visual_features = self._prepare_emma_visual_features(feature_dicts=feature_dicts)
 
         return visual_features
+
+    def _is_no_match(self, target_text: str) -> bool:
+        """Check if the instance NLU label is no_match."""
+        return SimBotNLUIntents.no_match.value in target_text
+
+    def _get_target_object_name(
+        self, action: SimBotAction, name_type: Literal["class", "readable"] = "readable"
+    ) -> Optional[str]:
+        """Get the object name for a given SimBot action.
+
+        The name can be either the class name which matches the bounding box classes, or the
+        readable name which includes special names such as 'laser monitor'.
+        """
+        target_object_name = None
+        object_metadata = action.get_action_data.get("object", None)
+        if object_metadata is not None and "id" in object_metadata:
+            if name_type == "readable":
+                target_object_name = get_object_readable_name_from_object_id(
+                    object_id=object_metadata["id"],
+                    object_assets_to_names=self._object_assets_to_names,
+                    special_name_cases=self._special_name_cases,
+                )
+            else:
+                target_object_name = get_object_label_from_object_id(
+                    object_metadata["id"], self._object_assets_to_names
+                )
+
+        return target_object_name

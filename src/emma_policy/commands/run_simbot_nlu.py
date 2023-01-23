@@ -28,7 +28,7 @@ from emma_policy.models.simbot_nlu_policy import SimBotNLUEmmaPolicy
 
 
 tracer = trace.get_tracer(__name__)
-DEFAULT_ACTION = SimBotNLUIntents.act_match.value
+DEFAULT_ACTION = SimBotNLUIntents.act_one_match.value
 
 
 class ApiSettings(BaseSettings):

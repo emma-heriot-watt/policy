@@ -66,7 +66,7 @@ def check_punctuation(text: str) -> str:
     if not text.endswith(("?", ".")):
         text = f"{text}."
     text = text.replace("..", ".")
-    return text
+    return text.lower()
 
 
 class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):

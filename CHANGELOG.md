@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.19.0](https://github.com/emma-simbot/policy/compare/v1.18.1...v1.19.0) (2023-01-23)
+
+
+### Features
+
+* Update raw text matcher with take a step ([#678](https://github.com/emma-simbot/policy/issues/678)) ([ddc909a](https://github.com/emma-simbot/policy/commit/ddc909a96c4083cb99cb40630a1d4eca83b82550))
+
+
+### Bug Fixes
+
+* Update nlu datset ([#677](https://github.com/emma-simbot/policy/issues/677)) ([d5ac6be](https://github.com/emma-simbot/policy/commit/d5ac6be46ee34d7a41fe1f4139b53f4e76223ec0))
+
 ## [1.18.1](https://github.com/emma-simbot/policy/compare/v1.18.0...v1.18.1) (2023-01-23)
 
 

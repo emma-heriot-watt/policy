@@ -524,9 +524,9 @@ class ArenaSessionAnnotation:
                     "bbox_coords": feature_dict["bbox_coords"],
                     "bbox_probas": feature_dict["bbox_probas"],
                     "cnn_features": feature_dict["cnn_features"],
+                    "width": 300,
+                    "height": 300,
                 },
-                "width": 300,
-                "height": 300,
             }
             features_formatted["frames"].append(feature_dict_formatted)
 

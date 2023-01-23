@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.18.1](https://github.com/emma-simbot/policy/compare/v1.18.0...v1.18.1) (2023-01-23)
+
+
+### Bug Fixes
+
+* the width height when saving the features in simbot annotations ([#675](https://github.com/emma-simbot/policy/issues/675)) ([7a3ac23](https://github.com/emma-simbot/policy/commit/7a3ac239d2a336318aef27846c3213ede4bef290))
+
 ## [1.18.0](https://github.com/emma-simbot/policy/compare/v1.17.0...v1.18.0) (2023-01-21)
 
 

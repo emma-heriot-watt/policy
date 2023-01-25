@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.20.0](https://github.com/emma-simbot/policy/compare/v1.19.0...v1.20.0) (2023-01-25)
+
+
+### Features
+
+* Restore NLU ambiguity rule ([#681](https://github.com/emma-simbot/policy/issues/681)) ([8b0012f](https://github.com/emma-simbot/policy/commit/8b0012f1c066c2c5e206c52808e957325e132e23))
+
 ## [1.19.0](https://github.com/emma-simbot/policy/compare/v1.18.1...v1.19.0) (2023-01-23)
 
 

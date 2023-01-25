@@ -168,10 +168,13 @@ async def generate(request: Request, response: Response) -> str:
         # the agent has already clarified or acted.
         if len(simbot_request.environment_history) == 1:
             batch = api_store["input_builder"](simbot_request)
-            try:
+            try:  # noqa: WPS229
                 with torch.no_grad():
                     action = api_store["model"].inference_step(batch)[0]
                 action = process_nlu_output(action, api_store["valid_action_types"])
+                action = rule_based_ambiguity_check(
+                    action, simbot_request.environment_history[-1].features
+                )
 
             except Exception as err:
                 # TODO: report session ID for better debugging

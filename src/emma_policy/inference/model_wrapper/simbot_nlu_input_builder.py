@@ -53,12 +53,10 @@ class SimBotNLUInputBuilder:
         """Convert feature dicts to tensors."""
         feature_dicts_tensors = []
         for feature_dict in feature_dicts:
-            feature_dicts_tensors.append(
-                {
-                    name: self._convert_to_tensor(instance)
-                    for name, instance in feature_dict.items()
-                }
-            )
+            for name, instance in feature_dict.items():
+                if name != "class_labels":
+                    feature_dict[name] = self._convert_to_tensor(instance)
+            feature_dicts_tensors.append(feature_dict)
         return feature_dicts_tensors
 
     def _convert_to_tensor(self, instance: Any) -> Any:

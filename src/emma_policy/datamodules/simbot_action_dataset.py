@@ -15,6 +15,7 @@ from emma_datasets.datamodels.datasets.utils.simbot_utils.simbot_datamodels impo
     SimBotInstructionInstance,
     SimBotObjectAttributes,
 )
+from emma_datasets.db import DatasetDb
 from overrides import overrides
 from torchvision.ops import masks_to_boxes
 from transformers import PreTrainedTokenizer
@@ -48,8 +49,8 @@ def get_simbot_instruction_paraphrase(
     paraphraser: InstructionParaphraser, instance: SimBotInstructionInstance, object_name: str
 ) -> str:
     """Paraphrase a SimBot instruction."""
-    action_type = instance.actions[0].type.lower()
-    action_object_metadata = instance.actions[0].get_action_data["object"]
+    action_type = instance.actions[-1].type.lower()
+    action_object_metadata = instance.actions[-1].get_action_data["object"]
     attributes = SimBotObjectAttributes(
         **action_object_metadata.get("attributes", {"readable_name": object_name})
     )
@@ -61,12 +62,51 @@ def get_simbot_instruction_paraphrase(
     )
 
 
-def check_punctuation(text: str) -> str:
+def format_instruction(text: str) -> str:
     """Make sure the instruction ends in a fullstop."""
     if not text.endswith(("?", ".")):
         text = f"{text}."
     text = text.replace("..", ".")
     return text.lower()
+
+
+class SearchNegativeSampler:
+    """Search negative selection class.
+
+    Used to sample negative examples for the search objective. Creates a dictionary where keys
+    indices of the positive examples in the dataset and values are the readable names of each
+    object in the example. Given a readable name for an object, it samples keys from the dictionary
+    until the readable name is not present in the list of objects for a key.
+    """
+
+    def __init__(self, db: DatasetDb):
+        self._positive_indices_map = self._create_positive_indices_objects_map(db)
+
+    def __call__(self, readable_name: str) -> int:
+        """Sample a negative example."""
+        while True:
+            rand_idx = random.choice(list(self._positive_indices_map.keys()))
+            if readable_name.lower() not in self._positive_indices_map[rand_idx]:
+                return rand_idx
+
+    def _create_positive_indices_objects_map(self, db: DatasetDb) -> dict[int, list[str]]:
+        """Create a map of indices and positive examples."""
+        db_size = len(db)
+        positive_indices_map = {}
+        with db:
+            for index in range(db_size):
+                instance_str: str = db[index]
+                instance = SimBotInstructionInstance.parse_raw(instance_str)
+
+                action = instance.actions[-1]
+                if action.type == "Search" and action.search["object"]["mask"] is not None:
+                    attributes = action.search["object"].get("attributes", None)
+                    if attributes is not None:
+                        readable_names = [  # noqa: WPS220
+                            attribute["readable_name"].lower() for attribute in attributes
+                        ]
+                        positive_indices_map[index] = readable_names  # noqa: WPS220
+        return positive_indices_map
 
 
 class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
@@ -81,6 +121,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         dataset_db_path: Path,
         tokenizer: PreTrainedTokenizer,
         iou_threshold: float = 0.5,
+        search_negative_proba: float = 0.5,
         max_frames: int = 15,
         use_only_necessary_questions: bool = True,
         allow_paraphrasing: bool = False,
@@ -92,6 +133,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
 
         self._iou_threshold = iou_threshold
         self._goto_proba = 0
+        self._search_negative_proba = search_negative_proba
         self._use_only_necessary_questions = use_only_necessary_questions
         self.question_answer_prompt = "<<driver>> {question} <<commander>> {answer}"
         arena_definitions = get_arena_definitions()
@@ -100,6 +142,8 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         self._image_height = arena_definitions["image_height"]
         self._paraphraser = InstructionParaphraser()
         self._allow_paraphrasing = allow_paraphrasing
+        self._search_negative_sampler = SearchNegativeSampler(self.db)
+        self._special_name_cases = arena_definitions["special_asset_to_readable_name"]
 
     @overrides(check_signature=False)
     def __getitem__(self, index: int) -> EmmaDatasetItem:
@@ -112,12 +156,12 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             return self.simbot_vision_augmentation(instance)
         return self.simbot_action_execution(instance)
 
-    def simbot_vision_augmentation(  # noqa: WPS210
+    def simbot_vision_augmentation(  # noqa: WPS210, WPS231
         self, instance: SimBotInstructionInstance
     ) -> EmmaDatasetItem:
         """Process a visual augmentation instance for the SimBot action task."""
-        if instance.actions[0].type == "Search":
-            action_object_metadata = instance.actions[0].get_action_data["object"]
+        if instance.actions[-1].type == "Search":
+            action_object_metadata = instance.actions[-1].get_action_data["object"]
 
             object_candidates = len(action_object_metadata["id"])
             object_candidate_idx = random.choice(range(object_candidates))
@@ -139,22 +183,36 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             source_text = self._get_random_template_for_task(Task.visual_grounding).format(
                 caption=source_text
             )
-            source_text = check_punctuation(source_text)
+            source_text = format_instruction(source_text)
 
             object_name = get_object_label_from_object_id(
                 object_id=action_object_metadata["id"][object_candidate_idx],
                 object_assets_to_names=self._object_assets_to_names,
             )
 
-            target_frames = [0 for _ in instance.actions]
-
-            visual_features, _, _ = self._load_visual_features(
-                features_path=instance.features_path,
-                target_frames=target_frames,
+            # We need to skip the instances that are from annotations aka paraphrasable
+            # TODO: we need to make this easier
+            select_negative = (
+                random.random() >= self._search_negative_proba and instance.paraphrasable
             )
+            if select_negative:
+                negative_idx = self._search_negative_sampler(
+                    action_object_metadata["attributes"][object_candidate_idx]["readable_name"]
+                )
+                instance_str = self.db[negative_idx]
+                negative_instance = SimBotInstructionInstance.parse_raw(instance_str)
+                visual_features, _, _ = self._load_visual_features(
+                    features_path=negative_instance.features_path,
+                    target_frames=[0 for _ in negative_instance.actions],
+                )
+            else:
+                visual_features, _, _ = self._load_visual_features(
+                    features_path=instance.features_path,
+                    target_frames=[0 for _ in instance.actions],
+                )
 
             ground_truth_bboxes = action_object_metadata["mask"]
-            if ground_truth_bboxes is None:
+            if ground_truth_bboxes is None or select_negative:
                 target_text = f"no {object_name} <stop>."
             else:
                 ground_truth_bbox = ground_truth_bboxes[object_candidate_idx]
@@ -317,7 +375,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             and answer: where is the hammer? the hammer is on the table in the robotics lab.
         """
         if self._allow_paraphrasing and instance.paraphrasable:
-            action_object_metadata = instance.actions[0].get_action_data["object"]
+            action_object_metadata = instance.actions[-1].get_action_data["object"]
             object_name = get_object_label_from_object_id(
                 object_id=action_object_metadata["id"],
                 object_assets_to_names=self._object_assets_to_names,
@@ -346,7 +404,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 )
                 source_text = f"{source_text}. {question_answer_text}"
 
-        source_text = check_punctuation(source_text)
+        source_text = format_instruction(source_text)
 
         return source_text
 

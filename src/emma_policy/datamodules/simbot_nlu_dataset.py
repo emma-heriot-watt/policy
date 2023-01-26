@@ -24,7 +24,8 @@ from transformers import PreTrainedTokenizer
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
 from emma_policy.datamodules.simbot_action_dataset import (
-    check_punctuation,
+    SearchNegativeSampler,
+    format_instruction,
     get_simbot_instruction_paraphrase,
 )
 from emma_policy.utils import get_logger
@@ -87,6 +88,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         max_frames: int = 4,
         is_train: bool = True,
         iou_threshold: float = 0.5,
+        search_negative_proba: float = 0.5,
     ) -> None:
         super().__init__(
             dataset_db_path=dataset_db_path, tokenizer=tokenizer, max_frames=max_frames
@@ -104,11 +106,13 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         arena_definitions = get_arena_definitions()
         self._object_assets_to_names = arena_definitions["asset_to_label"]
         self._label_to_idx = arena_definitions["label_to_idx"]
-        self._special_name_cases = get_arena_definitions()["special_asset_to_readable_name"]
+        self._special_name_cases = arena_definitions["special_asset_to_readable_name"]
         self._image_width = arena_definitions["image_width"]
         self._image_height = arena_definitions["image_height"]
         self._paraphraser = InstructionParaphraser()
         self._iou_threshold = iou_threshold
+        self._search_negative_proba = search_negative_proba
+        self._search_negative_sampler = SearchNegativeSampler(self.db)
 
     @overrides(check_signature=False)
     def __len__(self) -> int:
@@ -122,11 +126,16 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             instance_str = self.db[index]
         instance = SimBotInstructionInstance.parse_raw(instance_str)
         first_action = instance.actions[0]
+        frame_idx = 0
         if first_action.type == "Search":
-            instruction, target_text = self.prepare_search_instance(instance)
+            instruction, visual_features, target_text = self.prepare_search_instance(instance)
         else:
             instruction, target_text = self.prepare_action_instance(instance)
-        source_text = f"Predict the system act: {check_punctuation(instruction)}"
+            frame_idx = self._get_instance_frame(instance, target_text.lower())
+            visual_features = self._load_visual_features(
+                features_path=instance.features_path[0], frame_idx=frame_idx
+            )
+        source_text = f"Predict the system act: {format_instruction(instruction)}"
         target_text = target_text.lower()
         input_encoding = self.tokenizer.encode_plus(
             source_text, return_tensors=self._return_tensor_type, truncation=True
@@ -135,15 +144,13 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             target_text, return_tensors=self._return_tensor_type, truncation=True
         )
 
-        frame_idx = self._get_instance_frame(instance, target_text)
-        visual_features = self._load_visual_features(
-            features_path=instance.features_path[0], frame_idx=frame_idx
-        )
-
         raw_target = {
             "example_id": f"{instance.mission_id}_{instance.annotation_id}_{instance.instruction_id}",
             "references": target_text,
             "instruction": source_text,
+            "nlu_class": target_text.split()[0],
+            "object_type": " ".join(target_text.split()[1:]),
+            "action_type": first_action.type,
         }
 
         return EmmaDatasetItem(
@@ -204,33 +211,53 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             instruction, target_text = self._augment_synthetic_action(instance)
         return instruction, target_text
 
-    def prepare_search_instance(self, instance: SimBotInstructionInstance) -> tuple[str, str]:
+    def prepare_search_instance(
+        self, instance: SimBotInstructionInstance
+    ) -> tuple[str, EmmaVisualFeatures, str]:
         """Get source and target text for Search instructions."""
+        # Select the object
         action_object_metadata = instance.actions[0].get_action_data["object"]
         object_candidates = len(action_object_metadata["id"])
         object_candidate_idx = random.choice(range(object_candidates))
         object_id = action_object_metadata["id"][object_candidate_idx]
-        # Always paraphrase after selecting a target for search
-        instruction = self._paraphraser(
-            action_type="search",
-            object_id=object_id,
-            object_attributes=SimBotObjectAttributes(
-                **action_object_metadata["attributes"][object_candidate_idx]
-            ),
-        )
+
+        # Prepare the instruction
+        if instance.paraphrasable:
+            instruction = self._paraphraser(
+                action_type="search",
+                object_id=object_id,
+                object_attributes=SimBotObjectAttributes(
+                    **action_object_metadata["attributes"][object_candidate_idx]
+                ),
+            )
+        else:
+            instruction = instance.instruction.instruction
+
+        # Prepare the visual_features and target
         object_readable_name = get_object_readable_name_from_object_id(
             object_id=object_id,
             object_assets_to_names=self._object_assets_to_names,
             special_name_cases=self._special_name_cases,
         )
 
-        if action_object_metadata["mask"] is None:
+        negative_proba = random.random() >= self._search_negative_proba
+        # We need to skip the instances that are from annotations aka paraphrasable
+        select_negative = negative_proba and instance.paraphrasable
+        if select_negative:
+            negative_idx = self._search_negative_sampler(object_readable_name)
+            negative_instance = SimBotInstructionInstance.parse_raw(self.db[negative_idx])
+            visual_features = self._load_visual_features(
+                features_path=negative_instance.features_path[0]
+            )
+            target_text = f"{SimBotNLUIntents.search_no_match.value} {object_readable_name}"
+        elif action_object_metadata["mask"] is None:
+            # A negative search sample
+            visual_features = self._load_visual_features(features_path=instance.features_path[0])
             target_text = f"{SimBotNLUIntents.search_no_match.value} {object_readable_name}"
         else:
-            ground_truth_bboxes = action_object_metadata["mask"]
-            ground_truth_bbox = ground_truth_bboxes[object_candidate_idx]
+            # A positive search sample
             ground_truth_bbox = torch.tensor(
-                ground_truth_bbox,
+                action_object_metadata["mask"][object_candidate_idx],
                 dtype=torch.float32,
             ).unsqueeze(0)
 
@@ -253,7 +280,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
                     f"{SimBotNLUIntents.search_too_many_matches.value} {object_readable_name}"
                 )
 
-        return instruction, target_text
+        return instruction, visual_features, target_text
 
     def _augment_synthetic_action(self, instance: SimBotInstructionInstance) -> tuple[str, str]:
         """Prepare the instruction and target text for a synthetic unambiguous instruction.

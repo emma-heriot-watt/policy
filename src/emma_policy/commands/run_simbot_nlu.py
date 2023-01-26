@@ -24,6 +24,9 @@ from emma_policy.datamodules.simbot_nlu_datamodule import prepare_nlu_tokenizer
 from emma_policy.datamodules.simbot_nlu_dataset import SimBotNLUIntents
 from emma_policy.inference.api.simbot_state import GenerateRequest
 from emma_policy.inference.model_wrapper.simbot_nlu_input_builder import SimBotNLUInputBuilder
+from emma_policy.inference.model_wrapper.simbot_nlu_output_processor import (
+    SimBotNLUPredictionProcessor,
+)
 from emma_policy.models.simbot_nlu_policy import SimBotNLUEmmaPolicy
 
 
@@ -59,6 +62,7 @@ class ApiStore(TypedDict, total=False):
     input_builder: SimBotNLUInputBuilder
     tokenizer: PreTrainedTokenizer
     model: SimBotNLUEmmaPolicy
+    output_processor: SimBotNLUPredictionProcessor
     num_beams: int
     no_repeat_ngram_size: int
     max_generated_text_length: int
@@ -83,34 +87,6 @@ def load_model(checkpoint_path: str, model_name: str, device: str) -> SimBotNLUE
     return model
 
 
-def rule_based_ambiguity_check(action: str, frame_features: list[dict[str, Any]]) -> str:
-    """Change clarification to action if you can't find multiples of the predicted object."""
-    split_parts = action.split(" ")
-    object_name = " ".join(split_parts[1:]) if len(split_parts) > 1 else None
-    class_labels = frame_features[0].get("class_labels", None)
-    if object_name is None or class_labels is None:
-        return action
-    found_objects = [object_class.lower() == object_name for object_class in class_labels]
-    # For now, overwrite the NLU only if there are no multiples in front of you
-    # So if there's only one object that you are looking at, assume no ambiguity
-    if sum(found_objects) == 1:
-        action = DEFAULT_ACTION
-
-    return action
-
-
-def process_nlu_output(action: str, valid_action_types: list[str]) -> str:
-    """Process the NLU output to a valid form."""
-    # For search intents only return <search>
-    if action.startswith(SimBotNLUIntents.search.value):
-        return SimBotNLUIntents.search.value
-    # Make sure to return a valid format
-    action_type = action.split(" ")[0]
-    if action_type not in valid_action_types:
-        action = DEFAULT_ACTION
-    return action
-
-
 @app.on_event("startup")
 async def startup_event() -> None:
     """Run specific functions when starting up the API."""
@@ -125,6 +101,10 @@ async def startup_event() -> None:
     api_store["valid_action_types"] = [
         intent.value for intent in SimBotNLUIntents if intent.is_nlu_output
     ]
+    api_store["output_processor"] = SimBotNLUPredictionProcessor(
+        valid_action_types=api_store["valid_action_types"],
+        default_prediction=DEFAULT_ACTION,
+    )
     logging.info(f"Loading model on device `{settings.device}`")
     api_store["model"] = load_model(
         checkpoint_path=str(settings.model_checkpoint_path),
@@ -168,12 +148,12 @@ async def generate(request: Request, response: Response) -> str:
         # the agent has already clarified or acted.
         if len(simbot_request.environment_history) == 1:
             batch = api_store["input_builder"](simbot_request)
-            try:  # noqa: WPS229
+            try:
                 with torch.no_grad():
                     action = api_store["model"].inference_step(batch)[0]
-                action = process_nlu_output(action, api_store["valid_action_types"])
-                action = rule_based_ambiguity_check(
-                    action, simbot_request.environment_history[-1].features
+                action = api_store["output_processor"](
+                    prediction=action,
+                    frame_features=simbot_request.environment_history[-1].features,
                 )
 
             except Exception as err:

@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.22.0](https://github.com/emma-simbot/policy/compare/v1.21.0...v1.22.0) (2023-01-26)
+
+
+### Features
+
+* search itm ([#680](https://github.com/emma-simbot/policy/issues/680)) ([e4fa938](https://github.com/emma-simbot/policy/commit/e4fa93895117ab8eab309d3d8372a82dfa76bb5b))
+
 ## [1.21.0](https://github.com/emma-simbot/policy/compare/v1.20.0...v1.21.0) (2023-01-26)
 
 

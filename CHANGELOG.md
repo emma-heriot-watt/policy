@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.21.0](https://github.com/emma-simbot/policy/compare/v1.20.0...v1.21.0) (2023-01-26)
+
+
+### Features
+
+* Unifying all NLU prediction processing in a class ([#682](https://github.com/emma-simbot/policy/issues/682)) ([4c5bf3c](https://github.com/emma-simbot/policy/commit/4c5bf3cd5f2a7957523d18cdde894a02fed558b9))
+
 ## [1.20.0](https://github.com/emma-simbot/policy/compare/v1.19.0...v1.20.0) (2023-01-25)
 
 

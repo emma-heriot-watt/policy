@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.23.0](https://github.com/emma-simbot/policy/compare/v1.22.1...v1.23.0) (2023-01-27)
+
+
+### Features
+
+* add plot temperature script ([#683](https://github.com/emma-simbot/policy/issues/683)) ([450b8a8](https://github.com/emma-simbot/policy/commit/450b8a8a576088c8677b150eca1ea5bd8844d76f))
+
 ## [1.22.1](https://github.com/emma-simbot/policy/compare/v1.22.0...v1.22.1) (2023-01-27)
 
 

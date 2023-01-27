@@ -132,7 +132,6 @@ async def startup_event() -> None:
 async def root(response: Response) -> dict[str, Any]:
     """Ping the API to make sure it is responding."""
     response.status_code = status.HTTP_200_OK
-    logger.info(response.body)
     return {"action": "Pickup Bowl <vis_token_42>"}
 
 

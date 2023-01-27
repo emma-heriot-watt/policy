@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.22.1](https://github.com/emma-simbot/policy/compare/v1.22.0...v1.22.1) (2023-01-27)
+
+
+### Bug Fixes
+
+* remove unnecessary log point ([504fbca](https://github.com/emma-simbot/policy/commit/504fbca0bcb4ad56130e330a4069a72c94665f6f))
+
 ## [1.22.0](https://github.com/emma-simbot/policy/compare/v1.21.0...v1.22.0) (2023-01-26)
 
 

@@ -18,6 +18,7 @@ class SimBotActionRawTextMatcher:
         with open(raw_text_match_json) as fp:
             self.raw_text_matching = json.load(fp)
         self.distance_threshold = distance_threshold
+        self._wake_words = ["Alexa", "Amazon", "Echo", "Computer", "Ziggy"]
 
     def __call__(self, input_request: GenerateRequest) -> Optional[str]:
         """Process the input request."""
@@ -58,11 +59,20 @@ class SimBotActionRawTextMatcher:
         """Preprocess the raw input string."""
         new_string = re.sub(r"[^\w\s]", "", input_string)
         new_string = new_string.strip().lower()
+
+        # Remove wake words
+        for wake_word in self._wake_words:
+            new_string = new_string.replace(wake_word.lower(), "")
+
+        new_string = new_string.replace("okay", "")
+
+        # Remove polite intros
         new_string = new_string.replace("can you", "")
         new_string = new_string.replace("can you please", "")
         new_string = new_string.replace("could you", "")
         new_string = new_string.replace("could you please", "")
         new_string = new_string.replace("please", "")
+
         new_string = " ".join(new_string.split())
         return new_string
 

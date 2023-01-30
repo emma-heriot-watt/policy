@@ -169,7 +169,7 @@ class SimBotActionInputBuilder:
         if previous_actions:
             # Currently the implementation allows None previous actios
             # but in practice this should never happen.
-            previous_actions_str = " ".join(previous_actions[:-1])  # type: ignore[arg-type]
+            previous_actions_str = " ".join(previous_actions)  # type: ignore[arg-type]
         return (feature_dicts, previous_actions_str, step_index)
 
     def _prepare_input_text(self, instruction: str, task: Task) -> BatchEncoding:

@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.24.0](https://github.com/emma-simbot/policy/compare/v1.23.1...v1.24.0) (2023-01-30)
+
+
+### Features
+
+* Update raw text matcher forward ([#686](https://github.com/emma-simbot/policy/issues/686)) ([48a2047](https://github.com/emma-simbot/policy/commit/48a20473a8fd8c279eec3d9f86c07a66646f91a5))
+
 ## [1.23.1](https://github.com/emma-simbot/policy/compare/v1.23.0...v1.23.1) (2023-01-30)
 
 

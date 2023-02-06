@@ -136,6 +136,26 @@ def prepare_emma_visual_features(  # noqa: WPS210
     return emma_visual_features
 
 
+def best_match_features(
+    ground_truth_bbox: torch.Tensor,
+    object_coordinates_bbox: torch.Tensor,
+    threshold: float = 0.5,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Find the predicted bounding box with the highest IoU (best feature vector)."""
+    ground_truth_box = Boxes(ground_truth_bbox)
+    estimated_box = Boxes(object_coordinates_bbox)
+    ious = pairwise_iou(ground_truth_box, estimated_box)
+
+    # ignore all the ious below threshold
+    # ious[ious < threshold] = 0
+    matched_values, matched_indices = torch.max(ious, dim=1)
+
+    # keep track whether ground truth bbox is mapped to a feature
+    ground_truth_flags = matched_values > threshold
+
+    return matched_indices, ground_truth_flags
+
+
 class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
     """Common torch Dataset for easily getting dataset from DatasetDb files for modelling.
 
@@ -225,18 +245,11 @@ class EmmaBaseDataset(Dataset[DatasetReturn_Co]):
         threshold: float = 0.5,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """Find the predicted bounding box with the highest IoU (best feature vector)."""
-        ground_truth_box = Boxes(ground_truth_bbox)
-        estimated_box = Boxes(object_coordinates_bbox)
-        ious = pairwise_iou(ground_truth_box, estimated_box)
-
-        # ignore all the ious below threshold
-        # ious[ious < threshold] = 0
-        matched_values, matched_indices = torch.max(ious, dim=1)
-
-        # keep track whether ground truth bbox is mapped to a feature
-        ground_truth_flags = matched_values > threshold
-
-        return matched_indices, ground_truth_flags
+        return best_match_features(
+            ground_truth_bbox=ground_truth_bbox,
+            object_coordinates_bbox=object_coordinates_bbox,
+            threshold=threshold,
+        )
 
     def _get_task_as_tensor(self, task: Task) -> torch.Tensor:
         """Convert the given task to a Tensor."""

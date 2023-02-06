@@ -70,6 +70,13 @@ def format_instruction(text: str) -> str:
     return text.lower()
 
 
+def compressed_mask_is_bbox(mask: Union[list[int], list[list[int]]]) -> bool:
+    """Check if a compressed mask is a bounding box."""
+    only_coords = len(mask) == 4
+    not_list = not all([isinstance(x, list) for x in mask])
+    return only_coords and not_list
+
+
 class SearchNegativeSampler:
     """Search negative selection class.
 
@@ -125,10 +132,14 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         max_frames: int = 15,
         use_only_necessary_questions: bool = True,
         allow_paraphrasing: bool = False,
+        shuffle_objects: bool = False,
     ) -> None:
 
         super().__init__(
-            dataset_db_path=dataset_db_path, tokenizer=tokenizer, max_frames=max_frames
+            dataset_db_path=dataset_db_path,
+            tokenizer=tokenizer,
+            max_frames=max_frames,
+            shuffle_objects=shuffle_objects,
         )
 
         self._iou_threshold = iou_threshold
@@ -136,14 +147,15 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         self._search_negative_proba = search_negative_proba
         self._use_only_necessary_questions = use_only_necessary_questions
         self.question_answer_prompt = "<<driver>> {question} <<commander>> {answer}"
+
         arena_definitions = get_arena_definitions()
         self._object_assets_to_names = arena_definitions["asset_to_label"]
         self._image_width = arena_definitions["image_width"]
         self._image_height = arena_definitions["image_height"]
-        self._paraphraser = InstructionParaphraser()
         self._allow_paraphrasing = allow_paraphrasing
         self._search_negative_sampler = SearchNegativeSampler(self.db)
         self._special_name_cases = arena_definitions["special_asset_to_readable_name"]
+        self.paraphraser = InstructionParaphraser()
 
     @overrides(check_signature=False)
     def __getitem__(self, index: int) -> EmmaDatasetItem:
@@ -169,7 +181,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             # All the instances comming from augmentations are paraphrasable
             # The ones comming from annotations are not.
             if self._allow_paraphrasing and instance.paraphrasable:
-                instruction = self._paraphraser(
+                instruction = self.paraphraser(
                     action_type="search",
                     object_id=action_object_metadata["id"][object_candidate_idx],
                     object_attributes=SimBotObjectAttributes(
@@ -189,6 +201,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 object_id=action_object_metadata["id"][object_candidate_idx],
                 object_assets_to_names=self._object_assets_to_names,
             )
+            object_token = None
 
             # We need to skip the instances that are from annotations aka paraphrasable
             # TODO: we need to make this easier
@@ -299,13 +312,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 f"Instructions have {instance.instruction.actions} but found {action_ids_in_instance}."
             )
 
-        target_frames = []
-        for action in instance.actions:
-            action_object_metadata = action.get_action_data.get("object", None)
-            if action_object_metadata is not None:
-                target_frames.append(action_object_metadata.get("colorImageIndex", 0))
-            else:
-                target_frames.append(0)
+        target_frames = self.get_target_frames(instance)
 
         visual_features, frames, objects_per_frame = self._load_visual_features(
             features_path=instance.features_path,
@@ -364,6 +371,74 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             raw_target=raw_target,
         )
 
+    def get_target_frames(self, instance: SimBotInstructionInstance) -> list[int]:
+        """Get the frame indices of the target frames for the actions."""
+        target_frames = []
+        for action in instance.actions:
+            action_object_metadata = action.get_action_data.get("object", None)
+            if action_object_metadata is not None:
+                target_frames.append(action_object_metadata.get("colorImageIndex", 0))
+            else:
+                target_frames.append(0)
+        return target_frames
+
+    def map_object_to_visual_token(
+        self,
+        object_name: str,
+        action: SimBotAction,
+        image_index: int,
+        visual_features: EmmaVisualFeatures,
+        frames: list[str],
+        objects_per_frame: list[int],
+    ) -> str:
+        """Map the name of an object with its frame and visual token.
+
+        If the object cannot be mapped return the object name alone.
+        """
+        # Get the index of the color image
+        color_image = action.color_images[image_index]
+        frame_index = frames.index(color_image)
+        # Find the offset position of the frame objects within the visual features
+        offset_idx = sum(objects_per_frame[:frame_index])
+        object_coordinates_bbox = visual_features.object_coordinates[
+            offset_idx : offset_idx + objects_per_frame[frame_index], :
+        ]
+
+        gt_object_dict = action.get_action_data
+        # If the groundtruth object is a sticky note, the groundtruth bbox
+        # coordinates are currently provided directly in the mask
+        # TODO: this could potentially be improved if we have the segmentation masks for the sticky notes as well instead of the bounding boxes
+        object_mask = gt_object_dict["object"]["mask"]
+        if object_name == "Sticky Note":
+            ground_truth_bbox = torch.tensor(object_mask[0]).float()
+
+        else:
+            if compressed_mask_is_bbox(object_mask):
+                ground_truth_bbox = torch.tensor(object_mask, dtype=torch.float32).unsqueeze(0)
+            else:
+                gt_binary_mask = decompress_simbot_mask(object_mask)
+                ground_truth_bbox = masks_to_boxes(torch.tensor(gt_binary_mask).unsqueeze(0))
+
+        ground_truth_bbox[:, (0, 2)] /= self._image_width
+        ground_truth_bbox[:, (1, 3)] /= self._image_height
+
+        matched_indices, ground_truth_flags = self._best_match_features(
+            ground_truth_bbox=ground_truth_bbox,
+            object_coordinates_bbox=object_coordinates_bbox,
+            threshold=self._iou_threshold,
+        )
+        scene_frame_token = self.tokenizer.decode(visual_features.scene_frame_tokens[frame_index])
+
+        # If there is a matching bounding box, append its visual token to the target text
+        if ground_truth_flags[0]:
+            # Get the visual token ids for the corresponding frame
+            vis_tokens = visual_features.visual_token_ids[
+                offset_idx : offset_idx + objects_per_frame[frame_index]
+            ]
+            object_token = self.tokenizer.decode(vis_tokens[matched_indices[0]])
+            return f"{object_name} {scene_frame_token} {object_token}"
+        return f"{object_name} {scene_frame_token}"
+
     def _prepare_source_text(self, instance: SimBotInstructionInstance) -> str:
         """Prepare the source text.
 
@@ -382,7 +457,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             )
 
             instruction = get_simbot_instruction_paraphrase(
-                self._paraphraser, instance, object_name
+                self.paraphraser, instance, object_name
             )
         else:
             instruction = instance.instruction.instruction
@@ -440,7 +515,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                         object_assets_to_names=self._object_assets_to_names,
                     )
                     image_index = action_object_metadata["colorImageIndex"]
-                    object_name_with_tokens = self._map_object_to_visual_token(
+                    object_name_with_tokens = self.map_object_to_visual_token(
                         object_name=object_name,
                         action=action,
                         image_index=image_index,
@@ -462,63 +537,6 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         if instance.actions[-1].final:
             target_text[-1] = f"{target_text[-1][:-1]} <stop>."
         return " ".join(target_text).lower()
-
-    def _map_object_to_visual_token(
-        self,
-        object_name: str,
-        action: SimBotAction,
-        image_index: int,
-        visual_features: EmmaVisualFeatures,
-        frames: list[str],
-        objects_per_frame: list[int],
-    ) -> str:
-        """Map the name of an object with its frame and visual token.
-
-        If the object cannot be mapped return the object name alone.
-        """
-        # Get the index of the color image
-        color_image = action.color_images[image_index]
-        frame_index = frames.index(color_image)
-        # Find the offset position of the frame objects within the visual features
-        offset_idx = sum(objects_per_frame[:frame_index])
-        object_coordinates_bbox = visual_features.object_coordinates[
-            offset_idx : offset_idx + objects_per_frame[frame_index], :
-        ]
-
-        gt_object_dict = action.get_action_data
-        # If the groundtruth object is a sticky note, the groundtruth bbox
-        # coordinates are currently provided directly in the mask
-        # TODO: this could potentially be improved if we have the segmentation masks for the sticky notes as well instead of the bounding boxes
-        object_mask = gt_object_dict["object"]["mask"]
-        if object_name == "Sticky Note":
-            ground_truth_bbox = torch.tensor(object_mask[0]).float()
-
-        else:
-            if self._compressed_mask_is_bbox(object_mask):
-                ground_truth_bbox = torch.tensor(object_mask, dtype=torch.float32).unsqueeze(0)
-            else:
-                gt_binary_mask = decompress_simbot_mask(object_mask)
-                ground_truth_bbox = masks_to_boxes(torch.tensor(gt_binary_mask).unsqueeze(0))
-
-        ground_truth_bbox[:, (0, 2)] /= self._image_width
-        ground_truth_bbox[:, (1, 3)] /= self._image_height
-
-        matched_indices, ground_truth_flags = self._best_match_features(
-            ground_truth_bbox=ground_truth_bbox,
-            object_coordinates_bbox=object_coordinates_bbox,
-            threshold=self._iou_threshold,
-        )
-        scene_frame_token = self.tokenizer.decode(visual_features.scene_frame_tokens[frame_index])
-
-        # If there is a matching bounding box, append its visual token to the target text
-        if ground_truth_flags[0]:
-            # Get the visual token ids for the corresponding frame
-            vis_tokens = visual_features.visual_token_ids[
-                offset_idx : offset_idx + objects_per_frame[frame_index]
-            ]
-            object_token = self.tokenizer.decode(vis_tokens[matched_indices[0]])
-            return f"{object_name} {scene_frame_token} {object_token}"
-        return f"{object_name} {scene_frame_token}"
 
     def _ignore_goto_redundant_frames(
         self,
@@ -570,11 +588,6 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         )
 
         return truncated_visual_features, [frames[frame_index]], [objects_per_frame[frame_index]]
-
-    def _compressed_mask_is_bbox(self, mask: Union[list[int], list[list[int]]]) -> bool:
-        only_coords = len(mask) == 4
-        not_list = not all([isinstance(x, list) for x in mask])
-        return only_coords and not_list
 
     @overrides(check_signature=False)
     def _load_visual_features(

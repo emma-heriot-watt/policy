@@ -74,6 +74,20 @@ class SimBotNLUIntents(Enum):
         }
 
 
+def action_is_object_interaction(action: SimBotAction) -> bool:
+    """Check if an instruction is an object interaction.
+
+    1. Not a Search or Examine action
+    2. Has object metadata - but not room
+    """
+    if action.type in {"Search", "Examine"}:
+        return False
+    object_metadata = action.get_action_data.get("object", None)
+    if object_metadata is None:
+        return False
+    return "officeRoom" not in object_metadata
+
+
 class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
     """Dataset for AreanNLU.
 
@@ -89,9 +103,13 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         is_train: bool = True,
         iou_threshold: float = 0.5,
         search_negative_proba: float = 0.5,
+        shuffle_objects: bool = False,
     ) -> None:
         super().__init__(
-            dataset_db_path=dataset_db_path, tokenizer=tokenizer, max_frames=max_frames
+            dataset_db_path=dataset_db_path,
+            tokenizer=tokenizer,
+            max_frames=max_frames,
+            shuffle_objects=shuffle_objects,
         )
 
         self.is_train = is_train
@@ -102,17 +120,16 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             SimBotClarificationTypes.disambiguation: SimBotNLUIntents.act_too_many_matches,
         }
         self._prepare_data()
-
         arena_definitions = get_arena_definitions()
         self._object_assets_to_names = arena_definitions["asset_to_label"]
         self._label_to_idx = arena_definitions["label_to_idx"]
         self._special_name_cases = arena_definitions["special_asset_to_readable_name"]
         self._image_width = arena_definitions["image_width"]
         self._image_height = arena_definitions["image_height"]
-        self._paraphraser = InstructionParaphraser()
         self._iou_threshold = iou_threshold
         self._search_negative_proba = search_negative_proba
         self._search_negative_sampler = SearchNegativeSampler(self.db)
+        self.paraphraser = InstructionParaphraser()
 
     @overrides(check_signature=False)
     def __len__(self) -> int:
@@ -223,7 +240,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
 
         # Prepare the instruction
         if instance.paraphrasable:
-            instruction = self._paraphraser(
+            instruction = self.paraphraser(
                 action_type="search",
                 object_id=object_id,
                 object_attributes=SimBotObjectAttributes(
@@ -329,7 +346,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             object_name = self._get_target_object_name(instance.actions[0], name_type="class")
             if object_name:
                 instruction = get_simbot_instruction_paraphrase(
-                    self._paraphraser, instance, object_name
+                    self.paraphraser, instance, object_name
                 )
         else:
             instruction = instance.instruction.instruction
@@ -403,7 +420,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
 
                 self.data_intents.append(self._get_data_intent(instance))
 
-                if not instance.synthetic or not self._is_object_interaction(instance.actions[0]):
+                if not instance.synthetic or not action_is_object_interaction(instance.actions[0]):
                     continue
                 self._synthetic_negative_candidates.append(index)
 
@@ -422,19 +439,6 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         elif instance.ambiguous:
             return SimBotNLUIntents.act_too_many_matches
         return SimBotNLUIntents.act_one_match
-
-    def _is_object_interaction(self, action: SimBotAction) -> bool:
-        """Check if an instruction is an object interaction.
-
-        1. Not a Search or Examine action
-        2. Has object metadata - but not room
-        """
-        if action.type in {"Search", "Examine"}:
-            return False
-        object_metadata = action.get_action_data.get("object", None)
-        if object_metadata is None:
-            return False
-        return "officeRoom" not in object_metadata
 
     def _get_instance_frame(self, instance: SimBotInstructionInstance, target_text: str) -> int:
         """Get either the image infront of you or the image with the target object."""

@@ -84,6 +84,6 @@ class SimBotNLUPredictionProcessor:
         class_labels = self._get_detected_objects(frame_features)
         if class_labels is None:
             return prediction
-        if "button" in prediction and "robotic arm" in class_labels:
+        if "button" in prediction and "robot arm" in class_labels:
             return self._default_prediction
         return prediction

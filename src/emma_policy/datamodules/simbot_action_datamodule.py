@@ -60,6 +60,8 @@ class SimBotActionDataModule(LightningDataModule):
         weighted_sampling: bool = True,
         weight_temperature: float = 1.3,
         iou_threshold: float = 0.5,
+        skip_common_instances: bool = False,
+        shuffle_objects: bool = False,
     ) -> None:
         super().__init__()
         if isinstance(simbot_action_train_db_file, str):
@@ -82,6 +84,8 @@ class SimBotActionDataModule(LightningDataModule):
         self._subsample_perc = 0.5
         self._skip_goto_objects = {"Desk", "Table"}
         self._iou_threshold = iou_threshold
+        self._skip_common_instances = skip_common_instances
+        self._shuffle_objects = shuffle_objects
 
         # Model
         self._model_name = model_name
@@ -116,6 +120,7 @@ class SimBotActionDataModule(LightningDataModule):
             max_frames=self._max_frames,
             iou_threshold=self._iou_threshold,
             allow_paraphrasing=True,
+            shuffle_objects=self._shuffle_objects,
         )
 
         self._valid_dataset = SimBotActionDataset(

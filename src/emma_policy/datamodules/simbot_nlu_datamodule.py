@@ -99,6 +99,7 @@ class SimBotNLUDataModule(LightningDataModule):
             dataset_db_path=self._train_db_file,
             tokenizer=self.tokenizer,
             is_train=True,
+            shuffle_objects=True,
         )
 
         self._valid_dataset = SimBotNLUDataset(

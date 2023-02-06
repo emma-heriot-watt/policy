@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.25.1](https://github.com/emma-simbot/policy/compare/v1.25.0...v1.25.1) (2023-02-06)
+
+
+### Bug Fixes
+
+* negative candidate ids ([#696](https://github.com/emma-simbot/policy/issues/696)) ([8a27cf6](https://github.com/emma-simbot/policy/commit/8a27cf6f69fe95b1cd8ac760f04fc9fe58546e9e))
+
 ## [1.25.0](https://github.com/emma-simbot/policy/compare/v1.24.0...v1.25.0) (2023-02-06)
 
 

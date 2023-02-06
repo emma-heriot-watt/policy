@@ -6,6 +6,7 @@ import torch
 from emma_datasets.constants.simbot.simbot import get_arena_definitions
 from emma_datasets.datamodels.datasets.utils.simbot_utils.instruction_processing import (
     get_object_label_from_object_id,
+    get_object_readable_name_from_object_id,
 )
 from emma_datasets.datamodels.datasets.utils.simbot_utils.paraphrasers import (
     InstructionParaphraser,
@@ -197,10 +198,12 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             )
             source_text = format_instruction(source_text)
 
-            object_name = get_object_label_from_object_id(
+            object_name = get_object_readable_name_from_object_id(
                 object_id=action_object_metadata["id"][object_candidate_idx],
                 object_assets_to_names=self._object_assets_to_names,
+                special_name_cases=self._special_name_cases,
             )
+
             object_token = None
 
             # We need to skip the instances that are from annotations aka paraphrasable

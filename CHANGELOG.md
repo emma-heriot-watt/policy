@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.25.0](https://github.com/emma-simbot/policy/compare/v1.24.0...v1.25.0) (2023-02-06)
+
+
+### Features
+
+* Filter SimBot action and nlu dbs based on match with predicted bounding boxes ([#687](https://github.com/emma-simbot/policy/issues/687)) ([fa4ad74](https://github.com/emma-simbot/policy/commit/fa4ad744ea43be67b136e9f8f54da26543177091))
+
 ## [1.24.0](https://github.com/emma-simbot/policy/compare/v1.23.1...v1.24.0) (2023-01-30)
 
 

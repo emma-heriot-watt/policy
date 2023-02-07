@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.26.0](https://github.com/emma-simbot/policy/compare/v1.25.1...v1.26.0) (2023-02-07)
+
+
+### Features
+
+* Raw text matching with examine sticky note ([#698](https://github.com/emma-simbot/policy/issues/698)) ([776d364](https://github.com/emma-simbot/policy/commit/776d364ce9f00aff6e16751981c8af6a4a3b2868))
+
 ## [1.25.1](https://github.com/emma-simbot/policy/compare/v1.25.0...v1.25.1) (2023-02-06)
 
 

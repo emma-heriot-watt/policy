@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.27.0](https://github.com/emma-simbot/policy/compare/v1.26.0...v1.27.0) (2023-02-08)
+
+
+### Features
+
+* Add dataset visualization ([#701](https://github.com/emma-simbot/policy/issues/701)) ([da6b764](https://github.com/emma-simbot/policy/commit/da6b764af4cfc3845fbb6fe5b63a2d0c0b854c2e))
+
 ## [1.26.0](https://github.com/emma-simbot/policy/compare/v1.25.1...v1.26.0) (2023-02-07)
 
 

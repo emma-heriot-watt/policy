@@ -1,6 +1,6 @@
 import random
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import torch
 from emma_datasets.constants.simbot.simbot import get_arena_definitions
@@ -230,6 +230,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             ground_truth_bboxes = action_object_metadata["mask"]
             if ground_truth_bboxes is None or select_negative:
                 target_text = f"no {object_name} <stop>."
+                action_type = "search_negative"
             else:
                 ground_truth_bbox = ground_truth_bboxes[object_candidate_idx]
                 ground_truth_bbox = torch.tensor(
@@ -254,8 +255,10 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                         visual_features.scene_frame_tokens[0]
                     )
                     target_text = f"{scene_frame_token} {object_token} <stop>."
+                    action_type = "search_positive"
                 else:
                     target_text = f"no {object_name} <stop>."
+                    action_type = "search_negative"
 
             target_text = target_text.lower()
 
@@ -281,7 +284,13 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             # Now shift them to the right
             decoder_input_ids[1:] = full_target_token_ids[:-1].clone()  # noqa: WPS362
             decoder_attention_mask = torch.ones_like(decoder_input_ids)
-            raw_target = f"mission{instance.mission_id}_instr{instance.instruction_id}_ann{instance.annotation_id}_action{instance.actions[-1].type}"  # noqa: WPS221
+            raw_target = {
+                "instance_id": self._get_instance_id(instance),
+                "instruction": source_text,
+                "target": target_text,
+                "action_type": action_type,
+                "object_type": object_name,
+            }
 
             return EmmaDatasetItem(
                 input_token_ids=input_encoding.input_ids.squeeze(0),
@@ -353,7 +362,13 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         # Now shift them to the right
         decoder_input_ids[1:] = full_target_token_ids[:-1].clone()  # noqa: WPS362
         decoder_attention_mask = torch.ones_like(decoder_input_ids)
-        raw_target = f"mission{instance.mission_id}_instr{instance.instruction_id}_ann{instance.annotation_id}_action{instance.actions[-1].type}"  # noqa: WPS221
+        raw_target = {
+            "instance_id": self._get_instance_id(instance),
+            "instruction": source_text,
+            "target": target_text,
+            "action_type": instance.actions[-1].type,
+            "object_type": self._get_target_object(instance.actions[-1]),
+        }
 
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
@@ -611,3 +626,32 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         visual_features = self._prepare_emma_visual_features(feature_dicts=feature_dicts)
 
         return visual_features, frames, objects_per_frame
+
+    def _get_instance_id(self, instance: SimBotInstructionInstance) -> str:
+        """Construct the instance id."""
+        instruction_id = f"mission{instance.mission_id}_instr{instance.instruction_id}"
+        return f"{instruction_id}_ann{instance.annotation_id}_action{instance.actions[-1].type}"
+
+    def _get_target_object(self, action: SimBotAction) -> Optional[str]:
+        """Prepare the object name."""
+        action_type = action.type
+        # case 1: navigation actions except GoTo
+        if action_type in {"Look", "Move", "Rotate", "Turn"}:
+            return None
+
+        action_object_metadata = action.get_action_data["object"]
+        # case 2: room/object navigation or interaction action
+        object_id = action_object_metadata.get("id", None)
+        # action with a specific object
+        if object_id is not None:
+            object_name = get_object_readable_name_from_object_id(
+                object_id=action_object_metadata["id"],
+                object_assets_to_names=self._object_assets_to_names,
+                special_name_cases=self._special_name_cases,
+            )
+        # action without an object (e.g, Goto Office)
+        else:
+            # {'object': {'officeRoom': 'Lab1'}}
+            object_name = list(action_object_metadata.values())[0]
+
+        return object_name

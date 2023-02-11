@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.28.0](https://github.com/emma-simbot/policy/compare/v1.27.0...v1.28.0) (2023-02-11)
+
+
+### Features
+
+* add new examine sticky examples ([#704](https://github.com/emma-simbot/policy/issues/704)) ([121bcda](https://github.com/emma-simbot/policy/commit/121bcda1be9623904687320120ac6da4433d65f7))
+
 ## [1.27.0](https://github.com/emma-simbot/policy/compare/v1.26.0...v1.27.0) (2023-02-08)
 
 

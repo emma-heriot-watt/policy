@@ -4,13 +4,15 @@ import re
 from pathlib import Path
 from typing import Optional
 
-from emma_policy.inference.api.simbot_state import GenerateRequest, SpeakerRole
+from emma_common.datamodels import EmmaPolicyRequest, SpeakerRole
+
 from emma_policy.utils.simbot_raw_text_matching import levenshtein_distance
 
 
 logger = logging.getLogger(__name__)
 
 
+# deprecated!
 class SimBotActionRawTextMatcher:
     """Simple raw text matcher used to minimise latency cost for trivial actions."""
 
@@ -20,7 +22,7 @@ class SimBotActionRawTextMatcher:
         self.distance_threshold = distance_threshold
         self._wake_words = ["Alexa", "Amazon", "Echo", "Computer", "Ziggy"]
 
-    def __call__(self, input_request: GenerateRequest) -> Optional[str]:
+    def __call__(self, input_request: EmmaPolicyRequest) -> Optional[str]:
         """Process the input request."""
         if len(input_request.environment_history) > 1:
             logger.warning(

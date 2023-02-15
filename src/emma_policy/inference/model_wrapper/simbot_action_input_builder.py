@@ -1,7 +1,8 @@
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import torch
+from emma_common.datamodels import EmmaPolicyRequest
 from pytorch_lightning.utilities import move_data_to_device
 from transformers import BatchEncoding, PreTrainedTokenizer
 
@@ -13,7 +14,7 @@ from emma_policy.datamodules.emma_dataclasses import (
     EmmaVisualFeatures,
 )
 from emma_policy.datamodules.pretrain_instances import TASK_TEMPLATES_MAP, Task
-from emma_policy.inference.api.simbot_state import SPEAKER_TOKEN_MAP, GenerateRequest
+from emma_policy.inference.api.simbot_state import SPEAKER_TOKEN_MAP
 
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ class SimBotActionInputBuilder:
         }
 
     def __call__(
-        self, request: GenerateRequest, task: Task
+        self, request: EmmaPolicyRequest, task: Task
     ) -> tuple[Optional[EmmaDatasetBatch], Optional[torch.Tensor], Optional[list[int]]]:
         """Process the environment output into a batch for the model.
 
@@ -116,7 +117,7 @@ class SimBotActionInputBuilder:
 
     def _parse_dialogue_from_request(
         self,
-        request: GenerateRequest,
+        request: EmmaPolicyRequest,
     ) -> Optional[str]:
         """Parse the dialogue for the current request."""
         instruction = None
@@ -137,11 +138,11 @@ class SimBotActionInputBuilder:
         return instruction
 
     def _parse_environment_history_from_request(
-        self, request: GenerateRequest
-    ) -> tuple[list[dict[str, Any]], Optional[str], Optional[list[int]]]:
+        self, request: EmmaPolicyRequest
+    ) -> tuple[list[dict[str, torch.Tensor]], Optional[str], Optional[list[int]]]:  # noqa: WPS221
         """Parse the feature dicts and actions from the current request."""
-        feature_dicts = []
-        step_index = []
+        feature_dicts: list[dict[str, torch.Tensor]] = []
+        step_index: list[int] = []
         previous_actions = []
         total_steps = len(request.environment_history)
         for idx, step in enumerate(request.environment_history, 1):
@@ -149,17 +150,9 @@ class SimBotActionInputBuilder:
                 msg = "Found unexpected 'None' as a previous action. Verify that the received request contains string values for previous actions."
                 logger.debug(msg)
 
-            for features in step.features:
-                feature_dict: dict[str, Union[torch.Tensor, int]] = {
-                    "bbox_features": torch.tensor(features["bbox_features"]),
-                    "bbox_probas": torch.tensor(features["bbox_probas"]),
-                    "bbox_coords": torch.tensor(features["bbox_coords"]),
-                    "cnn_features": torch.tensor(features["cnn_features"]),
-                    "width": features["width"],
-                    "height": features["height"],
-                }
-                feature_dicts.append(feature_dict)
-                step_index.append(idx - 1)  # step_index is zero based
+            feature_dicts.extend(feature.dict() for feature in step.features)
+            step_index.extend(idx - 1 for _ in step.features)
+
             if idx < total_steps:
                 previous_actions.append(step.output)
 
@@ -226,7 +219,7 @@ class SimBotActionInputBuilder:
         return batch
 
     def _get_minimum_predicted_frame_index(
-        self, feature_dicts: list[dict[str, Any]], request: GenerateRequest
+        self, feature_dicts: list[dict[str, Any]], request: EmmaPolicyRequest
     ) -> int:
         """Force the predicted frame indices to be larger than past frames."""
         total_frames = len(feature_dicts)

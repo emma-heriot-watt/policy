@@ -7,6 +7,7 @@ from typing import Any, Optional, TypedDict
 import torch
 from emma_common.api.instrumentation import instrument_app
 from emma_common.aws.cloudwatch import add_cloudwatch_handler_to_logger
+from emma_common.datamodels import TorchDataMixin
 from emma_common.logging import (
     InstrumentedInterceptHandler,
     logger,
@@ -22,7 +23,6 @@ from uvicorn import Config, Server
 from emma_policy._version import __version__  # noqa: WPS436
 from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.datamodules.simbot_action_datamodule import prepare_action_tokenizer
-from emma_policy.inference.api.simbot_state import GenerateRequest
 from emma_policy.inference.model_wrapper.simbot_action_input_builder import (
     SimBotActionInputBuilder,
 )
@@ -145,25 +145,27 @@ async def healthcheck(response: Response) -> str:
     return "success"
 
 
-@app.post("/generate_raw_text_match", status_code=status.HTTP_200_OK)
-async def generate_raw_text_match(request: Request, response: Response) -> Optional[str]:
-    """Endpoint for simple raw text matching."""
-    try:
-        simbot_request = GenerateRequest.parse_obj(await request.json())
-    except Exception as request_err:
-        logging.exception("Unable to parse request", exc_info=request_err)
-        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        raise request_err
-    with tracer.start_as_current_span("Raw text match"):
-        output_string = api_store["raw_text_matcher"](simbot_request)
-    return output_string
+# [deprecated!]
+# @app.post("/generate_raw_text_match", status_code=status.HTTP_200_OK)
+# async def generate_raw_text_match(request: Request, response: Response) -> Optional[str]:
+#     """Endpoint for simple raw text matching."""
+#     try:
+#         simbot_request = GenerateRequest.parse_obj(await request.json())
+#     except Exception as request_err:
+#         logging.exception("Unable to parse request", exc_info=request_err)
+#         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+#         raise request_err
+#     with tracer.start_as_current_span("Raw text match"):
+#         output_string = api_store["raw_text_matcher"](simbot_request)
+#     return output_string
 
 
 @app.post("/generate_find", status_code=status.HTTP_200_OK)
-async def generate_find(request: Request, response: Response) -> list[str]:
+async def generate_find(request: Request, response: Response) -> list[str]:  # noqa: WPS231
     """Endpoint for find."""
     try:
-        simbot_request = GenerateRequest.parse_obj(await request.json())
+        request_body = await request.body()
+        simbot_request = TorchDataMixin.get_object(request_body)
     except Exception as request_err:
         logging.exception("Unable to parse request", exc_info=request_err)
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -225,7 +227,9 @@ async def generate_find(request: Request, response: Response) -> list[str]:
 async def grab_from_history(request: Request, response: Response) -> Optional[int]:
     """Endpoint for find."""
     try:
-        simbot_request = GenerateRequest.parse_obj(await request.json())
+        request_body = await request.body()
+        simbot_request = TorchDataMixin.get_object(request_body)
+
     except Exception as request_err:
         logging.exception("Unable to parse request", exc_info=request_err)
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -288,7 +292,8 @@ async def generate(request: Request, response: Response) -> str:
     """
     # Parse the request from the server
     try:
-        simbot_request = GenerateRequest.parse_obj(await request.json())
+        request_body = await request.body()
+        simbot_request = TorchDataMixin.get_object(request_body)
     except Exception as request_err:
         logging.exception("Unable to parse request", exc_info=request_err)
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR

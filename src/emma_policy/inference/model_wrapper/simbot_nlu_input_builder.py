@@ -2,6 +2,7 @@ import logging
 from typing import Any
 
 import torch
+from emma_common.datamodels import EmmaPolicyRequest
 from pytorch_lightning.utilities import move_data_to_device
 from transformers import BatchEncoding, PreTrainedTokenizer
 
@@ -13,7 +14,6 @@ from emma_policy.datamodules.emma_dataclasses import (
     EmmaVisualFeatures,
 )
 from emma_policy.datamodules.simbot_action_dataset import format_instruction
-from emma_policy.inference.api.simbot_state import GenerateRequest
 
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ class SimBotNLUInputBuilder:
         self._tokenizer = tokenizer
         self._device = device
 
-    def __call__(self, request: GenerateRequest) -> EmmaDatasetBatch:
+    def __call__(self, request: EmmaPolicyRequest) -> EmmaDatasetBatch:
         """Process the environment output into a batch for the model.
 
         The sample batch provides the set of previous observations and previous actions taken by
@@ -38,7 +38,8 @@ class SimBotNLUInputBuilder:
         instruction = format_instruction(request.dialogue_history[-1].utterance)
         logger.debug(f"Preparing NLU input for instruction: {instruction}")
         encoded_inputs = self._prepare_input_text(instruction)
-        feature_dicts = self._prepare_feature_dicts(request.environment_history[-1].features)
+        feature_dicts = [feature.dict() for feature in request.environment_history[-1].features]
+        feature_dicts = self._prepare_feature_dicts(feature_dicts)
         visual_features = self._prepare_visual_features(feature_dicts)
         dataset_item = self._create_emma_dataset_item(
             visual_features=visual_features, encoded_inputs=encoded_inputs

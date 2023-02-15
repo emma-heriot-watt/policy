@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.29.0](https://github.com/emma-simbot/policy/compare/v1.28.1...v1.29.0) (2023-02-15)
+
+
+### Features
+
+* enables torch pickle for requests/responses ([#708](https://github.com/emma-simbot/policy/issues/708)) ([9548da5](https://github.com/emma-simbot/policy/commit/9548da571c2c80a4ffe868803fb64fc57ea70e8c))
+
 ## [1.28.1](https://github.com/emma-simbot/policy/compare/v1.28.0...v1.28.1) (2023-02-15)
 
 

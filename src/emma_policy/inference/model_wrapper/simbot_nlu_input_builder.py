@@ -54,7 +54,7 @@ class SimBotNLUInputBuilder:
         feature_dicts_tensors = []
         for feature_dict in feature_dicts:
             for name, instance in feature_dict.items():
-                if name != "class_labels":
+                if name not in {"class_labels", "entity_labels"}:
                     feature_dict[name] = self._convert_to_tensor(instance)
             feature_dicts_tensors.append(feature_dict)
         return feature_dicts_tensors

@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.29.1](https://github.com/emma-simbot/policy/compare/v1.29.0...v1.29.1) (2023-02-15)
+
+
+### Bug Fixes
+
+* circular dependency ([#711](https://github.com/emma-simbot/policy/issues/711)) ([b58df74](https://github.com/emma-simbot/policy/commit/b58df7406e1d3075b3239253162649540b696896))
+
+## [1.29.0](https://github.com/emma-simbot/policy/compare/v1.28.1...v1.29.0) (2023-02-15)
+
+
+### Features
+
+* enables torch pickle for requests/responses ([#708](https://github.com/emma-simbot/policy/issues/708)) ([9548da5](https://github.com/emma-simbot/policy/commit/9548da571c2c80a4ffe868803fb64fc57ea70e8c))
+
+## [1.28.1](https://github.com/emma-simbot/policy/compare/v1.28.0...v1.28.1) (2023-02-15)
+
+
+### Bug Fixes
+
+* ignore entity labels when converting feature dicts to tensors ([#709](https://github.com/emma-simbot/policy/issues/709)) ([8f37ee8](https://github.com/emma-simbot/policy/commit/8f37ee89a08d3fccb14816b6394f0d878903f4f6))
+
 ## [1.28.0](https://github.com/emma-simbot/policy/compare/v1.27.0...v1.28.0) (2023-02-11)
 
 

@@ -1,10 +1,10 @@
 from typing import Optional
 
+from emma_common.datamodels import DialogueUtterance, EmmaPolicyRequest, SpeakerRole
 from pytest_cases import parametrize
 from transformers import AutoTokenizer
 
 from emma_policy.datamodules.pretrain_instances import Task
-from emma_policy.inference.api.simbot_state import GenerateRequest, RequestUtterance, SpeakerRole
 from emma_policy.inference.model_wrapper.simbot_action_input_builder import (
     SimBotActionInputBuilder,
 )
@@ -14,39 +14,39 @@ from emma_policy.inference.model_wrapper.simbot_action_input_builder import (
     "input_request, target",
     [
         (
-            GenerateRequest(
-                dialogue_history=[RequestUtterance(role=SpeakerRole.user, utterance="")],
+            EmmaPolicyRequest(
+                dialogue_history=[DialogueUtterance(role=SpeakerRole.user, utterance="")],
                 environment_history=[],
             ),
             None,
         ),
         (
-            GenerateRequest(
+            EmmaPolicyRequest(
                 dialogue_history=[
-                    RequestUtterance(role=SpeakerRole.user, utterance="Instruction"),
-                    RequestUtterance(role=SpeakerRole.agent, utterance="Is this a question?"),
-                    RequestUtterance(role=SpeakerRole.user, utterance="Maybe"),
+                    DialogueUtterance(role=SpeakerRole.user, utterance="Instruction"),
+                    DialogueUtterance(role=SpeakerRole.agent, utterance="Is this a question?"),
+                    DialogueUtterance(role=SpeakerRole.user, utterance="Maybe"),
                 ],
                 environment_history=[],
             ),
             ("<<commander>> instruction. <<driver>> is this a question? <<commander>> maybe."),
         ),
         (
-            GenerateRequest(
+            EmmaPolicyRequest(
                 dialogue_history=[
-                    RequestUtterance(role=SpeakerRole.user, utterance="Instruction"),
+                    DialogueUtterance(role=SpeakerRole.user, utterance="Instruction"),
                 ],
                 environment_history=[],
             ),
             "<<commander>> instruction.",
         ),
         (
-            GenerateRequest(
+            EmmaPolicyRequest(
                 dialogue_history=[
-                    RequestUtterance(role=SpeakerRole.user, utterance="Instruction1"),
-                    RequestUtterance(role=SpeakerRole.agent, utterance="Is this a question?"),
-                    RequestUtterance(role=SpeakerRole.user, utterance="Maybe"),
-                    RequestUtterance(role=SpeakerRole.user, utterance="Instruction2"),
+                    DialogueUtterance(role=SpeakerRole.user, utterance="Instruction1"),
+                    DialogueUtterance(role=SpeakerRole.agent, utterance="Is this a question?"),
+                    DialogueUtterance(role=SpeakerRole.user, utterance="Maybe"),
+                    DialogueUtterance(role=SpeakerRole.user, utterance="Instruction2"),
                 ],
                 environment_history=[],
             ),
@@ -55,7 +55,7 @@ from emma_policy.inference.model_wrapper.simbot_action_input_builder import (
     ],
 )
 def test_simbot_action_builder_parses_dialogue_history(
-    input_request: GenerateRequest,
+    input_request: EmmaPolicyRequest,
     target: Optional[str],
 ) -> None:
     """Test that the action builder parses a request properly."""

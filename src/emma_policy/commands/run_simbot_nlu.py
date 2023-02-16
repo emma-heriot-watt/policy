@@ -7,6 +7,7 @@ from typing import Any, TypedDict
 import torch
 from emma_common.api.instrumentation import instrument_app
 from emma_common.aws.cloudwatch import add_cloudwatch_handler_to_logger
+from emma_common.datamodels import TorchDataMixin
 from emma_common.logging import (
     InstrumentedInterceptHandler,
     logger,
@@ -22,7 +23,6 @@ from uvicorn import Config, Server
 from emma_policy._version import __version__  # noqa: WPS436
 from emma_policy.datamodules.simbot_nlu_datamodule import prepare_nlu_tokenizer
 from emma_policy.datamodules.simbot_nlu_dataset import SimBotNLUIntents
-from emma_policy.inference.api.simbot_state import GenerateRequest
 from emma_policy.inference.model_wrapper.simbot_nlu_input_builder import SimBotNLUInputBuilder
 from emma_policy.inference.model_wrapper.simbot_nlu_output_processor import (
     SimBotNLUPredictionProcessor,
@@ -136,7 +136,8 @@ async def generate(request: Request, response: Response) -> str:
     """Get the next action from the model for the given instance."""
     # Parse the request from the server
     try:
-        simbot_request = GenerateRequest.parse_obj(await request.json())
+        request_body = await request.body()
+        simbot_request = TorchDataMixin.get_object(request_body)
     except Exception as request_err:
         logging.exception("Unable to parse request", exc_info=request_err)
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR

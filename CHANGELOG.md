@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.29.2](https://github.com/emma-simbot/policy/compare/v1.29.1...v1.29.2) (2023-02-16)
+
+
+### Bug Fixes
+
+* access to emma visual features ([#715](https://github.com/emma-simbot/policy/issues/715)) ([9dc0581](https://github.com/emma-simbot/policy/commit/9dc0581bf13d22c42e62b5f0377d90644a8297d2))
+
 ## [1.29.1](https://github.com/emma-simbot/policy/compare/v1.29.0...v1.29.1) (2023-02-15)
 
 

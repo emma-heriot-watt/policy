@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.30.0](https://github.com/emma-simbot/policy/compare/v1.29.2...v1.30.0) (2023-02-18)
+
+
+### Features
+
+* Precompute centroids for special object assets ([#707](https://github.com/emma-simbot/policy/issues/707)) ([5e712db](https://github.com/emma-simbot/policy/commit/5e712db4b61e691675fb1c4c6843fa5e8d5ac707))
+
 ## [1.29.2](https://github.com/emma-simbot/policy/compare/v1.29.1...v1.29.2) (2023-02-16)
 
 

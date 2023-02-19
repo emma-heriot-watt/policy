@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.31.0](https://github.com/emma-simbot/policy/compare/v1.30.1...v1.31.0) (2023-02-19)
+
+
+### Features
+
+* toggle button special case action output processor ([#717](https://github.com/emma-simbot/policy/issues/717)) ([15ac1e2](https://github.com/emma-simbot/policy/commit/15ac1e29d3c5ae68cb0657c76686627c30e76ab2))
+
 ## [1.30.1](https://github.com/emma-simbot/policy/compare/v1.30.0...v1.30.1) (2023-02-19)
 
 

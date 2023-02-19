@@ -14,11 +14,11 @@ class SimBotNLUPredictionProcessor:
 
     def __call__(self, prediction: str, frame_features: list[EmmaExtractedFeatures]) -> str:
         """Process the prediction."""
-        new_prediction = self._overwrite_the_nlu_prediction(prediction)
+        object_name = self._get_target_object(prediction)
+        new_prediction = self._overwrite_the_nlu_prediction(prediction, object_name)
         if new_prediction != prediction:
             return new_prediction
 
-        object_name = self._get_target_object(prediction)
         if object_name is None:
             return prediction
         if prediction.startswith(SimBotNLUIntents.act_no_match.value):
@@ -39,14 +39,14 @@ class SimBotNLUPredictionProcessor:
         prediction_type = prediction.split(" ")[0]
         return prediction_type in self.valid_action_types
 
-    def _overwrite_the_nlu_prediction(self, prediction: str) -> str:
+    def _overwrite_the_nlu_prediction(self, prediction: str, object_name: Optional[str]) -> str:
         """Check if the predicted NLU output needs to be overwritten."""
         # If the predicted prediction is not valid return the default prediction
         if not self._prediction_type_is_valid(prediction):
             return self._default_prediction
-        # For search intents only return <search>
+        # For search intents only return <search> object_name
         if prediction.startswith(SimBotNLUIntents.search.value):
-            return SimBotNLUIntents.search.value
+            return f"{SimBotNLUIntents.search.value} {self._get_target_object(prediction)}"
         # For act one_match intents only return <act><one_match>
         if prediction.startswith(SimBotNLUIntents.act_one_match.value):
             return SimBotNLUIntents.act_one_match.value

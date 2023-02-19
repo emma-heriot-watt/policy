@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.32.0](https://github.com/emma-simbot/policy/compare/v1.31.0...v1.32.0) (2023-02-19)
+
+
+### Features
+
+* return object name from nlu ([#718](https://github.com/emma-simbot/policy/issues/718)) ([8863f79](https://github.com/emma-simbot/policy/commit/8863f790f2616805dec54a284094f8c244f04b59))
+
 ## [1.31.0](https://github.com/emma-simbot/policy/compare/v1.30.1...v1.31.0) (2023-02-19)
 
 

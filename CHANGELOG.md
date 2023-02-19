@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.30.1](https://github.com/emma-simbot/policy/compare/v1.30.0...v1.30.1) (2023-02-19)
+
+
+### Bug Fixes
+
+* transfer features to cpu ([#716](https://github.com/emma-simbot/policy/issues/716)) ([3d54bfd](https://github.com/emma-simbot/policy/commit/3d54bfdd6b996415ca25bb2e5882b702795937ad))
+
 ## [1.30.0](https://github.com/emma-simbot/policy/compare/v1.29.2...v1.30.0) (2023-02-18)
 
 

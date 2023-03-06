@@ -26,6 +26,9 @@ from emma_policy.datamodules.simbot_action_datamodule import prepare_action_toke
 from emma_policy.inference.model_wrapper.simbot_action_input_builder import (
     SimBotActionInputBuilder,
 )
+from emma_policy.inference.model_wrapper.simbot_action_output_processor import (
+    SimBotActionPredictionProcessor,
+)
 from emma_policy.inference.model_wrapper.simbot_raw_text_matcher import SimBotActionRawTextMatcher
 from emma_policy.models.simbot_emma_policy import SimBotEmmaPolicy
 
@@ -64,6 +67,7 @@ class ApiStore(TypedDict, total=False):
     raw_text_matcher: SimBotActionRawTextMatcher
     tokenizer: PreTrainedTokenizer
     model: SimBotEmmaPolicy
+    output_processor: SimBotActionPredictionProcessor
     max_length_per_action_sequence: int
     num_beams: int
     no_repeat_ngram_size: int
@@ -118,12 +122,15 @@ async def startup_event() -> None:
         device=settings.device,
     )
     logging.info(f"Model is on device: {api_store['model'].device}")
-    logging.info("Inference service is setup!")
+
+    api_store["output_processor"] = SimBotActionPredictionProcessor()
 
     api_store["raw_text_matcher"] = SimBotActionRawTextMatcher(
         raw_text_match_json=settings.raw_text_match_json,
         distance_threshold=settings.raw_distance_threshold,
     )
+
+    logging.info("Inference service is setup!")
 
 
 @app.get("/")
@@ -322,6 +329,11 @@ async def generate(request: Request, response: Response) -> str:
                     action = api_store["tokenizer"].batch_decode(
                         model_output[:, len_decode:], skip_special_tokens=False
                     )[0]
+
+                    action = api_store["output_processor"](
+                        prediction=action,
+                        frame_features=simbot_request.environment_history[-1].features,
+                    )
 
             except Exception as err:
                 # TODO: report session ID for better debugging

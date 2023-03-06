@@ -399,7 +399,7 @@ class ArenaSessionAnnotation:
             if os.path.exists(feature_path):
                 image_features = torch.load(feature_path)[int(image_index)]
 
-                boxes_coords = image_features["bbox_coords"].numpy()
+                boxes_coords = image_features["bbox_coords"].cpu().numpy()
 
                 num_boxes = boxes_coords.shape[0]
                 boxes_indices = [idx for idx in indices if 0 <= idx < num_boxes]

@@ -181,7 +181,9 @@ class SimBotActionInputBuilder:
             )
             source_text = ""
 
-        return self._tokenizer.encode_plus(source_text, return_tensors="pt", truncation=True)
+        return self._tokenizer.encode_plus(
+            source_text.lower(), return_tensors="pt", truncation=True
+        )
 
     def _create_emma_dataset_item(
         self,

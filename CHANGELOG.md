@@ -3,6 +3,48 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.32.1](https://github.com/emma-simbot/policy/compare/v1.32.0...v1.32.1) (2023-03-03)
+
+
+### Bug Fixes
+
+* lowercase the entire source text in simbot action ([#727](https://github.com/emma-simbot/policy/issues/727)) ([a8d7e90](https://github.com/emma-simbot/policy/commit/a8d7e90757e51e9f853c5e1b17b3cf1dda458367))
+
+## [1.32.0](https://github.com/emma-simbot/policy/compare/v1.31.0...v1.32.0) (2023-02-19)
+
+
+### Features
+
+* return object name from nlu ([#718](https://github.com/emma-simbot/policy/issues/718)) ([8863f79](https://github.com/emma-simbot/policy/commit/8863f790f2616805dec54a284094f8c244f04b59))
+
+## [1.31.0](https://github.com/emma-simbot/policy/compare/v1.30.1...v1.31.0) (2023-02-19)
+
+
+### Features
+
+* toggle button special case action output processor ([#717](https://github.com/emma-simbot/policy/issues/717)) ([15ac1e2](https://github.com/emma-simbot/policy/commit/15ac1e29d3c5ae68cb0657c76686627c30e76ab2))
+
+## [1.30.1](https://github.com/emma-simbot/policy/compare/v1.30.0...v1.30.1) (2023-02-19)
+
+
+### Bug Fixes
+
+* transfer features to cpu ([#716](https://github.com/emma-simbot/policy/issues/716)) ([3d54bfd](https://github.com/emma-simbot/policy/commit/3d54bfdd6b996415ca25bb2e5882b702795937ad))
+
+## [1.30.0](https://github.com/emma-simbot/policy/compare/v1.29.2...v1.30.0) (2023-02-18)
+
+
+### Features
+
+* Precompute centroids for special object assets ([#707](https://github.com/emma-simbot/policy/issues/707)) ([5e712db](https://github.com/emma-simbot/policy/commit/5e712db4b61e691675fb1c4c6843fa5e8d5ac707))
+
+## [1.29.2](https://github.com/emma-simbot/policy/compare/v1.29.1...v1.29.2) (2023-02-16)
+
+
+### Bug Fixes
+
+* access to emma visual features ([#715](https://github.com/emma-simbot/policy/issues/715)) ([9dc0581](https://github.com/emma-simbot/policy/commit/9dc0581bf13d22c42e62b5f0377d90644a8297d2))
+
 ## [1.29.1](https://github.com/emma-simbot/policy/compare/v1.29.0...v1.29.1) (2023-02-15)
 
 

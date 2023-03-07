@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.33.0](https://github.com/emma-simbot/policy/compare/v1.32.3...v1.33.0) (2023-03-07)
+
+
+### Features
+
+* patch button in simbot action output processor ([#731](https://github.com/emma-simbot/policy/issues/731)) ([ec38e8f](https://github.com/emma-simbot/policy/commit/ec38e8fab27f3a30e16a7250474ab9ccd0bbf4b8))
+
 ## [1.32.3](https://github.com/emma-simbot/policy/compare/v1.32.2...v1.32.3) (2023-03-07)
 
 

@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.32.2](https://github.com/emma-simbot/policy/compare/v1.32.1...v1.32.2) (2023-03-07)
+
+
+### Bug Fixes
+
+* feature device in simbot annotation tool ([#726](https://github.com/emma-simbot/policy/issues/726)) ([115616a](https://github.com/emma-simbot/policy/commit/115616a4068df7c9fa7bd19c0b563b02b2a6a5e4))
+
 ## [1.32.1](https://github.com/emma-simbot/policy/compare/v1.32.0...v1.32.1) (2023-03-03)
 
 

@@ -152,21 +152,6 @@ async def healthcheck(response: Response) -> str:
     return "success"
 
 
-# [deprecated!]
-# @app.post("/generate_raw_text_match", status_code=status.HTTP_200_OK)
-# async def generate_raw_text_match(request: Request, response: Response) -> Optional[str]:
-#     """Endpoint for simple raw text matching."""
-#     try:
-#         simbot_request = GenerateRequest.parse_obj(await request.json())
-#     except Exception as request_err:
-#         logging.exception("Unable to parse request", exc_info=request_err)
-#         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-#         raise request_err
-#     with tracer.start_as_current_span("Raw text match"):
-#         output_string = api_store["raw_text_matcher"](simbot_request)
-#     return output_string
-
-
 @app.post("/generate_find", status_code=status.HTTP_200_OK)
 async def generate_find(request: Request, response: Response) -> list[str]:  # noqa: WPS231
     """Endpoint for find."""
@@ -178,7 +163,7 @@ async def generate_find(request: Request, response: Response) -> list[str]:  # n
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         raise request_err
 
-    (batch, decoder_input_ids, step_index) = api_store["input_builder"](
+    (raw_input, batch, decoder_input_ids, step_index) = api_store["input_builder"](
         simbot_request, task=Task.visual_grounding
     )
     with tracer.start_as_current_span("Model inference"):
@@ -242,7 +227,7 @@ async def grab_from_history(request: Request, response: Response) -> Optional[in
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         raise request_err
 
-    (batch, decoder_input_ids, step_index) = api_store["input_builder"](
+    (raw_input, batch, decoder_input_ids, step_index) = api_store["input_builder"](
         simbot_request, task=Task.visual_grounding
     )
     with tracer.start_as_current_span("Model inference"):
@@ -306,7 +291,7 @@ async def generate(request: Request, response: Response) -> str:
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         raise request_err
 
-    (batch, decoder_input_ids, step_index) = api_store["input_builder"](
+    (raw_input, batch, decoder_input_ids, step_index) = api_store["input_builder"](
         simbot_request, task=Task.action_execution
     )
     with tracer.start_as_current_span("Model inference"):
@@ -331,6 +316,7 @@ async def generate(request: Request, response: Response) -> str:
                     )[0]
 
                     action = api_store["output_processor"](
+                        instruction=raw_input,
                         prediction=action,
                         frame_features=simbot_request.environment_history[-1].features,
                     )

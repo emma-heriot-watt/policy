@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.32.3](https://github.com/emma-simbot/policy/compare/v1.32.2...v1.32.3) (2023-03-07)
+
+
+### Bug Fixes
+
+* NLU act no match target text ([#699](https://github.com/emma-simbot/policy/issues/699)) ([75705bd](https://github.com/emma-simbot/policy/commit/75705bdc880041a57b3c7aac9493d0fc2027e1f5))
+
 ## [1.32.2](https://github.com/emma-simbot/policy/compare/v1.32.1...v1.32.2) (2023-03-07)
 
 

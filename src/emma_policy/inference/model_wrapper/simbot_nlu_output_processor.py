@@ -18,7 +18,7 @@ class SimBotNLUPredictionProcessor:
         """Process the prediction."""
         object_name = self._get_target_object(prediction)
         new_prediction = self._overwrite_the_nlu_prediction(prediction, object_name)
-        if new_prediction != prediction:
+        if new_prediction != prediction and prediction == SimBotNLUIntents.act_one_match.value:
             return new_prediction
 
         if object_name is None:
@@ -26,23 +26,21 @@ class SimBotNLUPredictionProcessor:
 
         class_labels = self._get_detected_objects(frame_features=frame_features)
         if prediction.startswith(SimBotNLUIntents.act_no_match.value):
-            new_prediction = self._special_robotic_arm_button_case(
+            prediction = self._special_robotic_arm_button_case(
                 prediction=prediction,
                 class_labels=class_labels,
             )
-
-            new_prediction = self._special_monitor_toggle_case(
-                instruction=instruction,
-                prediction=prediction,
-                class_labels=class_labels,
-            )
-            return new_prediction
-
         elif prediction.startswith(SimBotNLUIntents.act_too_many_matches.value):
-            return self._rule_based_ambiguity_check(
+            prediction = self._rule_based_ambiguity_check(
                 prediction=prediction,
                 class_labels=class_labels,
                 object_name=object_name,
+            )
+        if prediction.startswith(SimBotNLUIntents.act.value):
+            prediction = self._special_monitor_toggle_case(
+                instruction=instruction,
+                prediction=prediction,
+                class_labels=class_labels,
             )
         return prediction
 
@@ -139,7 +137,7 @@ class SimBotNLUPredictionProcessor:
         if "embiggenator" in instruction:
             if embiggenator_monitor_in_bbox:
                 return self._default_prediction
-            return "<no_match> embiggenator monitor"
+            return "<act><no_match> embiggenator monitor"
 
         is_portal_generator = "portal" in instruction or "generator" in instruction
         portal_generator_monitor_in_bbox = "portal generator monitor" in class_labels

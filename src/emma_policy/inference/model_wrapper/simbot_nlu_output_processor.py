@@ -17,9 +17,6 @@ class SimBotNLUPredictionProcessor:
     ) -> str:
         """Process the prediction."""
         object_name = self._get_target_object(prediction)
-        new_prediction = self._overwrite_the_nlu_prediction(prediction, object_name)
-        if new_prediction != prediction and prediction == SimBotNLUIntents.act_one_match.value:
-            return new_prediction
 
         if object_name is None:
             return prediction
@@ -42,7 +39,8 @@ class SimBotNLUPredictionProcessor:
                 prediction=prediction,
                 class_labels=class_labels,
             )
-        return prediction
+        new_prediction = self._overwrite_the_nlu_prediction(prediction, object_name)
+        return new_prediction
 
     def _prediction_type_is_valid(self, prediction: str) -> bool:
         # Make sure to return a valid format

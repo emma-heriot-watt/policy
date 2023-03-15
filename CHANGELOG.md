@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.37.1](https://github.com/emma-simbot/policy/compare/v1.37.0...v1.37.1) (2023-03-15)
+
+
+### Bug Fixes
+
+* force word stop ids ([#744](https://github.com/emma-simbot/policy/issues/744)) ([e765000](https://github.com/emma-simbot/policy/commit/e765000a1f6155545d5e32c345471f941a1ca4e5))
+
 ## [1.37.0](https://github.com/emma-simbot/policy/compare/v1.36.0...v1.37.0) (2023-03-15)
 
 

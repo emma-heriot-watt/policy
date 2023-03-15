@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.35.0](https://github.com/emma-simbot/policy/compare/v1.34.2...v1.35.0) (2023-03-15)
+
+
+### Features
+
+* patch nlu action output carrot machine ([#741](https://github.com/emma-simbot/policy/issues/741)) ([3c8b529](https://github.com/emma-simbot/policy/commit/3c8b529d71ff3431671d2be4bd86bc5bc364acfd))
+
 ## [1.34.2](https://github.com/emma-simbot/policy/compare/v1.34.1...v1.34.2) (2023-03-14)
 
 

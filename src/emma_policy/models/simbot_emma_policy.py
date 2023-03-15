@@ -51,8 +51,6 @@ class SimBotEmmaPolicy(EmmaPolicy):
         self._generated_actions: list[str] = []
         self._train_exact_match = SimbotActionExactMatch()
         self._valid_exact_match = SimbotActionExactMatch()
-        force_words_ids = [self._tokenizer.convert_tokens_to_ids("<stop>")]
-        self.force_words_ids = [force_words_ids]
 
     def on_test_epoch_end(self) -> None:
         """Save the results."""
@@ -206,7 +204,6 @@ class SimBotEmmaPolicy(EmmaPolicy):
         max_length: int = 10,
         num_beams: int = 5,
         no_repeat_ngram_size: int = 0,
-        use_force_word_ids: bool = True,
     ) -> PredictType:
         """Simbot Inference step."""
         bad_words_ids = self._get_inference_banned_frame_ids(batch)
@@ -221,10 +218,6 @@ class SimBotEmmaPolicy(EmmaPolicy):
             visual_token_ids=batch.visual_token_ids,
             language_token_ids=batch.input_token_ids,
         )
-        if use_force_word_ids:
-            force_words_ids = self.force_words_ids
-        else:
-            force_words_ids = None
         if decoder_input_ids is not None:
             outputs = self.emma.generate(
                 inputs_embeds=inputs_embeds,
@@ -236,7 +229,6 @@ class SimBotEmmaPolicy(EmmaPolicy):
                 num_beams=num_beams,
                 no_repeat_ngram_size=no_repeat_ngram_size,
                 bad_words_ids=bad_words_ids,  # type: ignore[arg-type]
-                force_words_ids=force_words_ids,  # type: ignore[arg-type]
             )
         else:
             outputs = self.emma.generate(
@@ -248,7 +240,6 @@ class SimBotEmmaPolicy(EmmaPolicy):
                 num_beams=num_beams,
                 no_repeat_ngram_size=no_repeat_ngram_size,
                 bad_words_ids=bad_words_ids,  # type: ignore[arg-type]
-                force_words_ids=force_words_ids,  # type: ignore[arg-type]
             )
         return outputs
 

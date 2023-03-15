@@ -310,7 +310,6 @@ async def generate(request: Request, response: Response) -> str:
                         max_length=max_length,
                         num_beams=api_store["num_beams"],
                         no_repeat_ngram_size=api_store["no_repeat_ngram_size"],
-                        # use_force_word_ids=simbot_request.force_stop_token,
                     )
                     action = api_store["tokenizer"].batch_decode(
                         model_output[:, len_decode:], skip_special_tokens=False

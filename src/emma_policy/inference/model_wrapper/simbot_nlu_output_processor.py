@@ -27,6 +27,12 @@ class SimBotNLUPredictionProcessor:
                 prediction=prediction,
                 class_labels=class_labels,
             )
+
+            prediction = self._special_machine_case(
+                instruction=instruction,
+                prediction=prediction,
+                class_labels=class_labels,
+            )
         elif prediction.startswith(SimBotNLUIntents.act_too_many_matches.value):
             prediction = self._rule_based_ambiguity_check(
                 prediction=prediction,
@@ -96,6 +102,41 @@ class SimBotNLUPredictionProcessor:
             return prediction
         if "button" in prediction and "robot arm" in class_labels:
             return self._default_prediction
+        return prediction
+
+    def _special_machine_case(
+        self, instruction: str, prediction: str, class_labels: Optional[list[str]]
+    ) -> str:
+        if class_labels is None:
+            return prediction
+
+        is_toggle_instruction = any(
+            [
+                "toggle" in instruction,
+                "activate" in instruction,
+                "turn" in instruction,
+                "switch" in instruction,
+            ]
+        )
+
+        is_place_instruction = any(
+            [
+                "place" in instruction,
+                "put" in instruction,
+            ]
+        )
+
+        is_carrot_machine_instruction = (
+            "carrot" in instruction or "machine" in instruction or "maker" in instruction
+        )
+
+        is_valid_instruction = (
+            is_place_instruction or is_toggle_instruction
+        ) and is_carrot_machine_instruction
+
+        if "everything's a carrot machine" in class_labels and is_valid_instruction:
+            return self._default_prediction
+
         return prediction
 
     def _special_monitor_toggle_case(  # noqa: WPS212, WPS231

@@ -127,7 +127,7 @@ class SimBotNLUPredictionProcessor:
         )
 
         is_carrot_machine_instruction = (
-            "carrot" in instruction or "machine" in instruction or "maker" in instruction
+            "carrot machine" in instruction or "carrot maker" in instruction
         )
 
         is_valid_instruction = (

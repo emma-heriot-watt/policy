@@ -161,7 +161,7 @@ class SimBotActionPredictionProcessor:
         )
 
         is_carrot_machine_instruction = (
-            "carrot" in instruction or "machine" in instruction or "maker" in instruction
+            "carrot machine" in instruction or "carrot maker" in instruction
         )
 
         # pickup bowl <frame_token_11> <vis_token_5> -> 11> 11> <vis_token_5> -> 11

@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.37.2](https://github.com/emma-simbot/policy/compare/v1.37.1...v1.37.2) (2023-03-16)
+
+
+### Bug Fixes
+
+* patch carrot ([#745](https://github.com/emma-simbot/policy/issues/745)) ([6332e4f](https://github.com/emma-simbot/policy/commit/6332e4fcfb38814d182fe03c704533e1d02085d6))
+
 ## [1.37.1](https://github.com/emma-simbot/policy/compare/v1.37.0...v1.37.1) (2023-03-15)
 
 

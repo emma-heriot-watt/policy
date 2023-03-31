@@ -218,7 +218,6 @@ class SimBotEmmaPolicy(EmmaPolicy):
             visual_token_ids=batch.visual_token_ids,
             language_token_ids=batch.input_token_ids,
         )
-
         if decoder_input_ids is not None:
             outputs = self.emma.generate(
                 inputs_embeds=inputs_embeds,

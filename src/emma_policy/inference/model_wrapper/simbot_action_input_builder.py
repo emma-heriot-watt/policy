@@ -19,6 +19,10 @@ from emma_policy.inference.api.simbot_state import SPEAKER_TOKEN_MAP
 
 logger = logging.getLogger(__name__)
 
+ActionBuilderOutput = tuple[
+    Optional[str], Optional[EmmaDatasetBatch], Optional[torch.Tensor], Optional[list[int]]
+]
+
 
 class SimBotActionInputBuilder:
     """Build the input for the SimBotAction model."""
@@ -31,9 +35,7 @@ class SimBotActionInputBuilder:
             Task.visual_grounding: TASK_TEMPLATES_MAP[Task.visual_grounding][0],
         }
 
-    def __call__(
-        self, request: EmmaPolicyRequest, task: Task
-    ) -> tuple[Optional[EmmaDatasetBatch], Optional[torch.Tensor], Optional[list[int]]]:
+    def __call__(self, request: EmmaPolicyRequest, task: Task) -> ActionBuilderOutput:
         """Process the environment output into a batch for the model.
 
         The sample batch provides the set of previous observations and previous actions taken by
@@ -94,7 +96,7 @@ class SimBotActionInputBuilder:
                 )
             else:
                 logger.error(f"Found unsupported task: {task}")
-        return (batch, decoder_input_ids, step_index)
+        return (instruction, batch, decoder_input_ids, step_index)
 
     def _prepare_decoder_input_ids(
         self, previous_actions: Optional[str] = None

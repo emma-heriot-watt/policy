@@ -9,7 +9,9 @@ updates:
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: daily
+      interval: weekly
+    commit-message:
+      prefix: "build(deps)"
   - package-ecosystem: pip
     directory: "/"
     insecure-external-code-execution: allow
@@ -17,4 +19,6 @@ updates:
     registries:
       - github-emma
     schedule:
-      interval: daily
+      interval: weekly
+    commit-message:
+      prefix: "chore(deps)"

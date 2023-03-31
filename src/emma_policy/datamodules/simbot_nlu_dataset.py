@@ -397,20 +397,10 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         # If there are matching bounding boxes in the current image, discard this candidate
         if self._label_to_idx[label] in existing_objects:
             return None, None, None
-
-        object_name = self._get_target_object_name(new_instance.actions[0], name_type="readable")
-        # Remove the `location` attribute from the new instance.
-        # This is done so that the instruction `go to the left computer` would not get matched to an act no match
-        action_object_metadata = new_instance.actions[-1].get_action_data["object"]
-        attributes = action_object_metadata.get("attributes", {"readable_name": object_name})
-        attributes["location"] = None
-        new_instance.actions[-1].get_action_data["object"][  # noqa: WPS219
-            "attributes"
-        ] = attributes
-
         new_instruction = self._get_synthectic_action_instruction(
             new_instance, allow_paraphrasing=True
         )
+        object_name = self._get_target_object_name(new_instance.actions[0], name_type="readable")
         return new_instruction, object_name, new_instance.actions[0].type
 
     def _prepare_data(self) -> None:

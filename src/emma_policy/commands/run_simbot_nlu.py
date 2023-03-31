@@ -148,12 +148,11 @@ async def generate(request: Request, response: Response) -> str:
         # If the environment history is greater than 1,
         # the agent has already clarified or acted.
         if len(simbot_request.environment_history) == 1:
-            batch, instruction = api_store["input_builder"](simbot_request)
+            batch = api_store["input_builder"](simbot_request)
             try:
                 with torch.no_grad():
                     action = api_store["model"].inference_step(batch)[0]
                 action = api_store["output_processor"](
-                    instruction=instruction,
                     prediction=action,
                     frame_features=simbot_request.environment_history[-1].features,
                 )

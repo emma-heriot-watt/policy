@@ -446,7 +446,7 @@ class ArenaSessionAnnotation:
                 mask = None
                 if os.path.exists(feature_path) and visual_token:
                     image_features = torch.load(feature_path)[int(image_index)]
-                    boxes_coords = image_features["bbox_coords"].numpy()
+                    boxes_coords = image_features["bbox_coords"].cpu().numpy()
                     mask = boxes_coords[int(visual_token - 1)].astype(int).tolist()
 
                 # The search metadata are slightly different from the other actions.
@@ -520,10 +520,10 @@ class ArenaSessionAnnotation:
             feature_dict_formatted = {
                 "image": os.path.basename(images[feature_idx]),
                 "features": {
-                    "bbox_features": feature_dict["bbox_features"],
-                    "bbox_coords": feature_dict["bbox_coords"],
-                    "bbox_probas": feature_dict["bbox_probas"],
-                    "cnn_features": feature_dict["cnn_features"],
+                    "bbox_features": feature_dict["bbox_features"].cpu(),
+                    "bbox_coords": feature_dict["bbox_coords"].cpu(),
+                    "bbox_probas": feature_dict["bbox_probas"].cpu(),
+                    "cnn_features": feature_dict["cnn_features"].cpu(),
                     "width": 300,
                     "height": 300,
                 },

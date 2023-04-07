@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.37.3](https://github.com/emma-simbot/policy/compare/v1.37.2...v1.37.3) (2023-04-07)
+
+
+### Bug Fixes
+
+* bbox coords device ([#757](https://github.com/emma-simbot/policy/issues/757)) ([fcb95ca](https://github.com/emma-simbot/policy/commit/fcb95ca1d327cf5ff899dfd1e222f2ed1b8b3754))
+* circular dependency ([efe80f8](https://github.com/emma-simbot/policy/commit/efe80f8370aebf3a0d4dd8b8d74b16dde27ce25d))
+
 ## [1.32.1](https://github.com/emma-simbot/policy/compare/v1.32.0...v1.32.1) (2023-03-03)
 
 

@@ -42,6 +42,7 @@ class SessionClient:
         table_name: str = "SIMBOT_MEMORY_TABLE",
         s3_sessions_bucket_url: str = "s3://emma-simbot-live-challenge",
         sessions_file: str = "./notebooks/sessions.txt",
+        ignore_session_suffix: bool = False,
     ) -> None:
 
         self._primary_key = primary_key
@@ -53,6 +54,7 @@ class SessionClient:
 
         self._s3_sessions_bucket_url = s3_sessions_bucket_url
         self._sessions_file = sessions_file
+        self._ignore_session_suffix = ignore_session_suffix
 
     def get_all_session_turns_for_session(self, session_id: str) -> list[Any]:
         """Get all the turns for a given session."""
@@ -88,8 +90,8 @@ class SessionClient:
 
         session_metadata = zip(session_days, session_times, session_files)
         for session_day, session_time, session_file in session_metadata:
-            if not session_file.startswith("amzn1"):
-                continue
+            # if not session_file.startswith("amzn1"):
+            #     continue
             session_name = os.path.dirname(session_file)
 
             timestamp = sessions.get(session_name, None)
@@ -112,13 +114,19 @@ class SessionClient:
         if os.path.exists(local_path):
             logger.debug(f"{s3_object_url} has been download in {local_path}")
             return
+
+        if self._ignore_session_suffix:
+            s3_object_url = "/".join(s3_object_url.split("/")[1:])
+
         s3_url = os.path.join(self._s3_sessions_bucket_url, s3_object_url)
         command = f"aws s3 cp {s3_url} {local_path}"
         if is_folder:
             command = f"{command} --recursive"
         logger.debug(f"Downloading {s3_url} into {local_path}")
         subprocess.call(  # noqa: S603
-            command.split(), stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL
+            command.split(),
+            stderr=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
         )
 
 
@@ -132,6 +140,7 @@ class ArenaSessionAnnotation:
         s3_sessions_bucket_url: str = "s3://emma-simbot-live-challenge",
         cache_dir: str = "sessions",
         max_bboxes: int = 36,
+        ignore_session_suffix: bool = True,
     ) -> None:
         self.output_annotation_json = output_annotation_json
 
@@ -145,8 +154,12 @@ class ArenaSessionAnnotation:
         self.actions = sorted(arena_definitions["action_list"] + ["Search"])
         self.assets = list(arena_definitions["asset_to_label"].keys())
         self.max_bboxes = max_bboxes
+        self._ignore_session_suffix = ignore_session_suffix
 
-        self._session_client = SessionClient(s3_sessions_bucket_url=s3_sessions_bucket_url)
+        self._session_client = SessionClient(
+            s3_sessions_bucket_url=s3_sessions_bucket_url,
+            ignore_session_suffix=ignore_session_suffix,
+        )
         sessions_dict = self._session_client.get_all_session_ids_from_bucket()
         self._session_ids = list(sessions_dict.keys())
         self._session_timestamps = list(sessions_dict.values())
@@ -176,11 +189,22 @@ class ArenaSessionAnnotation:
         metadata_current_turn = json.loads(current_session_turn["turn"])
         if metadata_current_turn["speech"] is None:
             return ""
+        try:  # noqa: WPS229
+            # Utterances have changed fix compatibility here
+            modified_utterance = metadata_current_turn["speech"].get("modified_utterance", None)
+            if modified_utterance is None:
+                user_utterance = metadata_current_turn["speech"]["original_utterance"]["utterance"]
+            else:
+                user_utterance = metadata_current_turn["speech"]["modified_utterance"]["utterance"]
+            return user_utterance
+        except Exception:
+            utterance_metadata = metadata_current_turn["speech"].get("utterance", None)
 
-        utterance_metadata = metadata_current_turn["speech"].get("utterance", None)
-        if utterance_metadata is not None:
-            return metadata_current_turn["speech"]["utterance"]
-        return " ".join([token["value"] for token in metadata_current_turn["speech"]["tokens"]])
+            if utterance_metadata is not None:
+                return metadata_current_turn["speech"]["utterance"]
+            return " ".join(
+                [token["value"] for token in metadata_current_turn["speech"]["tokens"]]
+            )
 
     def get_agent_metadata_for_turn(self, current_session_turn: dict[str, Any]) -> dict[str, Any]:
         """Get the metadata dict for the current turn."""
@@ -208,6 +232,7 @@ class ArenaSessionAnnotation:
         local_json_image_path = Path(
             os.path.join(self.cache_dir, session_id, f"{prediction_id}.json")
         )
+
         if not local_json_image_path.exists():
             logger.debug(f"{local_json_image_path} does not exist")
             return []
@@ -256,6 +281,7 @@ class ArenaSessionAnnotation:
 
         session_id = self._session_ids[new_session_index]
         session_timestamp = self._session_timestamps[new_session_index]
+
         self._session_client.download_from_s3(
             local_cache_path=self.cache_dir, s3_object_url=session_id, is_folder=True
         )
@@ -285,6 +311,7 @@ class ArenaSessionAnnotation:
 
         session_id = self._session_ids[new_session_index]
         session_timestamp = self._session_timestamps[new_session_index]
+
         self._session_client.download_from_s3(
             local_cache_path=self.cache_dir, s3_object_url=session_id, is_folder=True
         )
@@ -312,6 +339,7 @@ class ArenaSessionAnnotation:
         """Go to a session provided by its index."""
         session_id = self._session_ids[session_index]
         session_timestamp = self._session_timestamps[session_index]
+
         self._session_client.download_from_s3(
             local_cache_path=self.cache_dir, s3_object_url=session_id, is_folder=True
         )
@@ -392,7 +420,12 @@ class ArenaSessionAnnotation:
         os.makedirs(local_image_bbox_path, exist_ok=True)
         images_bboxes = []
         for idx, image in enumerate(images):
-            image_bname = os.path.splitext(os.path.basename(image))[0]
+            if self._ignore_session_suffix:
+                image_suffix = image
+            else:
+                image_suffix = "/".join(image.split("/"))[1:]
+
+            image_bname = os.path.splitext(os.path.basename(image_suffix))[0]
             (feature_basename, image_index) = image_bname.split("_")
             feature_path = os.path.join(self.cache_dir, session_id, f"{feature_basename}.pt")
 
@@ -411,7 +444,14 @@ class ArenaSessionAnnotation:
                     boxes_labels=[f"{idx + 1}" for idx in boxes_indices],
                     draw_label=True,
                 )
-                image_bbox_path = os.path.join(local_image_bbox_path, f"{session_id}_{idx}.png")
+
+                if self._ignore_session_suffix:
+                    image_from_suffix = "/".join(session_id.split("/")[1:])
+                else:
+                    image_from_suffix = session_id
+                image_bbox_path = os.path.join(
+                    local_image_bbox_path, f"{image_from_suffix}_{idx}.png"
+                )
                 cv2.imwrite(image_bbox_path, image_cv)
                 images_bboxes.append(image_bbox_path)
             else:
@@ -544,6 +584,8 @@ def main(args: argparse.Namespace) -> None:  # noqa: WPS210
         output_annotation_json=args.output_annotation_json,
         output_features_directory=args.output_features_directory,
         cache_dir=args.cache_dir,
+        s3_sessions_bucket_url=args.s3_sessions_bucket_url,
+        ignore_session_suffix=args.ignore_session_suffix,
     )
 
     with gr.Blocks() as block:
@@ -836,5 +878,14 @@ if __name__ == "__main__":
         help="Path to cache directory storing raw session metadata while annotating.",
     )
 
+    parser.add_argument(
+        "--s3_sessions_bucket_url",
+        help="S3 bucket to where all the sessions are stored",
+        default="s3://emma-simbot-live-challenge",
+    )
+
+    parser.add_argument(
+        "--ignore_session_suffix", help="Ignore session suffix", action="store_true"
+    )
     args = parser.parse_args()
     main(args)

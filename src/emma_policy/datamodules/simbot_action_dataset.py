@@ -1,6 +1,6 @@
 import random
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import torch
 from emma_datasets.constants.simbot.simbot import get_arena_definitions
@@ -16,7 +16,6 @@ from emma_datasets.datamodels.datasets.utils.simbot_utils.simbot_datamodels impo
     SimBotInstructionInstance,
     SimBotObjectAttributes,
 )
-from emma_datasets.db import DatasetDb
 from overrides import overrides
 from torchvision.ops import masks_to_boxes
 from transformers import PreTrainedTokenizer
@@ -29,92 +28,17 @@ from emma_policy.datamodules.emma_dataclasses import (
 )
 from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.utils import decompress_simbot_mask, get_logger
+from emma_policy.utils.datamodels.simbot import (
+    SearchNegativeSampler,
+    compressed_mask_is_bbox,
+    format_instruction,
+    get_object_for_search,
+    get_simbot_instruction_paraphrase,
+    mask_past_target_actions,
+)
 
 
 logger = get_logger(__name__)
-
-
-def mask_past_target_actions(
-    full_target_token_ids: torch.Tensor, sep_token_id: int, masking_value: int = -1
-) -> torch.Tensor:
-    """Mask the target token ids for all but the last action."""
-    target_token_ids = full_target_token_ids.clone()
-    separator_positions = torch.where(full_target_token_ids == sep_token_id)[0]
-    if separator_positions.shape[0] > 1:
-        end_index = int(separator_positions[-2].item()) + 1
-        target_token_ids[:end_index] = masking_value  # noqa: WPS362
-    return target_token_ids
-
-
-def get_simbot_instruction_paraphrase(
-    paraphraser: InstructionParaphraser, instance: SimBotInstructionInstance, object_name: str
-) -> str:
-    """Paraphrase a SimBot instruction."""
-    action_type = instance.actions[-1].type.lower()
-    action_object_metadata = instance.actions[-1].get_action_data["object"]
-    attributes = SimBotObjectAttributes(
-        **action_object_metadata.get("attributes", {"readable_name": object_name})
-    )
-
-    return paraphraser(
-        action_type=action_type,
-        object_id=action_object_metadata["id"],
-        object_attributes=attributes,
-    )
-
-
-def format_instruction(text: str) -> str:
-    """Make sure the instruction ends in a fullstop."""
-    if not text.endswith(("?", ".")):
-        text = f"{text}."
-    text = text.replace("..", ".")
-    return text.lower()
-
-
-def compressed_mask_is_bbox(mask: Union[list[int], list[list[int]]]) -> bool:
-    """Check if a compressed mask is a bounding box."""
-    only_coords = len(mask) == 4
-    not_list = not all([isinstance(x, list) for x in mask])
-    return only_coords and not_list
-
-
-class SearchNegativeSampler:
-    """Search negative selection class.
-
-    Used to sample negative examples for the search objective. Creates a dictionary where keys
-    indices of the positive examples in the dataset and values are the readable names of each
-    object in the example. Given a readable name for an object, it samples keys from the dictionary
-    until the readable name is not present in the list of objects for a key.
-    """
-
-    def __init__(self, db: DatasetDb):
-        self._positive_indices_map = self._create_positive_indices_objects_map(db)
-
-    def __call__(self, readable_name: str) -> int:
-        """Sample a negative example."""
-        while True:
-            rand_idx = random.choice(list(self._positive_indices_map.keys()))
-            if readable_name.lower() not in self._positive_indices_map[rand_idx]:
-                return rand_idx
-
-    def _create_positive_indices_objects_map(self, db: DatasetDb) -> dict[int, list[str]]:
-        """Create a map of indices and positive examples."""
-        db_size = len(db)
-        positive_indices_map = {}
-        with db:
-            for index in range(db_size):
-                instance_str: str = db[index]
-                instance = SimBotInstructionInstance.parse_raw(instance_str)
-
-                action = instance.actions[-1]
-                if action.type == "Search" and action.search["object"]["mask"] is not None:
-                    attributes = action.search["object"].get("attributes", None)
-                    if attributes is not None:
-                        readable_names = [  # noqa: WPS220
-                            attribute["readable_name"].lower() for attribute in attributes
-                        ]
-                        positive_indices_map[index] = readable_names  # noqa: WPS220
-        return positive_indices_map
 
 
 class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
@@ -157,6 +81,8 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         self._search_negative_sampler = SearchNegativeSampler(self.db)
         self._special_name_cases = arena_definitions["special_asset_to_readable_name"]
         self.paraphraser = InstructionParaphraser()
+        self._search_positive_type = "search_positive"
+        self._search_negative_type = "search_negative"
 
     @overrides(check_signature=False)
     def __getitem__(self, index: int) -> EmmaDatasetItem:
@@ -175,19 +101,17 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         """Process a visual augmentation instance for the SimBot action task."""
         if instance.actions[-1].type == "Search":
             action_object_metadata = instance.actions[-1].get_action_data["object"]
-
-            object_candidates = len(action_object_metadata["id"])
-            object_candidate_idx = random.choice(range(object_candidates))
+            object_id, object_index, attributes = get_object_for_search(
+                instance.actions[-1].search, action_object_metadata, instance.paraphrasable
+            )
 
             # All the instances comming from augmentations are paraphrasable
             # The ones comming from annotations are not.
             if self._allow_paraphrasing and instance.paraphrasable:
                 instruction = self.paraphraser(
-                    action_type="search",
-                    object_id=action_object_metadata["id"][object_candidate_idx],
-                    object_attributes=SimBotObjectAttributes(
-                        **action_object_metadata["attributes"][object_candidate_idx]
-                    ),
+                    action_type=instance.actions[-1].type.lower(),
+                    object_id=object_id,
+                    object_attributes=SimBotObjectAttributes(**attributes),
                 )
             else:
                 instruction = instance.instruction.instruction
@@ -199,7 +123,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             source_text = format_instruction(source_text)
 
             object_name = get_object_readable_name_from_object_id(
-                object_id=action_object_metadata["id"][object_candidate_idx],
+                object_id=object_id,
                 object_assets_to_names=self._object_assets_to_names,
                 special_name_cases=self._special_name_cases,
             )
@@ -212,9 +136,8 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 random.random() >= self._search_negative_proba and instance.paraphrasable
             )
             if select_negative:
-                negative_idx = self._search_negative_sampler(
-                    action_object_metadata["attributes"][object_candidate_idx]["readable_name"]
-                )
+                negative_idx = self._search_negative_sampler(object_name)
+
                 instance_str = self.db[negative_idx]
                 negative_instance = SimBotInstructionInstance.parse_raw(instance_str)
                 visual_features, _, _ = self._load_visual_features(
@@ -230,9 +153,9 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             ground_truth_bboxes = action_object_metadata["mask"]
             if ground_truth_bboxes is None or select_negative:
                 target_text = f"no {object_name} <stop>."
-                action_type = "search_negative"
+                action_type = self._search_negative_type
             else:
-                ground_truth_bbox = ground_truth_bboxes[object_candidate_idx]
+                ground_truth_bbox = ground_truth_bboxes[object_index]
                 ground_truth_bbox = torch.tensor(
                     ground_truth_bbox,
                     dtype=torch.float32,
@@ -255,10 +178,10 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                         visual_features.scene_frame_tokens[0]
                     )
                     target_text = f"{scene_frame_token} {object_token} <stop>."
-                    action_type = "search_positive"
+                    action_type = self._search_positive_type
                 else:
                     target_text = f"no {object_name} <stop>."
-                    action_type = "search_negative"
+                    action_type = self._search_negative_type
 
             target_text = target_text.lower()
 

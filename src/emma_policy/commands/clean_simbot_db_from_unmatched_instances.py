@@ -96,8 +96,10 @@ class FilterSimBotDB:
 
     def run(self) -> None:
         """Filter the training and validation dbs."""
-        self.run_for_split(self._train_input_db_file, self._train_output_db_file, "training")
+        logger.info(f"Cleaning the validation db: {self._valid_input_db_file}")
         self.run_for_split(self._valid_input_db_file, self._valid_output_db_file, "validation")
+        logger.info(f"Cleaning the training db: {self._train_input_db_file}")
+        self.run_for_split(self._train_input_db_file, self._train_output_db_file, "training")
 
     def run_for_split(
         self,
@@ -108,7 +110,8 @@ class FilterSimBotDB:
         """Filter the given db."""
         keep_instances = []
         db = DatasetDb(input_db_path)
-        for idx in tqdm(list(range(len(db)))):
+        db_indices = list(range(len(db)))
+        for idx in tqdm(db_indices):
             with db:
                 instance = SimBotInstructionInstance.parse_raw(db[idx])
             if instance.actions[self._action_idx].type == "Search":
@@ -163,16 +166,29 @@ class FilterSimBotDB:
         instance.actions[self._action_idx].search["object"].update(  # noqa: WPS219
             action_object_metadata
         )
-        # Resample the default instruction
-        random_idx = random.choice(range(len(should_keep_candidate_idx)))
-        instruction = self.dataset.paraphraser(
-            action_type="search",
-            object_id=action_object_metadata["id"][random_idx],
-            object_attributes=SimBotObjectAttributes(
-                **action_object_metadata["attributes"][random_idx]
-            ),
+
+        use_selected_object = (
+            "selected_object" in instance.actions[self._action_idx].search
+            and instance.actions[self._action_idx].search["selected_object"]["id"]  # noqa: WPS219
+            in action_object_metadata["id"]
         )
-        instance.instruction.instruction = instruction
+        if use_selected_object:
+            return instance
+        else:
+            # Resample the default instruction
+            random_idx = random.choice(range(len(should_keep_candidate_idx)))
+            instruction = self.dataset.paraphraser(
+                action_type="search",
+                object_id=action_object_metadata["id"][random_idx],
+                object_attributes=SimBotObjectAttributes(
+                    **action_object_metadata["attributes"][random_idx]
+                ),
+            )
+            instance.actions[self._action_idx].search["selected_object"] = {
+                "id": action_object_metadata["id"][random_idx],
+                "attributes": action_object_metadata["attributes"][random_idx],
+            }
+            instance.instruction.instruction = instruction
         return instance
 
     def _discard_action_unmatched_instance(
@@ -326,7 +342,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--valid_output_db_path", type=Path)
     parser.add_argument(
-        "--simbot_db_type", choices=["action", "nlu"], help="The type of SomBot task."
+        "--simbot_db_type", choices=["action", "nlu"], help="The type of SimBot task."
     )
     parser.add_argument(
         "--iou_threshold",
@@ -337,7 +353,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--min_iou_threshold",
         type=float,
-        default=0.1,
+        default=0.5,
         help="Minimum IoU threshold used when match_based_on_label is True",
     )
     parser.add_argument("--match_based_on_label", action="store_true")

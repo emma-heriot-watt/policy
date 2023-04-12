@@ -23,12 +23,13 @@ from transformers import PreTrainedTokenizer
 
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
-from emma_policy.datamodules.simbot_action_dataset import (
+from emma_policy.utils import get_logger
+from emma_policy.utils.datamodels.simbot import (
     SearchNegativeSampler,
     format_instruction,
+    get_object_for_search,
     get_simbot_instruction_paraphrase,
 )
-from emma_policy.utils import get_logger
 
 
 logger = get_logger(__name__)
@@ -168,6 +169,10 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             "nlu_class": target_text.split()[0],
             "object_type": " ".join(target_text.split()[1:]),
             "action_type": first_action.type,
+            "mission_id": instance.mission_id,
+            "frame_idx": frame_idx,
+            "features_path": instance.features_path[0],
+            "color_images": instance.actions[0].color_images[frame_idx],
         }
 
         return EmmaDatasetItem(
@@ -234,18 +239,15 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         """Get source and target text for Search instructions."""
         # Select the object
         action_object_metadata = instance.actions[0].get_action_data["object"]
-        object_candidates = len(action_object_metadata["id"])
-        object_candidate_idx = random.choice(range(object_candidates))
-        object_id = action_object_metadata["id"][object_candidate_idx]
-
+        object_id, object_index, attributes = get_object_for_search(
+            instance.actions[0].search, action_object_metadata, instance.paraphrasable
+        )
         # Prepare the instruction
         if instance.paraphrasable:
             instruction = self.paraphraser(
                 action_type="search",
                 object_id=object_id,
-                object_attributes=SimBotObjectAttributes(
-                    **action_object_metadata["attributes"][object_candidate_idx]
-                ),
+                object_attributes=SimBotObjectAttributes(**attributes),
             )
         else:
             instruction = instance.instruction.instruction
@@ -274,7 +276,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         else:
             # A positive search sample
             ground_truth_bbox = torch.tensor(
-                action_object_metadata["mask"][object_candidate_idx],
+                action_object_metadata["mask"][object_index],
                 dtype=torch.float32,
             ).unsqueeze(0)
 

@@ -37,6 +37,7 @@ class SimBotEmmaPolicy(EmmaPolicy):
         num_beams: int = 1,
         max_generated_text_length: int = 50,
         save_results_path: Optional[Path] = None,
+        test_single_instance: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(model_name=f"{model_name}-action", **kwargs)
@@ -51,16 +52,38 @@ class SimBotEmmaPolicy(EmmaPolicy):
         self._generated_actions: list[str] = []
         self._train_exact_match = SimbotActionExactMatch()
         self._valid_exact_match = SimbotActionExactMatch()
+        self._separator_token_id = 370
+        self._decoder_input_ids: list[str] = []
+        self._decoder_confidences: list[float] = []
+        self._groundtruth_actions: list[str] = []
+        self._test_single_instance = test_single_instance
 
-    def on_test_epoch_end(self) -> None:
+    def on_test_epoch_end(self) -> None:  # noqa: WPS231
         """Save the results."""
-        if self._results_path is not None:
+        if self._test_single_instance and self._results_path is not None:
+            all_example_ids = self._example_ids
+            generated_actions = self._generated_actions
+            groundtruth_actions = self._groundtruth_actions
+            decoder_input_ids = self._decoder_input_ids
+
+            outputs = {
+                example_id: {"prediction": generated_action, "groundtruth": gt, "teacher_forcing": dec}  # type: ignore[misc]
+                for example_id, generated_action, gt, dec in zip(
+                    all_example_ids,
+                    generated_actions,
+                    groundtruth_actions,
+                    decoder_input_ids,
+                )
+            }
+            self._save_results(outputs)
+
+        elif self._results_path is not None:
             if torch.distributed.is_available() and torch.distributed.is_initialized():
                 torch.distributed.barrier()
                 world_size = torch.distributed.get_world_size()
-                all_example_ids = [None for _ in range(world_size)]
+                all_example_ids = [None for _ in range(world_size)]  # type: ignore[misc]
                 torch.distributed.all_gather_object(all_example_ids, self._example_ids)
-                generated_actions = [None for _ in range(world_size)]
+                generated_actions = [None for _ in range(world_size)]  # type: ignore[misc]
                 torch.distributed.all_gather_object(generated_actions, self._generated_actions)
                 if torch.distributed.get_rank() == 0:
                     all_example_ids = list(
@@ -70,12 +93,10 @@ class SimBotEmmaPolicy(EmmaPolicy):
                         itertools.chain.from_iterable(generated_actions)  # type: ignore[arg-type]
                     )
                     outputs = {
-                        example_id: generated_action
+                        example_id: generated_action  # type:ignore[misc]
                         for example_id, generated_action in zip(all_example_ids, generated_actions)
                     }
-                    with open(self._results_path, "w") as fp:
-                        json.dump(outputs, fp, indent=4)  # noqa: WPS220
-
+                    self._save_results(outputs)
             else:
                 outputs = {
                     example_id: generated_action  # type: ignore[misc]
@@ -83,8 +104,7 @@ class SimBotEmmaPolicy(EmmaPolicy):
                         self._example_ids, self._generated_actions
                     )
                 }
-                with open(self._results_path, "w") as fp:  # noqa: WPS440
-                    json.dump(outputs, fp, indent=4)
+                self._save_results(outputs)
         return super().on_test_epoch_end()
 
     @overrides(check_signature=False)
@@ -189,6 +209,9 @@ class SimBotEmmaPolicy(EmmaPolicy):
     @overrides(check_signature=False)
     def test_step(self, batch: EmmaDatasetBatch, batch_idx: int) -> PredictType:
         """Inference step."""
+        if self._test_single_instance:
+            return self._test_instance(batch)
+
         outputs = self.predict_step(batch=batch, batch_idx=batch_idx)
         outputs_text = self._tokenizer.batch_decode(outputs, skip_special_tokens=True)
         if batch.raw_target is not None:
@@ -260,3 +283,44 @@ class SimBotEmmaPolicy(EmmaPolicy):
                 for idx in range(1, minimum_frame_index)
             ]
         return bad_words_ids  # type: ignore[return-value]
+
+    def _test_instance(self, batch: EmmaDatasetBatch) -> PredictType:
+        """Inference step."""
+        if batch.decoder_input_ids is None:
+            raise AssertionError("Expected decoder input ids for single instance testing")
+
+        separator_positions = torch.where(
+            batch.decoder_input_ids[0] == self._separator_token_id  # type:ignore[index]
+        )[0]
+
+        if separator_positions.shape[0] > 1:
+            end_index = int(separator_positions[-2].item()) + 1
+            decoder_input_ids = batch.decoder_input_ids[:, :end_index]  # type:ignore[index]
+
+        else:
+            decoder_input_ids = batch.decoder_input_ids[:, 0].unsqueeze(0)  # type:ignore[index]
+
+        outputs = self.inference_step(
+            batch, decoder_input_ids=decoder_input_ids, max_length=self._max_generated_text_length
+        )
+        self._example_ids.append(batch.raw_target[0]["instance_id"])  # type: ignore[index]
+
+        self._decoder_input_ids.extend(
+            self._tokenizer.batch_decode(decoder_input_ids, skip_special_tokens=False)
+        )
+
+        gt_text = []
+        for target, prediction in zip(batch.target_token_ids, outputs):
+            gt = target[target > -100]
+            gt_text.append("".join(self._tokenizer.batch_decode(gt, skip_special_tokens=False)))
+            pred = prediction[1:]
+            self._generated_actions.append(
+                "".join(self._tokenizer.batch_decode(pred, skip_special_tokens=False))
+            )
+
+        self._groundtruth_actions.extend(gt_text)
+        return outputs
+
+    def _save_results(self, outputs: dict[str, Any]) -> None:
+        with open(self._results_path, "w") as fp:  # type: ignore[arg-type]
+            json.dump(outputs, fp, indent=4)

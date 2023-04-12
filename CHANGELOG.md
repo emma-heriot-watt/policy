@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.38.0](https://github.com/emma-simbot/policy/compare/v1.37.3...v1.38.0) (2023-04-12)
+
+
+### Features
+
+* simbot action train v8 ([#759](https://github.com/emma-simbot/policy/issues/759)) ([0b5e6f1](https://github.com/emma-simbot/policy/commit/0b5e6f1a8698a0ffbcb70798227fa0aee155ae91))
+
+
+### Bug Fixes
+
+* modified utterance in speech ([#758](https://github.com/emma-simbot/policy/issues/758)) ([50483bc](https://github.com/emma-simbot/policy/commit/50483bcb2eb02085fdc7c25ec766d9ef0c28eebb))
+
 ## [1.37.3](https://github.com/emma-simbot/policy/compare/v1.37.2...v1.37.3) (2023-04-07)
 
 

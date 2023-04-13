@@ -1402,7 +1402,7 @@ idna = ">=2.0.0"
 
 [[package]]
 name = "emma-common"
-version = "2.1.1"
+version = "2.2.0"
 description = "Common modules which are used a lot throughout EMMA repositories"
 category = "main"
 optional = false
@@ -1434,7 +1434,7 @@ watchtower = "^3.0.0"
 type = "git"
 url = "https://github.com/emma-simbot/common"
 reference = "HEAD"
-resolved_reference = "bfb84262ba4813f428be4d42a326ca27f5096e02"
+resolved_reference = "f43cae4631519f4ed375d135e3cfffcaca3a40e8"
 
 [[package]]
 name = "emma-datasets"

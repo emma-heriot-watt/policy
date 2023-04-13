@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.39.0](https://github.com/emma-simbot/policy/compare/v1.38.0...v1.39.0) (2023-04-13)
+
+
+### Features
+
+* Add inventory object ([#760](https://github.com/emma-simbot/policy/issues/760)) ([ff5f118](https://github.com/emma-simbot/policy/commit/ff5f1189b89135433db88853627c42d129ce8aab))
+
 ## [1.38.0](https://github.com/emma-simbot/policy/compare/v1.37.3...v1.38.0) (2023-04-12)
 
 

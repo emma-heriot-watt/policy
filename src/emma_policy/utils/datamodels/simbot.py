@@ -17,6 +17,9 @@ from emma_policy.utils import get_logger
 logger = get_logger(__name__)
 
 
+EMPTY_INVENTORY = "empty"
+
+
 def mask_past_target_actions(
     full_target_token_ids: torch.Tensor, sep_token_id: int, masking_value: int = -1
 ) -> torch.Tensor:
@@ -38,11 +41,11 @@ def get_simbot_instruction_paraphrase(
     attributes = SimBotObjectAttributes(
         **action_object_metadata.get("attributes", {"readable_name": object_name})
     )
-
     return paraphraser(
         action_type=action_type,
         object_id=action_object_metadata["id"],
         object_attributes=attributes,
+        inventory_object_id=instance.actions[-1].inventory_object_id,
     )
 
 

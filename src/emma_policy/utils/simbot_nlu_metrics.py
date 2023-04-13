@@ -39,7 +39,8 @@ class SimbotActionTypeF1(F1Score):
         self.class1_id = tokenizer.convert_tokens_to_ids("<one_match>")
         self.class2_id = tokenizer.convert_tokens_to_ids("<no_match>")
         self.class3_id = tokenizer.convert_tokens_to_ids("<too_many_matches>")
-        super().__init__(num_classes=4, average="macro")
+        self.class4_id = tokenizer.convert_tokens_to_ids("<missing_inventory>")
+        super().__init__(num_classes=5, average="macro")
 
     @overrides(check_signature=False)
     def update(self, predicted: torch.Tensor, ground_truth: torch.Tensor) -> None:
@@ -50,16 +51,21 @@ class SimbotActionTypeF1(F1Score):
         act_gt[act_gt == self.class1_id] = 0
         act_gt[act_gt == self.class2_id] = 1
         act_gt[act_gt == self.class3_id] = 2
+        act_gt[act_gt == self.class4_id] = 3
         act_predicted[
             torch.logical_and(
                 torch.logical_and(
-                    act_predicted != self.class1_id,
-                    act_predicted != self.class2_id,
+                    torch.logical_and(
+                        act_predicted != self.class1_id,
+                        act_predicted != self.class2_id,
+                    ),
+                    act_predicted != self.class3_id,
                 ),
-                act_predicted != self.class3_id,
+                act_predicted != self.class4_id,
             )
-        ] = 3
+        ] = 4
         act_predicted[act_predicted == self.class1_id] = 0
         act_predicted[act_predicted == self.class2_id] = 1
         act_predicted[act_predicted == self.class3_id] = 2
+        act_predicted[act_predicted == self.class4_id] = 3
         super().update(act_predicted, act_gt)

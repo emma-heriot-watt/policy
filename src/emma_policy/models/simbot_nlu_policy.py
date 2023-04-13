@@ -55,11 +55,17 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
         # force_words_ids lists will have lengths:
         # lengths number of constraints (1), number of visual tokens (100), number of tokens per forced word (1)
         force_words_ids = []
-        for forced_action_word in ("<act>", "<search>"):
-            for forced_ambiguity_word in ("<one_match>", "<no_match>", "<too_many_matches>"):
+        ambiguity_words = [
+            "<one_match>",
+            "<no_match>",
+            "<too_many_matches>",
+            "<missing_inventory>",
+        ]
+        for action_word in ("<act>", "<search>"):
+            for ambiguity_word in ambiguity_words:
                 forced_phrase = [
-                    self._tokenizer.convert_tokens_to_ids(forced_action_word),
-                    self._tokenizer.convert_tokens_to_ids(forced_ambiguity_word),
+                    self._tokenizer.convert_tokens_to_ids(action_word),
+                    self._tokenizer.convert_tokens_to_ids(ambiguity_word),
                 ]
                 force_words_ids.append(forced_phrase)
         self.force_words_ids = [force_words_ids]

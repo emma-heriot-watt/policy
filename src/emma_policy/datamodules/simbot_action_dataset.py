@@ -59,7 +59,6 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         allow_paraphrasing: bool = False,
         shuffle_objects: bool = False,
     ) -> None:
-
         super().__init__(
             dataset_db_path=dataset_db_path,
             tokenizer=tokenizer,

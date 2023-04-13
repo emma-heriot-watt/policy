@@ -13,7 +13,7 @@ from emma_policy.datamodules.emma_dataclasses import (
     EmmaDatasetItem,
     EmmaVisualFeatures,
 )
-from emma_policy.datamodules.simbot_action_dataset import format_instruction
+from emma_policy.utils.datamodels.simbot import EMPTY_INVENTORY, format_instruction
 
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,9 @@ class SimBotNLUInputBuilder:
         the agent in the environment.
         """
         # Add a fullstop at the end and lowercase
-        instruction = format_instruction(request.dialogue_history[-1].utterance)
+        inventory = EMPTY_INVENTORY if request.inventory is None else request.inventory
+        instruction = f"Inventory: {inventory}. {request.dialogue_history[-1].utterance}"
+        instruction = format_instruction(instruction)
         logger.debug(f"Preparing NLU input for instruction: {instruction}")
         encoded_inputs = self._prepare_input_text(instruction)
         feature_dicts = [feature.dict() for feature in request.environment_history[-1].features]

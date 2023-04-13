@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.39.1](https://github.com/emma-simbot/policy/compare/v1.39.0...v1.39.1) (2023-04-13)
+
+
+### Bug Fixes
+
+* NLU vocab size ([#761](https://github.com/emma-simbot/policy/issues/761)) ([e7fb53d](https://github.com/emma-simbot/policy/commit/e7fb53d538bd534e9fd0665050a0b8de7e7f6678))
+
 ## [1.39.0](https://github.com/emma-simbot/policy/compare/v1.38.0...v1.39.0) (2023-04-13)
 
 

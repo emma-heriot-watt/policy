@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.40.0](https://github.com/emma-simbot/policy/compare/v1.39.2...v1.40.0) (2023-04-16)
+
+
+### Features
+
+* return dummy action after toggling the carrot maker ([#764](https://github.com/emma-simbot/policy/issues/764)) ([0402a7e](https://github.com/emma-simbot/policy/commit/0402a7e817a6226fab3ad54490eb5e6664ec04f3))
+
 ## [1.39.2](https://github.com/emma-simbot/policy/compare/v1.39.1...v1.39.2) (2023-04-13)
 
 

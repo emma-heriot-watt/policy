@@ -98,7 +98,7 @@ class SimBotActionInputBuilder:
 
     def check_carrot_case(self, request: EmmaPolicyRequest) -> bool:
         """Check if the previous action toggled the carrot machine."""
-        if len(request.environment_history) != 1:
+        if len(request.environment_history) != 2:
             return False
 
         previous_action = request.environment_history[0]

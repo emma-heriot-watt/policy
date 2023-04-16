@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.40.2](https://github.com/emma-simbot/policy/compare/v1.40.1...v1.40.2) (2023-04-16)
+
+
+### Bug Fixes
+
+* len of enviroment history in carrot case ([#766](https://github.com/emma-simbot/policy/issues/766)) ([1408c7a](https://github.com/emma-simbot/policy/commit/1408c7a18c7ffd0de3a0eadfc803278a81599372))
+
 ## [1.40.1](https://github.com/emma-simbot/policy/compare/v1.40.0...v1.40.1) (2023-04-16)
 
 

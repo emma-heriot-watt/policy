@@ -28,6 +28,8 @@ from emma_policy.inference.model_wrapper.simbot_action_input_builder import (
 )
 from emma_policy.inference.model_wrapper.simbot_action_output_processor import (
     SimBotActionPredictionProcessor,
+    SimBotFindPredictionProcessor,
+    post_process_action,
 )
 from emma_policy.inference.model_wrapper.simbot_raw_text_matcher import SimBotActionRawTextMatcher
 from emma_policy.models.simbot_emma_policy import SimBotEmmaPolicy
@@ -67,7 +69,8 @@ class ApiStore(TypedDict, total=False):
     raw_text_matcher: SimBotActionRawTextMatcher
     tokenizer: PreTrainedTokenizer
     model: SimBotEmmaPolicy
-    output_processor: SimBotActionPredictionProcessor
+    action_output_processor: SimBotActionPredictionProcessor
+    find_output_processor: SimBotFindPredictionProcessor
     max_length_per_action_sequence: int
     num_beams: int
     no_repeat_ngram_size: int
@@ -86,19 +89,6 @@ def load_model(checkpoint_path: str, model_name: str, device: str) -> SimBotEmma
     model.to(device)
     model.eval()
     return model
-
-
-def post_process_action(action: str) -> str:
-    """Post process the action string.
-
-    Remove the </s><s> at the begining of an instruction. Remove padding tokens. Keep other special
-    tokens e.g, <vis_token_5>.
-    """
-    action = action.lstrip()
-    action = action.replace("</s><s>", "")
-    action = action.replace("<s>", "")
-    action = action.replace("<pad>", "")
-    return action
 
 
 @app.on_event("startup")
@@ -123,7 +113,8 @@ async def startup_event() -> None:
     )
     logging.info(f"Model is on device: {api_store['model'].device}")
 
-    api_store["output_processor"] = SimBotActionPredictionProcessor()
+    api_store["action_output_processor"] = SimBotActionPredictionProcessor()
+    api_store["find_output_processor"] = SimBotFindPredictionProcessor()
 
     api_store["raw_text_matcher"] = SimBotActionRawTextMatcher(
         raw_text_match_json=settings.raw_text_match_json,
@@ -168,7 +159,7 @@ async def healthcheck(response: Response) -> str:
 
 
 @app.post("/generate_find", status_code=status.HTTP_200_OK)
-async def generate_find(request: Request, response: Response) -> list[str]:  # noqa: WPS231
+async def generate_find(request: Request, response: Response) -> list[str]:
     """Endpoint for find."""
     try:
         request_body = await request.body()
@@ -213,19 +204,8 @@ async def generate_find(request: Request, response: Response) -> list[str]:  # n
             logger.debug(f"Empty action for request: {simbot_request}")
 
     with tracer.start_as_current_span("Post processing"):
-        post_processed_actions = []
-        for idx, action in enumerate(actions, 1):
-            # Append only positive predictions, in case of no object return None
-            if "token" in action:
-                processed_action = post_process_action(action)
-                # Fix the frame token in the case of multiple images
-                processed_action = processed_action.replace(
-                    "<frame_token_1>", f"<frame_token_{idx}>"
-                )
-                # Replace the <stop></s> at the end of the prediction
-                # We know that the model has finished predicting in visual grounding.
-                processed_action = processed_action.replace("<stop></s>", "").strip()
-                post_processed_actions.append(processed_action)
+        post_processed_actions = api_store["find_output_processor"](actions, simbot_request)
+
     logger.debug(f"Predicted actions: {post_processed_actions}")
     return post_processed_actions
 
@@ -333,7 +313,7 @@ async def generate(request: Request, response: Response) -> str:
                         model_output[:, len_decode:], skip_special_tokens=False
                     )[0]
 
-                    action = api_store["output_processor"](
+                    action = api_store["action_output_processor"](
                         prediction=action,
                         frame_features=simbot_request.environment_history[-1].features,
                     )

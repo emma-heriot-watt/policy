@@ -102,7 +102,10 @@ class SimBotActionInputBuilder:
             return False
 
         previous_action = request.environment_history[0]
-        if "<stop>" in previous_action:
+        if previous_action.output is None:
+            return False
+
+        if "<stop>" in previous_action.output:
             return False
 
         return previous_action.output.startswith(

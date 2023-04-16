@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.40.1](https://github.com/emma-simbot/policy/compare/v1.40.0...v1.40.1) (2023-04-16)
+
+
+### Bug Fixes
+
+* previous action is None in carrot case ([#765](https://github.com/emma-simbot/policy/issues/765)) ([bdc4318](https://github.com/emma-simbot/policy/commit/bdc431842ed1b6cbbc0462d010f201392c8d3bc2))
+
 ## [1.40.0](https://github.com/emma-simbot/policy/compare/v1.39.2...v1.40.0) (2023-04-16)
 
 

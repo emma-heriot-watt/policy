@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.41.0](https://github.com/emma-simbot/policy/compare/v1.40.2...v1.41.0) (2023-04-16)
+
+
+### Features
+
+* try to get object from object vinvl ([#767](https://github.com/emma-simbot/policy/issues/767)) ([268cae1](https://github.com/emma-simbot/policy/commit/268cae17e63eaaea0080e1933f4109ce41051c9b))
+
 ## [1.40.2](https://github.com/emma-simbot/policy/compare/v1.40.1...v1.40.2) (2023-04-16)
 
 

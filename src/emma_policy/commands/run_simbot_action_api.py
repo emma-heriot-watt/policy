@@ -306,6 +306,9 @@ async def generate(request: Request, response: Response) -> str:
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         raise request_err
 
+    if api_store["input_builder"].check_carrot_case(simbot_request):
+        return "dummy look down <stop>."
+
     (batch, decoder_input_ids, step_index) = api_store["input_builder"](
         simbot_request, task=Task.action_execution
     )

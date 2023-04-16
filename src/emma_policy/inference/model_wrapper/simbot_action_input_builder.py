@@ -96,6 +96,19 @@ class SimBotActionInputBuilder:
                 logger.error(f"Found unsupported task: {task}")
         return (batch, decoder_input_ids, step_index)
 
+    def check_carrot_case(self, request: EmmaPolicyRequest) -> bool:
+        """Check if the previous action toggled the carrot machine."""
+        if len(request.environment_history) != 1:
+            return False
+
+        previous_action = request.environment_history[0]
+        if "<stop>" in previous_action:
+            return False
+
+        return previous_action.output.startswith(
+            "toggle everything's a carrot machine <frame_token_1>"
+        )
+
     def _prepare_decoder_input_ids(
         self, previous_actions: Optional[str] = None
     ) -> Optional[torch.Tensor]:

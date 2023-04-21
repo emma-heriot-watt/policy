@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.42.1](https://github.com/emma-simbot/policy/compare/v1.42.0...v1.42.1) (2023-04-21)
+
+
+### Bug Fixes
+
+* use entity labels when patching model output ([#771](https://github.com/emma-simbot/policy/issues/771)) ([d747062](https://github.com/emma-simbot/policy/commit/d7470627fb91a5c402371242cd98c164fa0a6212))
+
 ## [1.42.0](https://github.com/emma-simbot/policy/compare/v1.41.0...v1.42.0) (2023-04-21)
 
 

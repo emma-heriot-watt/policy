@@ -169,7 +169,7 @@ async def generate_find(request: Request, response: Response) -> list[str]:
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         raise request_err
 
-    (batch, decoder_input_ids, step_index) = api_store["input_builder"](
+    (_, batch, decoder_input_ids, step_index) = api_store["input_builder"](
         simbot_request, task=Task.visual_grounding
     )
     with tracer.start_as_current_span("Model inference"):
@@ -222,7 +222,7 @@ async def grab_from_history(request: Request, response: Response) -> Optional[in
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         raise request_err
 
-    (batch, decoder_input_ids, step_index) = api_store["input_builder"](
+    (_, batch, decoder_input_ids, step_index) = api_store["input_builder"](
         simbot_request, task=Task.visual_grounding
     )
     with tracer.start_as_current_span("Model inference"):
@@ -289,7 +289,9 @@ async def generate(request: Request, response: Response) -> str:
     if api_store["input_builder"].check_carrot_case(simbot_request):
         return "dummy look down <stop>."
 
-    (batch, decoder_input_ids, step_index) = api_store["input_builder"](
+    # (batch, decoder_input_ids, step_index) = api_store["input_builder"](
+    # )
+    (raw_input, batch, decoder_input_ids, step_index) = api_store["input_builder"](
         simbot_request, task=Task.action_execution
     )
     with tracer.start_as_current_span("Model inference"):
@@ -316,6 +318,7 @@ async def generate(request: Request, response: Response) -> str:
                     action = api_store["action_output_processor"](
                         prediction=action,
                         frame_features=simbot_request.environment_history[-1].features,
+                        instruction=raw_input,
                     )
 
             except Exception as err:

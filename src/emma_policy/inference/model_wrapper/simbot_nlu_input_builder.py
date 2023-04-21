@@ -28,7 +28,7 @@ class SimBotNLUInputBuilder:
         self._tokenizer = tokenizer
         self._device = device
 
-    def __call__(self, request: EmmaPolicyRequest) -> EmmaDatasetBatch:
+    def __call__(self, request: EmmaPolicyRequest) -> tuple[EmmaDatasetBatch, str]:
         """Process the environment output into a batch for the model.
 
         The sample batch provides the set of previous observations and previous actions taken by
@@ -46,7 +46,7 @@ class SimBotNLUInputBuilder:
         dataset_item = self._create_emma_dataset_item(
             visual_features=visual_features, encoded_inputs=encoded_inputs
         )
-        return self._create_emma_dataset_batch(dataset_item)
+        return self._create_emma_dataset_batch(dataset_item), instruction
 
     def _prepare_input_text(self, instruction: str) -> BatchEncoding:
         source_text = f"Predict the system act: {instruction}"

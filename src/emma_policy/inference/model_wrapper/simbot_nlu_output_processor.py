@@ -93,7 +93,7 @@ class SimBotNLUPredictionProcessor:
         self, frame_features: list[EmmaExtractedFeatures]
     ) -> Optional[list[str]]:
         """Get a list of class labels fro the detected objects."""
-        class_labels = frame_features[0].class_labels
+        class_labels = frame_features[-1].entity_labels
         if class_labels is not None:
             class_labels = [label.lower() for label in class_labels]
         return class_labels
@@ -134,6 +134,7 @@ class SimBotNLUPredictionProcessor:
                 "activate" in instruction,
                 "turn" in instruction,
                 "switch" in instruction,
+                "flip" in instruction,
             ]
         )
 

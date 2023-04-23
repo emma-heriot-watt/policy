@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.43.0](https://github.com/emma-simbot/policy/compare/v1.42.1...v1.43.0) (2023-04-23)
+
+
+### Features
+
+* enable cdf instance training ([#762](https://github.com/emma-simbot/policy/issues/762)) ([17fb96b](https://github.com/emma-simbot/policy/commit/17fb96bf79159e4a49c117e6714429ce56d5f813))
+
 ## [1.42.1](https://github.com/emma-simbot/policy/compare/v1.42.0...v1.42.1) (2023-04-21)
 
 

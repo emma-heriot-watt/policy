@@ -15,6 +15,7 @@ from emma_policy.datamodules.emma_dataclasses import (
 )
 from emma_policy.datamodules.pretrain_instances import TASK_TEMPLATES_MAP, Task
 from emma_policy.inference.api.simbot_state import SPEAKER_TOKEN_MAP
+from emma_policy.utils.datamodels.simbot import EMPTY_INVENTORY
 
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ class SimBotActionInputBuilder:
         The sample batch provides the set of previous observations and previous actions taken by
         the agent in the environment.
         """
+        inventory = EMPTY_INVENTORY if request.inventory is None else request.inventory
         instruction = self._parse_dialogue_from_request(
             request
         )  # @TODO check whether gfh should change instructions
@@ -53,6 +55,7 @@ class SimBotActionInputBuilder:
         batch: Optional[EmmaDatasetBatch] = None
         decoder_input_ids: Optional[torch.Tensor] = None
         if instruction is not None and instruction:
+            instruction = f"Inventory: {inventory}. {instruction}"
             logger.debug(f"Predicting action for instruction: {instruction}")
 
             encoded_inputs = self._prepare_input_text(instruction=instruction, task=task)

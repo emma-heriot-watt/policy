@@ -5,6 +5,9 @@ from typing import Literal, Optional
 
 import torch
 from emma_datasets.constants.simbot.simbot import get_arena_definitions
+from emma_datasets.datamodels.datasets.utils.simbot_utils.high_level_key_processor import (
+    HighLevelKeyProcessor,
+)
 from emma_datasets.datamodels.datasets.utils.simbot_utils.instruction_processing import (
     get_object_label_from_object_id,
     get_object_readable_name_from_object_id,
@@ -25,8 +28,8 @@ from emma_policy.datamodules.base_dataset import EmmaBaseDataset
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
 from emma_policy.utils import get_logger
 from emma_policy.utils.datamodels.simbot import (
-    EMPTY_INVENTORY,
     SearchNegativeSampler,
+    add_inventory_to_instruction,
     format_instruction,
     get_object_for_search,
     get_simbot_instruction_paraphrase,
@@ -141,7 +144,8 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         self._one_match_to_missining_inventory_proba = _one_match_to_missining_inventory_proba
         self._no_match_to_missining_inventory_proba = _no_match_to_missining_inventory_proba
         self._search_negative_sampler = SearchNegativeSampler(self.db)
-        self.paraphraser = InstructionParaphraser()
+        self.low_level_paraphraser = InstructionParaphraser()
+        self.high_level_paraphraser = HighLevelKeyProcessor()
 
     @overrides(check_signature=False)
     def __len__(self) -> int:
@@ -206,10 +210,51 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
 
     def prepare_action_instance(self, instance: SimBotInstructionInstance) -> tuple[str, str]:
         """Prepare the source and target text for an action instance."""
-        if instance.synthetic:
+        if instance.cdf_augmentation:
+            instruction, target_text = self.prepare_cdf_action_instance(instance)
+        elif instance.synthetic:
             instruction, target_text = self.prepare_synthetic_action_instance(instance)
         else:
             instruction, target_text = self.prepare_human_action_instance(instance)
+
+        return instruction, target_text
+
+    def prepare_cdf_action_instance(self, instance: SimBotInstructionInstance) -> tuple[str, str]:
+        """Prepare the instruction and target text for a human instruction."""
+        high_level_key = self.high_level_paraphraser(instance.cdf_highlevel_key)
+        instruction = random.choice(high_level_key.paraphrases)
+
+        holding_object = instance.actions[0].inventory_object_id
+        missing_holding_object = (
+            holding_object is not None
+            and random.random() < self._one_match_to_missining_inventory_proba
+        )
+        if missing_holding_object:
+            instance.actions[0].inventory_object_id = None
+            target_text = SimBotNLUIntents.act_missing_inventory.value
+
+            object_readable_name = get_object_readable_name_from_object_id(
+                object_id=holding_object,
+                object_assets_to_names=self._object_assets_to_names,
+                special_name_cases=self._special_name_cases,
+            )
+
+        else:
+            target_text = SimBotNLUIntents.act_one_match.value
+            object_readable_name = self._get_target_object_name(
+                action=instance.actions[0],
+                name_type="readable",
+            )
+
+        instruction = add_inventory_to_instruction(
+            object_assets_to_names=self._object_assets_to_names,
+            special_name_cases=self._special_name_cases,
+            instruction=instruction,
+            inventory_object_id=instance.actions[0].inventory_object_id,
+        )
+
+        if object_readable_name:
+            target_text = f"{target_text} {object_readable_name}"
 
         return instruction, target_text
 
@@ -218,8 +263,11 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
     ) -> tuple[str, str]:
         """Prepare the instruction and target text for a human instruction."""
         instruction = instance.instruction.instruction
-        instruction = self._add_inventory_to_instruction(
-            instruction=instruction, inventory_object_id=instance.actions[0].inventory_object_id
+        instruction = add_inventory_to_instruction(
+            object_assets_to_names=self._object_assets_to_names,
+            special_name_cases=self._special_name_cases,
+            instruction=instruction,
+            inventory_object_id=instance.actions[0].inventory_object_id,
         )
         # First try to get the target for a clarification
         target_text = self._get_nlu_human_question(instance)
@@ -240,13 +288,17 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
     ) -> tuple[str, str]:
         """Prepare the instruction and target text for a synthetic instruction."""
         if instance.ambiguous:
-            instance.actions[0].inventory_object_id = self.paraphraser.sample_inventory_object(
+            instance.actions[
+                0
+            ].inventory_object_id = self.low_level_paraphraser.sample_inventory_object(
                 instance.actions[0].type.lower()
             )
             instruction = self._get_synthectic_action_instruction(
                 instance, allow_paraphrasing=False
             )
-            instruction = self._add_inventory_to_instruction(
+            instruction = add_inventory_to_instruction(
+                object_assets_to_names=self._object_assets_to_names,
+                special_name_cases=self._special_name_cases,
                 instruction=instruction,
                 inventory_object_id=instance.actions[0].inventory_object_id,
             )
@@ -265,22 +317,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         object_id, object_index, attributes = get_object_for_search(
             action.search, action_object_metadata, instance.paraphrasable
         )
-        # Prepare the instruction
-        if instance.paraphrasable:
-            inventory_object_id = self.paraphraser.sample_inventory_object("search")
-            instruction = self.paraphraser(
-                action_type="search",
-                object_id=object_id,
-                object_attributes=SimBotObjectAttributes(**attributes),
-                inventory_object_id=inventory_object_id,
-            )
-        else:
-            instruction = instance.instruction.instruction
-            inventory_object_id = action.inventory_object_id
 
-        instruction = self._add_inventory_to_instruction(
-            instruction=instruction, inventory_object_id=inventory_object_id
-        )
         # Prepare the visual_features and target
         object_readable_name = get_object_readable_name_from_object_id(
             object_id=object_id,
@@ -291,6 +328,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         negative_proba = random.random() >= self._search_negative_proba
         # We need to skip the instances that are from annotations aka paraphrasable
         select_negative = negative_proba and instance.paraphrasable
+        is_negative = False
         if select_negative:
             negative_idx = self._search_negative_sampler(object_readable_name)
             negative_instance = SimBotInstructionInstance.parse_raw(self.db[negative_idx])
@@ -298,10 +336,13 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 features_path=negative_instance.features_path[0]
             )
             target_text = f"{SimBotNLUIntents.search_no_match.value} {object_readable_name}"
+            is_negative = True
         elif action_object_metadata["mask"] is None:
             # A negative search sample
             visual_features = self._load_visual_features(features_path=instance.features_path[0])
             target_text = f"{SimBotNLUIntents.search_no_match.value} {object_readable_name}"
+            is_negative = True
+
         else:
             # A positive search sample
             ground_truth_bbox = torch.tensor(
@@ -321,6 +362,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             # If there is a matching bounding box, append its visual token to the target text
             if ground_truth_flags.shape[0] == 0:
                 target_text = f"{SimBotNLUIntents.search_no_match.value} {object_readable_name}"
+                is_negative = True
             elif ground_truth_flags.shape[0] == 1:
                 target_text = f"{SimBotNLUIntents.search_one_match.value} {object_readable_name}"
             else:
@@ -328,7 +370,45 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
                     f"{SimBotNLUIntents.search_too_many_matches.value} {object_readable_name}"
                 )
 
+        instruction = self._prepare_search_instruction(
+            instance,
+            object_id=object_id,
+            is_negative=is_negative,
+            attributes=attributes,
+            inventory_object_id=action.invetory_object_id,
+        )
+
         return instruction, visual_features, target_text
+
+    def _prepare_search_instruction(
+        self,
+        instance: SimBotInstructionInstance,
+        object_id: str,
+        is_negative: bool,
+        attributes: dict[str, str],
+        inventory_object_id: Optional[str],
+    ) -> str:
+        """Prepare the instruction."""
+        if instance.paraphrasable:
+            if is_negative and "location" in attributes:
+                attributes.pop("location")
+            inventory_object_id = self.low_level_paraphraser.sample_inventory_object("search")
+            instruction = self.low_level_paraphraser(
+                action_type="search",
+                object_id=object_id,
+                object_attributes=SimBotObjectAttributes(**attributes),
+                inventory_object_id=inventory_object_id,
+            )
+        else:
+            instruction = instance.instruction.instruction
+
+        instruction = add_inventory_to_instruction(
+            object_assets_to_names=self._object_assets_to_names,
+            special_name_cases=self._special_name_cases,
+            instruction=instruction,
+            inventory_object_id=inventory_object_id,
+        )
+        return instruction
 
     def _augment_synthetic_action(self, instance: SimBotInstructionInstance) -> tuple[str, str]:
         """Prepare the instruction and target text for a synthetic unambiguous instruction.
@@ -356,6 +436,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 instance=instance,
                 missing_inventory_proba=self._no_match_to_missining_inventory_proba,
                 target_text=SimBotNLUIntents.act_no_match.value,
+                include_location_in_attributes=False,
             )
 
         return instruction, target_text
@@ -364,13 +445,17 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         self,
         instance: SimBotInstructionInstance,
         allow_paraphrasing: bool = False,
+        include_location_in_attributes: bool = True,
     ) -> str:
         """Get source text for all actions except Search."""
         if allow_paraphrasing and instance.paraphrasable:
             object_name = self._get_target_object_name(instance.actions[0], name_type="class")
             if object_name:
                 instruction = get_simbot_instruction_paraphrase(
-                    self.paraphraser, instance, object_name
+                    self.low_level_paraphraser,
+                    instance,
+                    object_name,
+                    include_location=include_location_in_attributes,
                 )
             else:
                 instruction = instance.instruction.instruction
@@ -431,23 +516,33 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         instance: SimBotInstructionInstance,
         missing_inventory_proba: float,
         target_text: str,
+        include_location_in_attributes: bool = True,
     ) -> tuple[str, str]:
         """Add an inventory object to the synthetic low-level instance."""
-        is_inventory_required = self.paraphraser.is_inventory_required(
+        is_inventory_required = self.low_level_paraphraser.is_inventory_required(
             instance.actions[0].type.lower()
         )
         if instance.paraphrasable:
-            instance.actions[0].inventory_object_id = self.paraphraser.sample_inventory_object(
+            instance.actions[
+                0
+            ].inventory_object_id = self.low_level_paraphraser.sample_inventory_object(
                 instance.actions[0].type.lower()
             )
-        instruction = self._get_synthectic_action_instruction(instance, allow_paraphrasing=True)
+        instruction = self._get_synthectic_action_instruction(
+            instance,
+            allow_paraphrasing=True,
+            include_location_in_attributes=include_location_in_attributes,
+        )
         # If the inventory is not required for the action, we should NOT have an act_missing_inventory target
         cond1 = random.random() < missing_inventory_proba
         cond2 = is_inventory_required and instance.paraphrasable
         if cond1 and cond2:
             # Get the object_readable_name from the inventory readable name
-            instruction = self._add_inventory_to_instruction(
-                inventory_object_id=None, instruction=instruction
+            instruction = add_inventory_to_instruction(
+                object_assets_to_names=self._object_assets_to_names,
+                special_name_cases=self._special_name_cases,
+                inventory_object_id=None,
+                instruction=instruction,
             )
             target_text = SimBotNLUIntents.act_missing_inventory.value
             object_readable_name = get_object_readable_name_from_object_id(
@@ -456,7 +551,9 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 special_name_cases=self._special_name_cases,
             )
         else:
-            instruction = self._add_inventory_to_instruction(
+            instruction = add_inventory_to_instruction(
+                object_assets_to_names=self._object_assets_to_names,
+                special_name_cases=self._special_name_cases,
                 inventory_object_id=instance.actions[0].inventory_object_id,
                 instruction=instruction,
             )
@@ -554,20 +651,6 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 )
 
         return target_object_name
-
-    def _add_inventory_to_instruction(
-        self, inventory_object_id: Optional[str], instruction: str
-    ) -> str:
-        """Add the inventory state to the instruction."""
-        if inventory_object_id is None:
-            inventory_object_name = EMPTY_INVENTORY
-        else:
-            inventory_object_name = get_object_readable_name_from_object_id(
-                object_id=inventory_object_id,
-                object_assets_to_names=self._object_assets_to_names,
-                special_name_cases=self._special_name_cases,
-            )
-        return f"Inventory: {inventory_object_name}. {instruction}"
 
     def _create_act_no_match_action(
         self, old_action: SimBotAction, negative_example_action: SimBotAction

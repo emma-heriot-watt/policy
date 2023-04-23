@@ -172,7 +172,7 @@ class SimBotActionDataModule(LightningDataModule):
             num_workers=self._num_workers,
             collate_fn=collate_fn,
             shuffle=False,
-            pin_memory=True,
+            pin_memory=False,
         )
 
     def test_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
@@ -183,7 +183,7 @@ class SimBotActionDataModule(LightningDataModule):
             num_workers=self._num_workers,
             collate_fn=collate_fn,
             shuffle=False,
-            pin_memory=True,
+            pin_memory=False,
         )
 
     def _compute_sample_weights(self, dataset_db: Path) -> list[float]:

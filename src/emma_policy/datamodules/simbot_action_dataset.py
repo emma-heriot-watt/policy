@@ -4,6 +4,9 @@ from typing import Optional
 
 import torch
 from emma_datasets.constants.simbot.simbot import get_arena_definitions
+from emma_datasets.datamodels.datasets.utils.simbot_utils.high_level_key_processor import (
+    HighLevelKeyProcessor,
+)
 from emma_datasets.datamodels.datasets.utils.simbot_utils.instruction_processing import (
     get_object_label_from_object_id,
     get_object_readable_name_from_object_id,
@@ -30,6 +33,7 @@ from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.utils import decompress_simbot_mask, get_logger
 from emma_policy.utils.datamodels.simbot import (
     SearchNegativeSampler,
+    add_inventory_to_instruction,
     compressed_mask_is_bbox,
     format_instruction,
     get_object_for_search,
@@ -79,7 +83,8 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         self._allow_paraphrasing = allow_paraphrasing
         self._search_negative_sampler = SearchNegativeSampler(self.db)
         self._special_name_cases = arena_definitions["special_asset_to_readable_name"]
-        self.paraphraser = InstructionParaphraser()
+        self.low_level_paraphraser = InstructionParaphraser()
+        self.high_level_paraphraser = HighLevelKeyProcessor()
         self._search_positive_type = "search_positive"
         self._search_negative_type = "search_negative"
 
@@ -93,6 +98,9 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         if instance.vision_augmentation:
             return self.simbot_vision_augmentation(instance)
         return self.simbot_action_execution(instance)
+        # except Exception as e:
+        #     print(e)
+        #     breakpoint()
 
     def simbot_vision_augmentation(  # noqa: WPS210, WPS231
         self, instance: SimBotInstructionInstance
@@ -103,11 +111,15 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             object_id, object_index, attributes = get_object_for_search(
                 instance.actions[-1].search, action_object_metadata, instance.paraphrasable
             )
+            # Sample the inventory
+            instance.actions[
+                -1
+            ].inventory_object_id = self.low_level_paraphraser.sample_inventory_object("search")
 
             # All the instances comming from augmentations are paraphrasable
             # The ones comming from annotations are not.
             if self._allow_paraphrasing and instance.paraphrasable:
-                instruction = self.paraphraser(
+                instruction = self.low_level_paraphraser(
                     action_type=instance.actions[-1].type.lower(),
                     object_id=object_id,
                     object_attributes=SimBotObjectAttributes(**attributes),
@@ -116,9 +128,16 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 instruction = instance.instruction.instruction
 
             source_text = f"<<commander>> {instruction}"
+            source_text = add_inventory_to_instruction(
+                object_assets_to_names=self._object_assets_to_names,
+                special_name_cases=self._special_name_cases,
+                instruction=source_text,
+                inventory_object_id=instance.actions[0].inventory_object_id,
+            )
             source_text = self._get_random_template_for_task(Task.visual_grounding).format(
                 caption=source_text
             )
+
             source_text = format_instruction(source_text)
 
             object_name = get_object_readable_name_from_object_id(
@@ -390,22 +409,41 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             and answer: where is the hammer? the hammer is on the table in the robotics lab.
         """
         if self._allow_paraphrasing and instance.paraphrasable:
-            action_object_metadata = instance.actions[-1].get_action_data["object"]
-            object_name = get_object_label_from_object_id(
-                object_id=action_object_metadata["id"],
-                object_assets_to_names=self._object_assets_to_names,
-            )
+            if instance.cdf_augmentation:
+                high_level_key = self.high_level_paraphraser(instance.cdf_highlevel_key)
+                instruction = random.choice(high_level_key.paraphrases)
+            elif instance.vision_augmentation:
+                action_object_metadata = instance.actions[-1].get_action_data["object"]
+                object_name = get_object_label_from_object_id(
+                    object_id=action_object_metadata["id"],
+                    object_assets_to_names=self._object_assets_to_names,
+                )
+                # Sample the inventory
+                instance.actions[
+                    0
+                ].inventory_object_id = self.low_level_paraphraser.sample_inventory_object(
+                    instance.actions[0].type.lower()
+                )
+                instruction = get_simbot_instruction_paraphrase(
+                    self.low_level_paraphraser, instance, object_name
+                )
 
-            instruction = get_simbot_instruction_paraphrase(
-                self.paraphraser, instance, object_name
-            )
+            else:
+                instruction = instance.instruction.instruction
         else:
             instruction = instance.instruction.instruction
 
         source_text = f"<<commander>> {instruction}"
+        source_text = add_inventory_to_instruction(
+            object_assets_to_names=self._object_assets_to_names,
+            special_name_cases=self._special_name_cases,
+            instruction=source_text,
+            inventory_object_id=instance.actions[0].inventory_object_id,
+        )
         source_text = self._get_random_template_for_task(Task.action_execution).format(
             instruction=source_text
         )
+
         if instance.instruction.question_answers is not None:
             question_answer_candidates = instance.instruction.question_answers
             if self._use_only_necessary_questions:

@@ -177,7 +177,7 @@ class FilterSimBotDB:
         else:
             # Resample the default instruction
             random_idx = random.choice(range(len(should_keep_candidate_idx)))
-            instruction = self.dataset.paraphraser(
+            instruction = self.dataset.low_level_paraphraser(
                 action_type="search",
                 object_id=action_object_metadata["id"][random_idx],
                 object_attributes=SimBotObjectAttributes(

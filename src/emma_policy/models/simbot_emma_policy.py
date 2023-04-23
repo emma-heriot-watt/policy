@@ -159,6 +159,7 @@ class SimBotEmmaPolicy(EmmaPolicy):
         predictions = torch.argmax(torch.softmax(output.logits, -1), -1)
 
         self._valid_exact_match(predictions, batch.target_token_ids, batch.decoder_attention_mask)
+
         self.log("valid_action_exact_match", self._valid_exact_match)
 
         self.log("valid_loss", output.loss, sync_dist=True)

@@ -1,7 +1,10 @@
 import random
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import torch
+from emma_datasets.datamodels.datasets.utils.simbot_utils.instruction_processing import (
+    get_object_readable_name_from_object_id,
+)
 from emma_datasets.datamodels.datasets.utils.simbot_utils.paraphrasers import (
     InstructionParaphraser,
 )
@@ -33,14 +36,18 @@ def mask_past_target_actions(
 
 
 def get_simbot_instruction_paraphrase(
-    paraphraser: InstructionParaphraser, instance: SimBotInstructionInstance, object_name: str
+    paraphraser: InstructionParaphraser,
+    instance: SimBotInstructionInstance,
+    object_name: str,
+    include_location: bool = True,
 ) -> str:
     """Paraphrase a SimBot instruction."""
     action_type = instance.actions[-1].type.lower()
     action_object_metadata = instance.actions[-1].get_action_data["object"]
-    attributes = SimBotObjectAttributes(
-        **action_object_metadata.get("attributes", {"readable_name": object_name})
-    )
+    attributes_dict = action_object_metadata.get("attributes", {"readable_name": object_name})
+    if not include_location and "location" in attributes_dict:
+        attributes_dict.pop("location")
+    attributes = SimBotObjectAttributes(**attributes_dict)
     return paraphraser(
         action_type=action_type,
         object_id=action_object_metadata["id"],
@@ -129,3 +136,21 @@ class SearchNegativeSampler:
                         ]
                         positive_indices_map[index] = readable_names  # noqa: WPS220
         return positive_indices_map
+
+
+def add_inventory_to_instruction(
+    inventory_object_id: Optional[str],
+    instruction: str,
+    object_assets_to_names: dict[str, str],
+    special_name_cases: dict[str, str],
+) -> str:
+    """Add the inventory state to the instruction."""
+    if inventory_object_id is None:
+        inventory_object_name = EMPTY_INVENTORY
+    else:
+        inventory_object_name = get_object_readable_name_from_object_id(
+            object_id=inventory_object_id,
+            object_assets_to_names=object_assets_to_names,
+            special_name_cases=special_name_cases,
+        )
+    return f"Inventory: {inventory_object_name}. {instruction}"

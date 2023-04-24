@@ -375,7 +375,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             object_id=object_id,
             is_negative=is_negative,
             attributes=attributes,
-            inventory_object_id=action.invetory_object_id,
+            inventory_object_id=action.inventory_object_id,
         )
 
         return instruction, visual_features, target_text

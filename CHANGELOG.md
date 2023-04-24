@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.43.2](https://github.com/emma-simbot/policy/compare/v1.43.1...v1.43.2) (2023-04-24)
+
+
+### Bug Fixes
+
+* Update emma-datasets ([#774](https://github.com/emma-simbot/policy/issues/774)) ([0538396](https://github.com/emma-simbot/policy/commit/0538396995f2bdf2112acbf9b3658671e3c42960))
+
 ## [1.43.1](https://github.com/emma-simbot/policy/compare/v1.43.0...v1.43.1) (2023-04-24)
 
 

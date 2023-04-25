@@ -1438,7 +1438,7 @@ resolved_reference = "3b434c49f0d4a7654aefcbba48f28977b5883968"
 
 [[package]]
 name = "emma-datasets"
-version = "1.34.3"
+version = "1.34.4"
 description = ""
 category = "main"
 optional = false
@@ -1466,7 +1466,7 @@ rich-click = {version = "^1.4", extras = ["typer"]}
 type = "git"
 url = "https://github.com/emma-simbot/datasets"
 reference = "main"
-resolved_reference = "bcae1aa3a555297f2420d08adc7ef79d59a19e4a"
+resolved_reference = "787ecec2f8a1b282111f0b744afa235c38b51d14"
 
 [[package]]
 name = "entrypoints"

@@ -58,11 +58,13 @@ class SimBotActionPredictionProcessor:
     def _is_toggle_instruction(self, instruction: str) -> bool:
         return any(
             [
-                "toggle" in instruction,
-                "activate" in instruction,
-                "turn" in instruction,
-                "switch" in instruction,
-                "flip" in instruction,
+                " toggle " in instruction,
+                " activate " in instruction,
+                " turn " in instruction,
+                " switch " in instruction,
+                " flip " in instruction,
+                " push " in instruction,
+                " press " in instruction,
             ]
         )
 
@@ -121,6 +123,14 @@ class SimBotActionPredictionProcessor:
             return f"toggle everything's a carrot machine <frame_token_{frame_token_id}> <vis_token_{vis_token}>."
 
         # TODO: do we need force placing?
+        tried_to_pick_up_carrot_machine = (
+            vis_token
+            and "pickup" in prediction
+            and entity_labels[vis_token - 1] == "everything's a carrot machine"
+        )
+        if "carrot" in entity_labels and tried_to_pick_up_carrot_machine:
+            new_vis_token = entity_labels.index("carrot") + 1
+            return f"pick up carrot <frame_token_{frame_token_id}> <vis_token_{new_vis_token}> <stop>."
         return prediction
 
     def _special_colorchanger_button_case(

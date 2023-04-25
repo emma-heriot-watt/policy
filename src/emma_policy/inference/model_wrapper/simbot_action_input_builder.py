@@ -114,7 +114,7 @@ class SimBotActionInputBuilder:
             return False
 
         return previous_action.output.startswith(
-            "toggle everything's a carrot machine <frame_token_>"
+            "toggle everything's a carrot machine <frame_token_"
         )
 
     def _prepare_decoder_input_ids(

@@ -186,17 +186,13 @@ class SimBotActionPredictionProcessor:
     def _special_machine_case(
         self, instruction: Optional[str], prediction: str, entity_labels: Optional[list[str]]
     ) -> str:
-        if instruction is None or entity_labels is None:
+
+        # If there is no instruction or no entity labels return whatever we predicted
+        # If this is part of an action sequence of the model dont touch it.
+        if instruction is None or entity_labels is None or "<stop>" not in prediction:
             return prediction
 
-        is_toggle_instruction = any(
-            [
-                "toggle" in instruction,
-                "activate" in instruction,
-                "turn" in instruction,
-                "switch" in instruction,
-            ]
-        )
+        is_toggle_instruction = "toggle" in prediction
 
         is_place_instruction = any(
             [
@@ -215,10 +211,10 @@ class SimBotActionPredictionProcessor:
             return prediction
         if "everything's a carrot machine" in entity_labels and is_carrot_machine_instruction:
             token_id = entity_labels.index("everything's a carrot machine") + 1
-            if is_toggle_instruction:
-                return f"toggle everything's a carrot machine <frame_token_{frame_token_id}> <vis_token_{token_id}>."
-            elif is_place_instruction:
+            if is_place_instruction:
                 return f"place everything's a carrot machine <frame_token_{frame_token_id}> <vis_token_{token_id}> {self._stop_token}."
+            elif is_toggle_instruction:
+                return f"toggle everything's a carrot machine <frame_token_{frame_token_id}> <vis_token_{token_id}>."
         return prediction
 
     def _get_visual_token_from_prediction(self, prediction: str) -> Optional[int]:

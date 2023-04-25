@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.44.0](https://github.com/emma-simbot/policy/compare/v1.43.3...v1.44.0) (2023-04-25)
+
+
+### Features
+
+* show the entity to the annotation tool ([#780](https://github.com/emma-simbot/policy/issues/780)) ([af43ced](https://github.com/emma-simbot/policy/commit/af43ceda18be52c37c9a424a934faba8b839488f))
+
+
+### Bug Fixes
+
+* carrot case ([#779](https://github.com/emma-simbot/policy/issues/779)) ([14905bf](https://github.com/emma-simbot/policy/commit/14905bfdd7def51a41855b1e5b9e71224f1b3ab6))
+
 ## [1.43.3](https://github.com/emma-simbot/policy/compare/v1.43.2...v1.43.3) (2023-04-25)
 
 

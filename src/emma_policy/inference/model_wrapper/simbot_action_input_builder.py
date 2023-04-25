@@ -175,7 +175,8 @@ class SimBotActionInputBuilder:
             step_index.extend(idx - 1 for _ in step.features)
 
             if idx < total_steps:
-                previous_actions.append(step.output)
+                output = step.output.replace("</s>", "")
+                previous_actions.append(output)
 
         # concatenate all the previous actions to a string
         # ignore the last element as it is None (the current action has not been predicted yet)

@@ -16,37 +16,18 @@ class SimBotNLUPredictionProcessor:
         self, instruction: str, prediction: str, frame_features: list[EmmaExtractedFeatures]
     ) -> str:
         """Process the prediction."""
-        # object_name = self._get_target_object(prediction)
-        # new_prediction = self._overwrite_the_nlu_prediction(prediction, object_name)
-        # if new_prediction != prediction:
-        #     return new_prediction
-
-        # if object_name is None:
-        #     return prediction
-        # if prediction.startswith(SimBotNLUIntents.act_no_match.value):
-        #     return self._special_robotic_arm_button_case(
-        #         prediction=prediction,
-        #         frame_features=frame_features,
-        #     )
-        # elif prediction.startswith(SimBotNLUIntents.act_too_many_matches.value):
-        #     return self._rule_based_ambiguity_check(
-        #         prediction=prediction,
-        #         frame_features=frame_features,
-        #         object_name=object_name,
-        #     )
-        # return prediction
         object_name = self._get_target_object(prediction)
         if object_name is None:
             return prediction
 
         class_labels = self._get_detected_objects(frame_features=frame_features)
         if prediction.startswith(SimBotNLUIntents.act_no_match.value):
-            prediction = self._special_robotic_arm_button_case(
+            prediction = self._special_robotics_lab_button_case(
                 prediction=prediction,
                 class_labels=class_labels,
             )
 
-            prediction = self._special_machine_case(
+            prediction = self._special_carrot_machine_case(
                 instruction=instruction,
                 prediction=prediction,
                 class_labels=class_labels,
@@ -113,16 +94,21 @@ class SimBotNLUPredictionProcessor:
 
         return prediction
 
-    def _special_robotic_arm_button_case(
+    def _special_robotics_lab_button_case(
         self, prediction: str, class_labels: Optional[list[str]]
     ) -> str:
         if class_labels is None:
             return prediction
-        if "button" in prediction and "robot arm" in class_labels:
+        conditions = "button" in prediction and (
+            "robot arm" in class_labels
+            or "emotion tester" in class_labels
+            or "printer" in class_labels
+        )
+        if conditions:
             return self._default_prediction
         return prediction
 
-    def _special_machine_case(
+    def _special_carrot_machine_case(
         self, instruction: str, prediction: str, class_labels: Optional[list[str]]
     ) -> str:
         if class_labels is None:

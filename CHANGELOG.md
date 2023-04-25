@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.43.3](https://github.com/emma-simbot/policy/compare/v1.43.2...v1.43.3) (2023-04-25)
+
+
+### Bug Fixes
+
+* Frame token id in action output processor ([#778](https://github.com/emma-simbot/policy/issues/778)) ([b59e8f5](https://github.com/emma-simbot/policy/commit/b59e8f550f91312a4228c9a38efe8c38462bdff5))
+
 ## [1.43.2](https://github.com/emma-simbot/policy/compare/v1.43.1...v1.43.2) (2023-04-24)
 
 

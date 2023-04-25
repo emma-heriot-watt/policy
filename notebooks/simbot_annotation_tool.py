@@ -160,6 +160,7 @@ class ArenaSessionAnnotation:
             s3_sessions_bucket_url=s3_sessions_bucket_url,
             ignore_session_suffix=ignore_session_suffix,
         )
+
         sessions_dict = self._session_client.get_all_session_ids_from_bucket()
         self._session_ids = list(sessions_dict.keys())
         self._session_timestamps = list(sessions_dict.values())
@@ -217,7 +218,10 @@ class ArenaSessionAnnotation:
         agent_turn_metadata.pop("viewpoints", None)
         agent_turn_metadata.pop("unique_room_names", None)
         agent_turn_metadata["actions"].pop("dialog", None)
+
+        inventory = agent_turn_metadata["state"]["inventory"]
         agent_turn_metadata.pop("state", None)
+        agent_turn_metadata["inventory"] = inventory
         return agent_turn_metadata
 
     def get_images_for_turn(self, current_session_turn: dict[str, Any]) -> list[str]:

@@ -71,9 +71,12 @@ class SimBotActionPredictionProcessor:
     ) -> str:
         if entity_labels is None:
             return prediction
-        if "robot arm" in entity_labels and "button" in prediction:
+        frame_token_id = self._get_frame_token_from_prediction(prediction)
+        if "robot arm" in entity_labels and "button" in prediction and frame_token_id:
             token_id = entity_labels.index("robot arm") + 1
-            return f"toggle robot arm <frame_token_1> <vis_token_{token_id}> <stop>."
+            return (
+                f"toggle robot arm <frame_token_{frame_token_id}> <vis_token_{token_id}> <stop>."
+            )
         return prediction
 
     def _special_carrot_case(
@@ -96,8 +99,9 @@ class SimBotActionPredictionProcessor:
             and class_labels[vis_token - 1] == "everything's a carrot machine"
             and "toggle" in prediction
         )
-        if prediction_toggles_carrot_machine:
-            return f"toggle everything's a carrot machine <frame_token_1> <vis_token_{vis_token}>."
+        frame_token_id = self._get_frame_token_from_prediction(prediction)
+        if prediction_toggles_carrot_machine and frame_token_id:
+            return f"toggle everything's a carrot machine <frame_token_{frame_token_id}> <vis_token_{vis_token}>."
         return prediction
 
     def _special_button_case(
@@ -114,9 +118,9 @@ class SimBotActionPredictionProcessor:
                 and "button" not in prediction
             )
 
-            if should_modify_prediction:
+            frame_token_id = self._get_frame_token_from_prediction(prediction)
+            if should_modify_prediction and frame_token_id:
                 # pickup bowl <frame_token_11> <vis_token_5> -> 11> 11> <vis_token_5> -> 11
-                frame_token_id = prediction.split("frame_token_")[1].split(">")[0]
                 token_id = entity_labels.index(color_button) + 1
                 # return f"toggle button <frame_token_{frame_token_id}> <vis_token_{token_id}> {self._stop_token}."
                 return self._make_toggle("button", frame_token_id, token_id)
@@ -142,8 +146,9 @@ class SimBotActionPredictionProcessor:
             return prediction
 
         # pickup bowl <frame_token_11> <vis_token_5> -> 11> 11> <vis_token_5> -> 11
-        frame_token_id = prediction.split("frame_token_")[1].split(">")[0]
-
+        frame_token_id = self._get_frame_token_from_prediction(prediction)
+        if frame_token_id is None:
+            return prediction
         laser_condition = "laser monitor" in entity_labels
         if "laser" in instruction and laser_condition:
             token_id = entity_labels.index("laser monitor") + 1
@@ -175,7 +180,7 @@ class SimBotActionPredictionProcessor:
             return self._make_toggle("portal generator monitor", frame_token_id, token_id)
         return prediction
 
-    def _make_toggle(self, object_class: str, frame_token: str, vis_token: int) -> str:
+    def _make_toggle(self, object_class: str, frame_token: int, vis_token: int) -> str:
         return f"toggle {object_class} <frame_token_{frame_token}> <vis_token_{vis_token}> {self._stop_token}."
 
     def _special_machine_case(
@@ -205,7 +210,9 @@ class SimBotActionPredictionProcessor:
         )
 
         # pickup bowl <frame_token_11> <vis_token_5> -> 11> 11> <vis_token_5> -> 11
-        frame_token_id = prediction.split("frame_token_")[1].split(">")[0]
+        frame_token_id = self._get_frame_token_from_prediction(prediction)
+        if frame_token_id is None:
+            return prediction
         if "everything's a carrot machine" in entity_labels and is_carrot_machine_instruction:
             token_id = entity_labels.index("everything's a carrot machine") + 1
             if is_toggle_instruction:
@@ -217,6 +224,11 @@ class SimBotActionPredictionProcessor:
     def _get_visual_token_from_prediction(self, prediction: str) -> Optional[int]:
         if "<vis_token" in prediction:
             return int(prediction.split("<vis_token_")[-1].split(">")[0])
+        return None
+
+    def _get_frame_token_from_prediction(self, prediction: str) -> Optional[int]:
+        if "<frame_token" in prediction:
+            return int(prediction.split("<frame_token_")[-1].split(">")[0])
         return None
 
 

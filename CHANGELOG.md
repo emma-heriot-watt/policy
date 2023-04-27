@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.45.1](https://github.com/emma-simbot/policy/compare/v1.45.0...v1.45.1) (2023-04-27)
+
+
+### Bug Fixes
+
+* sticky note patch ([#785](https://github.com/emma-simbot/policy/issues/785)) ([e6f64d3](https://github.com/emma-simbot/policy/commit/e6f64d3cacf6aab444a2e29899479aaec84c4f25))
+
 ## [1.45.0](https://github.com/emma-simbot/policy/compare/v1.44.2...v1.45.0) (2023-04-27)
 
 

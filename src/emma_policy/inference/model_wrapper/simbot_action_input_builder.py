@@ -137,11 +137,21 @@ class SimBotActionInputBuilder:
         if ignore_instruction:
             return None
 
-        patterns = "|".join(["sticky", "clue", "hint", "postit", "posted"])
+        patterns = "|".join(
+            [
+                r"\S?sticky\s+",
+                r"\S?stickynote\s+",
+                r"\S?note\S?",
+                r"\S?clue\S?",
+                r"\S?hint\S?",
+                r"\S?postit\S?",
+                r"\S?posted\S?",
+            ]
+        )
         search_pattern = f"({patterns})"
         search_result = re.search(search_pattern, request.dialogue_history[-1].utterance)
 
-        if search_result is not None and "Sticky Note" not in entity_labels:
+        if search_result is not None and "Sticky Note" in entity_labels:
             vis_token = entity_labels.index("Sticky Note") + 1
             if is_action:
                 return f"goto sticky note <frame_token_1> <vis_token_{vis_token}> <stop>.</s>"

@@ -1,3 +1,4 @@
+import re
 from typing import Optional
 
 from emma_common.datamodels import EmmaExtractedFeatures
@@ -16,6 +17,10 @@ class SimBotNLUPredictionProcessor:
         self, instruction: str, prediction: str, frame_features: list[EmmaExtractedFeatures]
     ) -> str:
         """Process the prediction."""
+        sticky_note_case = self._check_sticky_note(instruction, prediction, frame_features)
+        if sticky_note_case is not None:
+            return sticky_note_case
+
         object_name = self._get_target_object(prediction)
         if object_name is None:
             return prediction
@@ -191,3 +196,41 @@ class SimBotNLUPredictionProcessor:
             return "<act><no_match> portal generator monitor"
 
         return prediction
+
+    def _check_sticky_note(
+        self, instruction: str, prediction: str, frame_features: list[EmmaExtractedFeatures]
+    ) -> Optional[str]:
+        """Check if the instruction refers to a sticky note."""
+        entity_labels = frame_features[0].entity_labels
+
+        ignore_instruction = any(
+            [
+                len(frame_features) > 1,
+                entity_labels is None,
+            ]
+        )
+        if ignore_instruction:
+            return None
+
+        patterns = "|".join(
+            [
+                r"\S?sticky\s+",
+                r"\S?stickynote\s+",
+                r"\S?note\S?",
+                r"\S?clue\S?",
+                r"\S?hint\S?",
+                r"\S?postit\S?",
+                r"\S?posted\S?",
+            ]
+        )
+        search_pattern = f"({patterns})"
+        search_result = re.search(search_pattern, instruction)
+
+        if search_result is None:
+            return None
+
+        if prediction.startswith(SimBotNLUIntents.search.value):
+            return f"{SimBotNLUIntents.search.value} sticky note"
+        if "Sticky Note" in entity_labels:
+            return self._default_prediction
+        return "<act><no_match> sticky note"

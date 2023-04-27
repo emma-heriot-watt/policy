@@ -143,12 +143,6 @@ async def generate(request: Request, response: Response) -> str:
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         raise request_err
 
-    sticky_note_case = api_store["input_builder"].check_sticky_note_case(
-        simbot_request, default_prediction=DEFAULT_ACTION
-    )
-    if sticky_note_case is not None:
-        return sticky_note_case
-
     with tracer.start_as_current_span("Model inference"):
         logger.debug("Preparing the model input")
         # If the environment history is greater than 1,

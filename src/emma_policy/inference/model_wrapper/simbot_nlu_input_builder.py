@@ -1,5 +1,6 @@
 import logging
-from typing import Any
+import re
+from typing import Any, Optional
 
 import torch
 from emma_common.datamodels import EmmaPolicyRequest
@@ -47,6 +48,38 @@ class SimBotNLUInputBuilder:
             visual_features=visual_features, encoded_inputs=encoded_inputs
         )
         return self._create_emma_dataset_batch(dataset_item), instruction
+
+    def check_sticky_note_case(
+        self, request: EmmaPolicyRequest, default_prediction: str
+    ) -> Optional[str]:
+        """Check if the instruction refers to a sticky note."""
+        features = request.environment_history[-1].features
+
+        entity_labels = features[0].entity_labels
+
+        ignore_instruction = any(
+            [
+                len(request.environment_history) > 1,
+                len(features) > 1,
+                entity_labels is None,
+                len(request.dialogue_history) > 1,
+                request.dialogue_history[-1].role == "agent",
+            ]
+        )
+        if ignore_instruction:
+            return None
+
+        if "Sticky Note" in entity_labels:
+            patterns = "|".join(["sticky", "clue", "hint", "postit", "posted"])
+            search_pattern = f"({patterns})"
+            search_result = re.search(search_pattern, request.dialogue_history[-1].utterance)
+
+            if search_result is not None:
+                return default_prediction
+        else:
+            return "<act><no_match> sticky note"
+
+        return None
 
     def _prepare_input_text(self, instruction: str) -> BatchEncoding:
         source_text = f"Predict the system act: {instruction}"

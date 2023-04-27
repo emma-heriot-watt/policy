@@ -169,6 +169,12 @@ async def generate_find(request: Request, response: Response) -> list[str]:
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         raise request_err
 
+    sticky_note_case = api_store["input_builder"].check_sticky_note_case(
+        simbot_request, is_action=False
+    )
+    if sticky_note_case is not None:
+        return [sticky_note_case]
+
     (_, batch, decoder_input_ids, step_index) = api_store["input_builder"](
         simbot_request, task=Task.visual_grounding
     )
@@ -285,6 +291,12 @@ async def generate(request: Request, response: Response) -> str:
         logging.exception("Unable to parse request", exc_info=request_err)
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         raise request_err
+
+    sticky_note_case = api_store["input_builder"].check_sticky_note_case(
+        simbot_request, is_action=True
+    )
+    if sticky_note_case is not None:
+        return sticky_note_case
 
     if api_store["input_builder"].check_carrot_case(simbot_request):
         return "dummy look down <stop>."

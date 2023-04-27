@@ -99,6 +99,20 @@ class SimBotNLUPredictionProcessor:
 
         return prediction
 
+    def _is_toggle_instruction(self, instruction: str) -> bool:
+        return any(
+            [
+                " toggle " in instruction,
+                " activate " in instruction,
+                " turn " in instruction,
+                " switch " in instruction,
+                " flip " in instruction,
+                " push " in instruction,
+                " press " in instruction,
+                " use " in instruction,
+            ]
+        )
+
     def _special_robotics_lab_button_case(
         self, prediction: str, class_labels: Optional[list[str]]
     ) -> str:
@@ -119,15 +133,7 @@ class SimBotNLUPredictionProcessor:
         if class_labels is None:
             return prediction
 
-        is_toggle_instruction = any(
-            [
-                "toggle" in instruction,
-                "activate" in instruction,
-                "turn" in instruction,
-                "switch" in instruction,
-                "flip" in instruction,
-            ]
-        )
+        is_toggle_instruction = self._is_toggle_instruction(instruction)
 
         is_place_instruction = any(
             [
@@ -152,14 +158,7 @@ class SimBotNLUPredictionProcessor:
     def _special_monitor_toggle_case(  # noqa: WPS212, WPS231
         self, instruction: str, prediction: str, class_labels: Optional[list[str]]
     ) -> str:
-        is_toggle_instruction = any(
-            [
-                "toggle" in instruction,
-                "activate" in instruction,
-                "turn" in instruction,
-                "switch" in instruction,
-            ]
-        )
+        is_toggle_instruction = self._is_toggle_instruction(instruction)
         if class_labels is None or not is_toggle_instruction:
             return prediction
 

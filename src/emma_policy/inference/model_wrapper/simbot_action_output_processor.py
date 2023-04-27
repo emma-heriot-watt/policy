@@ -65,6 +65,7 @@ class SimBotActionPredictionProcessor:
                 " flip " in instruction,
                 " push " in instruction,
                 " press " in instruction,
+                " use " in instruction,
             ]
         )
 

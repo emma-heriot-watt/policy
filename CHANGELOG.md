@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.45.6](https://github.com/emma-simbot/policy/compare/v1.45.5...v1.45.6) (2023-04-28)
+
+
+### Bug Fixes
+
+* coffee unmaker patch ([#790](https://github.com/emma-simbot/policy/issues/790)) ([edeed57](https://github.com/emma-simbot/policy/commit/edeed57cf929ecbd08a6a083f20991ae5e6de380))
+
 ## [1.45.5](https://github.com/emma-simbot/policy/compare/v1.45.4...v1.45.5) (2023-04-28)
 
 

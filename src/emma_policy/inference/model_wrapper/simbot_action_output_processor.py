@@ -53,7 +53,11 @@ class SimBotActionPredictionProcessor:
                 prediction_after_special_monitor, entity_labels
             )
 
-            return prediction_after_carrot
+            prediction_after_cartridge = self._special_cartridge_case(
+                instruction, prediction_after_carrot, entity_labels
+            )
+
+            return prediction_after_cartridge
         return prediction
 
     def _is_toggle_instruction(self, instruction: str) -> bool:
@@ -106,6 +110,25 @@ class SimBotActionPredictionProcessor:
                 return f"toggle {entity} <frame_token_{frame_token_id}> <vis_token_{token_id}> <stop>."
         return prediction
 
+    def _special_cartridge_case(
+        self, instruction: str, prediction: str, entity_labels: list[str]
+    ) -> str:
+        should_ignore = (
+            "<stop>" not in prediction
+            or "cartridge" not in instruction
+            or "pickup" not in prediction
+        )
+        if should_ignore:
+            return prediction
+
+        vis_token = self._get_visual_token_from_prediction(prediction)
+        frame_token_id = self._get_frame_token_from_prediction(prediction)
+        if "printer cartridge" not in entity_labels or vis_token is None or frame_token_id is None:
+            return prediction
+
+        new_vis_token = entity_labels.index("printer cartridge") + 1
+        return f"pickup printer cartridge <frame_token_{frame_token_id}> <vis_token_{new_vis_token}> <stop>."
+
     def _special_carrot_case(self, prediction: str, entity_labels: list[str]) -> str:
         """Remove the <stop> token whenever we are toggling the carrot machine.
 
@@ -132,7 +155,9 @@ class SimBotActionPredictionProcessor:
         )
         if "carrot" in entity_labels and tried_to_pick_up_carrot_machine:
             new_vis_token = entity_labels.index("carrot") + 1
-            return f"pick up carrot <frame_token_{frame_token_id}> <vis_token_{new_vis_token}> <stop>."
+            return (
+                f"pickup carrot <frame_token_{frame_token_id}> <vis_token_{new_vis_token}> <stop>."
+            )
         return prediction
 
     def _special_colorchanger_button_case(

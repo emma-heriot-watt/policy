@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.45.4](https://github.com/emma-simbot/policy/compare/v1.45.3...v1.45.4) (2023-04-28)
+
+
+### Bug Fixes
+
+* colorchanger patch ([#788](https://github.com/emma-simbot/policy/issues/788)) ([14994e9](https://github.com/emma-simbot/policy/commit/14994e9602f0fd609518a025b5ecdddef9f63036))
+
 ## [1.45.3](https://github.com/emma-simbot/policy/compare/v1.45.2...v1.45.3) (2023-04-28)
 
 

@@ -104,6 +104,9 @@ class SimBotActionPredictionProcessor:
             elif "printer" in entity_labels:
                 token_id = entity_labels.index("printer") + 1
                 entity = "printer"
+            elif "coffee unmaker" in entity_labels:
+                token_id = entity_labels.index("coffee unmaker") + 1
+                entity = "coffee unmaker"
 
             # TODO: check if we should only replace the prediction when no computer is present
             if token_id is not None and frame_token_id is not None:

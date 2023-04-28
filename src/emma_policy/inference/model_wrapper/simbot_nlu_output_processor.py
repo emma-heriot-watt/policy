@@ -130,10 +130,11 @@ class SimBotNLUPredictionProcessor:
     ) -> str:
         if class_labels is None:
             return prediction
-        conditions = "button" in prediction and (
+        conditions = "button" in prediction and (  # noqa: WPS222
             "robot arm" in class_labels
             or "emotion tester" in class_labels
             or "printer" in class_labels
+            or "coffee unmaker" in class_labels
         )
         if conditions:
             return self._default_prediction

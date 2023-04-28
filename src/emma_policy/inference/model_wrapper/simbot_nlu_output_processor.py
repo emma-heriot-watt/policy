@@ -37,11 +37,23 @@ class SimBotNLUPredictionProcessor:
                 prediction=prediction,
                 class_labels=class_labels,
             )
+
+            prediction = self._special_color_changer_case(
+                instruction=instruction,
+                prediction=prediction,
+                class_labels=class_labels,
+            )
         elif prediction.startswith(SimBotNLUIntents.act_too_many_matches.value):
             prediction = self._rule_based_ambiguity_check(
                 prediction=prediction,
                 class_labels=class_labels,
                 object_name=object_name,
+            )
+        elif prediction.startswith(SimBotNLUIntents.search.value):
+            prediction = self._special_color_changer_case(
+                instruction=instruction,
+                prediction=prediction,
+                class_labels=class_labels,
             )
         if prediction.startswith(SimBotNLUIntents.act.value):
             prediction = self._special_monitor_toggle_case(
@@ -125,6 +137,25 @@ class SimBotNLUPredictionProcessor:
         )
         if conditions:
             return self._default_prediction
+        return prediction
+
+    def _special_color_changer_case(
+        self, instruction: str, prediction: str, class_labels: Optional[list[str]]
+    ) -> str:
+        if class_labels is None:
+            return prediction
+
+        pattern = r".*(the )?(red|blue|green)?( one| button)?\.$"
+        match = re.search(pattern, instruction)
+        if match is not None:
+            color = re.search("(red|blue|green)", match.group()).group()  # type: ignore[union-attr]
+            if color is not None:
+                color_button = f"{color} button"
+                if color_button in class_labels:
+                    color_button = f"{color} button"
+                    if color_button in class_labels:
+                        return self._default_prediction  # noqa: WPS220
+
         return prediction
 
     def _special_carrot_machine_case(

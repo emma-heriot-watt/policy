@@ -1,3 +1,4 @@
+import re
 from typing import Optional
 
 import torch
@@ -140,18 +141,19 @@ class SimBotActionPredictionProcessor:
         if "<stop>" not in prediction:
             return prediction
 
-        for color in self._button_colors:
-            color_button = f"{color} button"
-            should_modify_prediction = (
-                color_button in entity_labels
-                and color in instruction
-                and "button" not in prediction
-            )
+        frame_token_id = self._get_frame_token_from_prediction(prediction)
+        if frame_token_id is None:
+            return prediction
 
-            frame_token_id = self._get_frame_token_from_prediction(prediction)
-            if should_modify_prediction and frame_token_id:
-                token_id = entity_labels.index(color_button) + 1
-                return self._make_toggle("button", frame_token_id, token_id)
+        pattern = r".*(the )?(red|blue|green)?( one| button)?\.$"
+        match = re.search(pattern, instruction)
+        if match is not None:
+            color = re.search("(red|blue|green)", match.group()).group()  # type: ignore[union-attr]
+            color_button = f"{color} button"
+            if color is not None:
+                if color_button in entity_labels:
+                    token_id = entity_labels.index(color_button) + 1
+                    return self._make_toggle("button", frame_token_id, token_id)
 
         return prediction
 

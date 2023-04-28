@@ -145,15 +145,20 @@ class SimBotActionPredictionProcessor:
         if frame_token_id is None:
             return prediction
 
-        pattern = r".*(the )?(red|blue|green)?( one| button)?\.$"
+        pattern = r".*(the )?(red|blue|green)( one| button)?\.$"
         match = re.search(pattern, instruction)
         if match is not None:
-            color = re.search("(red|blue|green)", match.group()).group()  # type: ignore[union-attr]
-            color_button = f"{color} button"
-            if color is not None:
-                if color_button in entity_labels:
-                    token_id = entity_labels.index(color_button) + 1
-                    return self._make_toggle("button", frame_token_id, token_id)
+            color_result = re.search("(red|blue|green)", match.group())
+            if color_result is not None:
+                color = color_result.group()
+                color_button = f"{color} button"
+                if color is not None:
+                    if color_button in entity_labels:
+                        token_id = entity_labels.index(color_button) + 1  # noqa: WPS220
+                        toggle_action = self._make_toggle(  # noqa: WPS220
+                            "button", frame_token_id, token_id
+                        )
+                        return toggle_action  # noqa: WPS220
 
         return prediction
 

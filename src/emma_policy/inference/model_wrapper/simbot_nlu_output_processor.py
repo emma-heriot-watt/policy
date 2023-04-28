@@ -145,16 +145,15 @@ class SimBotNLUPredictionProcessor:
         if class_labels is None:
             return prediction
 
-        pattern = r".*(the )?(red|blue|green)?( one| button)?\.$"
+        pattern = r".*(the )?(red|blue|green)( one| button)?\.$"
         match = re.search(pattern, instruction)
         if match is not None:
-            color = re.search("(red|blue|green)", match.group()).group()  # type: ignore[union-attr]
-            if color is not None:
+            color_result = re.search("(red|blue|green)", match.group())
+            if color_result is not None:
+                color = color_result.group()  # type: ignore[union-attr]
                 color_button = f"{color} button"
                 if color_button in class_labels:
-                    color_button = f"{color} button"
-                    if color_button in class_labels:
-                        return self._default_prediction  # noqa: WPS220
+                    return self._default_prediction
 
         return prediction
 

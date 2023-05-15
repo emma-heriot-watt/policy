@@ -45,7 +45,7 @@ class SimBotActionInputBuilder:
         """
         inventory = EMPTY_INVENTORY if request.inventory is None else request.inventory
         instruction = self._parse_dialogue_from_request(
-            request
+            request, task=task
         )  # @TODO check whether gfh should change instructions
         (
             feature_dicts,
@@ -179,8 +179,7 @@ class SimBotActionInputBuilder:
         return None
 
     def _parse_dialogue_from_request(
-        self,
-        request: EmmaPolicyRequest,
+        self, request: EmmaPolicyRequest, task: Task
     ) -> Optional[str]:
         """Parse the dialogue for the current request."""
         instruction = None
@@ -193,11 +192,25 @@ class SimBotActionInputBuilder:
                 utterance_text = f"{utterance_text}."
             dialogue.append(utterance_text)
 
+        instruction = self._get_instruction_from_dialogue(dialogue, task)
+
         if dialogue:
-            instruction = " ".join(dialogue).lower()
             logger.debug(f"Found instruction: {instruction}")
         else:
             logger.debug(f"No instruction for request: {request}")
+
+        return instruction
+
+    def _get_instruction_from_dialogue(self, dialogue: list[str], task: Task) -> Optional[str]:
+        if not dialogue:
+            return None
+        if task == Task.action_execution:
+            instruction = " ".join(dialogue).lower()
+        else:
+            if len(dialogue) > 1:
+                raise ValueError("Found more than one utterance in the dialogue history for VG.")
+            instruction = dialogue[-1].lower()
+            instruction = instruction.split("<<driver>>")[0].strip()
         return instruction
 
     def _parse_environment_history_from_request(

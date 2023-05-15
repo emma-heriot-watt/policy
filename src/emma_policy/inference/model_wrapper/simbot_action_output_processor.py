@@ -22,9 +22,10 @@ def post_process_action(action: str) -> str:
 class SimBotActionPredictionProcessor:
     """Process SimBot Action predictions."""
 
-    def __init__(self) -> None:
+    def __init__(self, enable_prediction_patching: bool = True) -> None:
         self._button_colors = ["blue", "green", "red"]
         self._stop_token = "<stop>"  # noqa: S105
+        self._enable_prediction_patching = enable_prediction_patching
 
     def __call__(
         self,
@@ -35,6 +36,9 @@ class SimBotActionPredictionProcessor:
         """Process the prediction."""
         entity_labels = self._get_detected_objects(frame_features)
         if instruction is None or entity_labels is None:
+            return prediction
+
+        if not self._enable_prediction_patching:
             return prediction
 
         if "frame_token" in prediction and "vis_token" in prediction:

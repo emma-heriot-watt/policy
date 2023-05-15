@@ -50,6 +50,7 @@ class ApiSettings(BaseSettings):
     device: str = "cpu"
     raw_text_match_json: Path = Path("storage/constants/simbot_low_level_examples.json")
     raw_distance_threshold: int = 2
+    enable_prediction_patching: bool = True
 
     # Observability
     traces_to_opensearch: bool = False
@@ -113,7 +114,9 @@ async def startup_event() -> None:
     )
     logging.info(f"Model is on device: {api_store['model'].device}")
 
-    api_store["action_output_processor"] = SimBotActionPredictionProcessor()
+    api_store["action_output_processor"] = SimBotActionPredictionProcessor(
+        enable_prediction_patching=settings.enable_prediction_patching
+    )
     api_store["find_output_processor"] = SimBotFindPredictionProcessor()
 
     api_store["raw_text_matcher"] = SimBotActionRawTextMatcher(

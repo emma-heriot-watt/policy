@@ -49,6 +49,7 @@ class SimBotNLUInputBuilder:
         return self._create_emma_dataset_batch(dataset_item), instruction
 
     def _prepare_input_text(self, instruction: str) -> BatchEncoding:
+        instruction = instruction.split("<<driver>>")[0].strip()
         source_text = f"Predict the system act: {instruction}"
         return self._tokenizer.encode_plus(source_text, return_tensors="pt", truncation=True)
 

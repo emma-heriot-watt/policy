@@ -9,11 +9,17 @@ from emma_policy.datamodules.simbot_nlu_dataset import SimBotNLUIntents
 class SimBotNLUPredictionProcessor:
     """Process SimBot NLU predictions."""
 
-    def __init__(self, valid_action_types: list[str], default_prediction: str) -> None:
+    def __init__(
+        self,
+        valid_action_types: list[str],
+        default_prediction: str,
+        enable_prediction_patching: bool = True,
+    ) -> None:
         self.valid_action_types = valid_action_types
         self._default_prediction = default_prediction
+        self._enable_prediction_patching = enable_prediction_patching
 
-    def __call__(
+    def __call__(  # noqa: WPS231
         self, instruction: str, prediction: str, frame_features: list[EmmaExtractedFeatures]
     ) -> str:
         """Process the prediction."""
@@ -25,42 +31,43 @@ class SimBotNLUPredictionProcessor:
         if object_name is None:
             return prediction
 
-        class_labels = self._get_detected_objects(frame_features=frame_features)
-        if prediction.startswith(SimBotNLUIntents.act_no_match.value):
-            prediction = self._special_robotics_lab_button_case(
-                prediction=prediction,
-                class_labels=class_labels,
-            )
+        if self._enable_prediction_patching:
+            class_labels = self._get_detected_objects(frame_features=frame_features)
+            if prediction.startswith(SimBotNLUIntents.act_no_match.value):
+                prediction = self._special_robotics_lab_button_case(
+                    prediction=prediction,
+                    class_labels=class_labels,
+                )
 
-            prediction = self._special_carrot_machine_case(
-                instruction=instruction,
-                prediction=prediction,
-                class_labels=class_labels,
-            )
+                prediction = self._special_carrot_machine_case(
+                    instruction=instruction,
+                    prediction=prediction,
+                    class_labels=class_labels,
+                )
 
-            prediction = self._special_color_changer_case(
-                instruction=instruction,
-                prediction=prediction,
-                class_labels=class_labels,
-            )
-        elif prediction.startswith(SimBotNLUIntents.act_too_many_matches.value):
-            prediction = self._rule_based_ambiguity_check(
-                prediction=prediction,
-                class_labels=class_labels,
-                object_name=object_name,
-            )
-        elif prediction.startswith(SimBotNLUIntents.search.value):
-            prediction = self._special_color_changer_case(
-                instruction=instruction,
-                prediction=prediction,
-                class_labels=class_labels,
-            )
-        if prediction.startswith(SimBotNLUIntents.act.value):
-            prediction = self._special_monitor_toggle_case(
-                instruction=instruction,
-                prediction=prediction,
-                class_labels=class_labels,
-            )
+                prediction = self._special_color_changer_case(
+                    instruction=instruction,
+                    prediction=prediction,
+                    class_labels=class_labels,
+                )
+            elif prediction.startswith(SimBotNLUIntents.act_too_many_matches.value):
+                prediction = self._rule_based_ambiguity_check(
+                    prediction=prediction,
+                    class_labels=class_labels,
+                    object_name=object_name,
+                )
+            elif prediction.startswith(SimBotNLUIntents.search.value):
+                prediction = self._special_color_changer_case(
+                    instruction=instruction,
+                    prediction=prediction,
+                    class_labels=class_labels,
+                )
+            if prediction.startswith(SimBotNLUIntents.act.value):
+                prediction = self._special_monitor_toggle_case(
+                    instruction=instruction,
+                    prediction=prediction,
+                    class_labels=class_labels,
+                )
         new_prediction = self._overwrite_the_nlu_prediction(prediction, object_name)
         return new_prediction
 

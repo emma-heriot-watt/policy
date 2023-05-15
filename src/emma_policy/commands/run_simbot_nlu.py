@@ -44,6 +44,7 @@ class ApiSettings(BaseSettings):
     model_checkpoint_path: FilePath = Path("storage/model/checkpoints/simbot/nlu.ckpt")
     model_name: str = "heriot-watt/emma-base"
     device: str = "cpu"
+    enable_prediction_patching: bool = True
 
     # Observability
     traces_to_opensearch: bool = False
@@ -104,6 +105,7 @@ async def startup_event() -> None:
     api_store["output_processor"] = SimBotNLUPredictionProcessor(
         valid_action_types=api_store["valid_action_types"],
         default_prediction=DEFAULT_ACTION,
+        enable_prediction_patching=settings.enable_prediction_patching,
     )
     logging.info(f"Loading model on device `{settings.device}`")
     api_store["model"] = load_model(

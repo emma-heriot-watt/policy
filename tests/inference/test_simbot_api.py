@@ -61,7 +61,7 @@ def test_simbot_action_builder_parses_dialogue_history(
     """Test that the action builder parses a request properly."""
     tokenizer = AutoTokenizer.from_pretrained("heriot-watt/emma-base")
     builder = SimBotActionInputBuilder(tokenizer=tokenizer)
-    output = builder._parse_dialogue_from_request(input_request)
+    output = builder._parse_dialogue_from_request(input_request, task=Task.action_execution)
     assert output == target
     if output is not None:
         input_text = builder._prepare_input_text(instruction=output, task=Task.action_execution)

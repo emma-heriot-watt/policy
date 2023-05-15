@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.46.0](https://github.com/emma-simbot/policy/compare/v1.45.7...v1.46.0) (2023-05-15)
+
+
+### Features
+
+* add flag to disable missing inventory ([#793](https://github.com/emma-simbot/policy/issues/793)) ([4a0ad98](https://github.com/emma-simbot/policy/commit/4a0ad98ce80c7ce33123766fcf22847f55491215))
+
 ## [1.45.7](https://github.com/emma-simbot/policy/compare/v1.45.6...v1.45.7) (2023-05-15)
 
 

@@ -134,7 +134,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         self._prepare_data()
         arena_definitions = get_arena_definitions()
         self._object_assets_to_names = arena_definitions["asset_to_label"]
-        self._label_to_idx = arena_definitions["label_to_idx"]
+        self._label_to_idx: dict[str, int] = arena_definitions["label_to_idx"]
         self._special_name_cases = arena_definitions["special_asset_to_readable_name"]
         self._image_width = arena_definitions["image_width"]
         self._image_height = arena_definitions["image_height"]
@@ -162,11 +162,8 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         if instance.actions[0].type == "Search":  # noqa: WPS204
             instruction, visual_features, target_text = self.prepare_search_instance(instance)
         else:
-            instruction, target_text = self.prepare_action_instance(instance)
-            frame_idx = self._get_instance_frame(instance, target_text.lower())
-            visual_features = self._load_visual_features(
-                features_path=instance.features_path[0], frame_idx=frame_idx
-            )
+            instruction, visual_features, target_text = self.prepare_action_instance(instance)
+
         source_text = f"Predict the system act: {format_instruction(instruction)}"
         if "inventory:" not in source_text:
             raise AssertionError(f"{source_text}")
@@ -208,55 +205,72 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             raw_target=raw_target,
         )
 
-    def prepare_action_instance(self, instance: SimBotInstructionInstance) -> tuple[str, str]:
+    def prepare_action_instance(
+        self, instance: SimBotInstructionInstance
+    ) -> tuple[str, EmmaVisualFeatures, str]:
         """Prepare the source and target text for an action instance."""
         if instance.cdf_augmentation:
-            instruction, target_text = self.prepare_cdf_action_instance(instance)
-        elif instance.synthetic:
-            instruction, target_text = self.prepare_synthetic_action_instance(instance)
+            instruction, visual_features, target_text = self.prepare_cdf_action_instance(instance)
         else:
-            instruction, target_text = self.prepare_human_action_instance(instance)
+            if instance.synthetic:
+                instruction, target_text = self.prepare_synthetic_action_instance(instance)
+            else:
+                instruction, target_text = self.prepare_human_action_instance(instance)
+            frame_idx = self._get_instance_frame(instance, target_text.lower())
+            visual_features = self._load_visual_features(
+                features_path=instance.features_path[0], frame_idx=frame_idx
+            )
 
-        return instruction, target_text
+        return instruction, visual_features, target_text
 
-    def prepare_cdf_action_instance(self, instance: SimBotInstructionInstance) -> tuple[str, str]:
+    def prepare_cdf_action_instance(
+        self, instance: SimBotInstructionInstance
+    ) -> tuple[str, EmmaVisualFeatures, str]:
         """Prepare the instruction and target text for a human instruction."""
-        high_level_key = self.high_level_paraphraser(instance.cdf_highlevel_key)
-        instruction = random.choice(high_level_key.paraphrases)
+        if random.random() < self._act_one_match_proba:
+            high_level_key = self.high_level_paraphraser(instance.cdf_highlevel_key)
+            instruction = random.choice(high_level_key.paraphrases)
 
-        holding_object = instance.actions[0].inventory_object_id
-        missing_holding_object = (
-            holding_object is not None
-            and random.random() < self._one_match_to_missining_inventory_proba
-        )
-        if missing_holding_object:
-            instance.actions[0].inventory_object_id = None
-            target_text = SimBotNLUIntents.act_missing_inventory.value
+            holding_object = instance.actions[0].inventory_object_id
+            missing_holding_object = (
+                holding_object is not None
+                and random.random() < self._one_match_to_missining_inventory_proba
+            )
+            if missing_holding_object:
+                instance.actions[0].inventory_object_id = None
+                target_text = SimBotNLUIntents.act_missing_inventory.value
 
-            object_readable_name = get_object_readable_name_from_object_id(
-                object_id=holding_object,
+                object_readable_name = get_object_readable_name_from_object_id(
+                    object_id=holding_object,
+                    object_assets_to_names=self._object_assets_to_names,
+                    special_name_cases=self._special_name_cases,
+                )
+
+            else:
+                target_text = SimBotNLUIntents.act_one_match.value
+                object_readable_name = self._get_target_object_name(
+                    action=instance.actions[0],
+                    name_type="readable",
+                )
+
+            frame_idx = self._get_instance_frame(instance, target_text.lower())
+            visual_features = self._load_visual_features(
+                features_path=instance.features_path[0], frame_idx=frame_idx
+            )
+            instruction = add_inventory_to_instruction(
                 object_assets_to_names=self._object_assets_to_names,
                 special_name_cases=self._special_name_cases,
+                instruction=instruction,
+                inventory_object_id=instance.actions[0].inventory_object_id,
             )
+
+            if object_readable_name:
+                target_text = f"{target_text} {object_readable_name}"
 
         else:
-            target_text = SimBotNLUIntents.act_one_match.value
-            object_readable_name = self._get_target_object_name(
-                action=instance.actions[0],
-                name_type="readable",
-            )
+            instruction, visual_features, target_text = self._sample_cdf_no_match(instance)
 
-        instruction = add_inventory_to_instruction(
-            object_assets_to_names=self._object_assets_to_names,
-            special_name_cases=self._special_name_cases,
-            instruction=instruction,
-            inventory_object_id=instance.actions[0].inventory_object_id,
-        )
-
-        if object_readable_name:
-            target_text = f"{target_text} {object_readable_name}"
-
-        return instruction, target_text
+        return instruction, visual_features, target_text
 
     def prepare_human_action_instance(
         self, instance: SimBotInstructionInstance
@@ -507,7 +521,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         # Get the corresponding bounding box label
         label = self._get_target_object_name(new_instance.actions[0], name_type="class")
         # If there are matching bounding boxes in the current image, discard this candidate
-        if self._label_to_idx[label] in existing_objects:
+        if label is not None and self._label_to_idx[label] in existing_objects:
             return None, new_instance.actions[0]
         return new_instance.instruction.instruction, new_instance.actions[0]
 
@@ -667,3 +681,64 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             }
         )
         return modified_action
+
+    def _sample_cdf_no_match(
+        self, instance: SimBotInstructionInstance
+    ) -> tuple[str, EmmaVisualFeatures, str]:
+        """Sample a negative image and a CDF paraphrase for the no_match intent."""
+        high_level_key = self.high_level_paraphraser(instance.cdf_highlevel_key)
+        instruction = random.choice(high_level_key.paraphrases)
+
+        # Get the target object name from the CDF high level key
+        # Prioritize anything but the target object
+        candidates = [
+            high_level_key.decoded_key.from_container,
+            high_level_key.decoded_key.from_receptacle,
+            high_level_key.decoded_key.to_container,
+            high_level_key.decoded_key.to_receptacle,
+            high_level_key.decoded_key.interaction_object,
+            high_level_key.decoded_key.stacked_object,
+        ]
+        target_asset_ids = [c for c in candidates if c is not None]
+        if target_asset_ids:
+            target_asset_id = target_asset_ids[0]
+        else:
+            target_asset_id = high_level_key.decoded_key.target_object
+
+        if target_asset_id is None:
+            raise AssertionError(f"No target from CDF high level key {instance.cdf_highlevel_key}")
+        target_object_name = get_object_label_from_object_id(
+            target_asset_id, self._object_assets_to_names
+        )
+
+        object_readable_name = get_object_readable_name_from_object_id(
+            object_id=target_object_name,
+            object_assets_to_names=self._object_assets_to_names,
+            special_name_cases=self._special_name_cases,
+        )
+        # Sample a negative image
+        visual_features = None
+        while visual_features is None:
+            rand_index = int(len(self._synthetic_negative_candidates) * random.random())
+            db_index = self._synthetic_negative_candidates[rand_index]
+            with self.db:
+                new_instance = SimBotInstructionInstance.parse_raw(self.db[db_index])
+            temp_visual_features = self._load_visual_features(
+                features_path=new_instance.features_path[0], frame_idx=0
+            )
+            tmp_object_classes = temp_visual_features.object_classes.tolist()
+            if self._label_to_idx[target_object_name] not in tmp_object_classes:
+                visual_features = temp_visual_features
+
+        instruction = add_inventory_to_instruction(  # type: ignore[unreachable]
+            object_assets_to_names=self._object_assets_to_names,
+            special_name_cases=self._special_name_cases,
+            instruction=instruction,
+            inventory_object_id=instance.actions[0].inventory_object_id,
+        )
+
+        target_text = SimBotNLUIntents.act_no_match.value
+        if object_readable_name:
+            target_text = f"{target_text} {object_readable_name}"
+
+        return instruction, visual_features, target_text

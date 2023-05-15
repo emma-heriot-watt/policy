@@ -132,7 +132,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 object_assets_to_names=self._object_assets_to_names,
                 special_name_cases=self._special_name_cases,
                 instruction=source_text,
-                inventory_object_id=instance.actions[0].inventory_object_id,
+                inventory_object_id=instance.actions[-1].inventory_object_id,
             )
             source_text = self._get_random_template_for_task(Task.visual_grounding).format(
                 caption=source_text
@@ -420,9 +420,9 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 )
                 # Sample the inventory
                 instance.actions[
-                    0
+                    -1
                 ].inventory_object_id = self.low_level_paraphraser.sample_inventory_object(
-                    instance.actions[0].type.lower()
+                    instance.actions[-1].type.lower()
                 )
                 instruction = get_simbot_instruction_paraphrase(
                     self.low_level_paraphraser, instance, object_name
@@ -438,7 +438,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             object_assets_to_names=self._object_assets_to_names,
             special_name_cases=self._special_name_cases,
             instruction=source_text,
-            inventory_object_id=instance.actions[0].inventory_object_id,
+            inventory_object_id=instance.actions[-1].inventory_object_id,
         )
         source_text = self._get_random_template_for_task(Task.action_execution).format(
             instruction=source_text

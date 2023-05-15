@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.45.7](https://github.com/emma-simbot/policy/compare/v1.45.6...v1.45.7) (2023-05-15)
+
+
+### Bug Fixes
+
+* input for evaluation wit QAs ([#797](https://github.com/emma-simbot/policy/issues/797)) ([c2c5478](https://github.com/emma-simbot/policy/commit/c2c5478cc3e654f1ff4677b027af6334757a0160))
+* inventory input ([#783](https://github.com/emma-simbot/policy/issues/783)) ([5ef7729](https://github.com/emma-simbot/policy/commit/5ef7729693bc9012b5b09ae3ed7071938cee4259))
+
 ## [1.45.6](https://github.com/emma-simbot/policy/compare/v1.45.5...v1.45.6) (2023-04-28)
 
 

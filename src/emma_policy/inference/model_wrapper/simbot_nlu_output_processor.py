@@ -13,9 +13,11 @@ class SimBotNLUPredictionProcessor:
         self,
         valid_action_types: list[str],
         default_prediction: str,
+        disable_missing_inventory: bool = False,
         enable_prediction_patching: bool = True,
     ) -> None:
         self.valid_action_types = valid_action_types
+        self._disable_missing_inventory = disable_missing_inventory
         self._default_prediction = default_prediction
         self._enable_prediction_patching = enable_prediction_patching
 
@@ -23,6 +25,13 @@ class SimBotNLUPredictionProcessor:
         self, instruction: str, prediction: str, frame_features: list[EmmaExtractedFeatures]
     ) -> str:
         """Process the prediction."""
+        disable_missing_invetory = (
+            prediction.startswith(SimBotNLUIntents.act_missing_inventory.value)
+            and self._disable_missing_inventory
+        )
+        if disable_missing_invetory:
+            return self._default_prediction
+
         sticky_note_case = self._check_sticky_note(instruction, prediction, frame_features)
         if sticky_note_case is not None:
             return sticky_note_case

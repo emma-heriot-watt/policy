@@ -231,6 +231,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 "target": target_text,
                 "action_type": action_type,
                 "object_type": object_name,
+                "task": "visual grounding",
             }
 
             return EmmaDatasetItem(
@@ -309,6 +310,7 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
             "target": target_text,
             "action_type": instance.actions[-1].type,
             "object_type": self._get_target_object(instance.actions[-1]),
+            "task": "action execution",
         }
 
         return EmmaDatasetItem(
@@ -488,10 +490,16 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 object_id = action_object_metadata.get("id", None)
                 # action with a specific object
                 if object_id is not None:
-                    object_name = get_object_label_from_object_id(
-                        object_id=action_object_metadata["id"],
+                    # object_name = get_object_label_from_object_id(
+                    #     object_id=action_object_metadata["id"],
+                    #     object_assets_to_names=self._object_assets_to_names,
+                    # )
+                    object_name = get_object_readable_name_from_object_id(
+                        object_id=object_id,
                         object_assets_to_names=self._object_assets_to_names,
+                        special_name_cases=self._special_name_cases,
                     )
+
                     image_index = action_object_metadata["colorImageIndex"]
                     object_name_with_tokens = self.map_object_to_visual_token(
                         object_name=object_name,

@@ -32,6 +32,7 @@ class Task(Enum):
     vmlm = "Video Masked Language Modelling"
     vtm = "Video-Text Matching"
     fom = "Frame Order Modeling"
+    vad = "Visual Ambiguity Detection"
 
     @classmethod
     def get_index(cls, task: Any) -> int:

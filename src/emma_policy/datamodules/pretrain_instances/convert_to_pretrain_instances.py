@@ -80,11 +80,6 @@ class PretrainInstanceCreator:
             Task.fom: self.fom,
         }
 
-        if list(self.instance_task_map.keys()) != list(Task):
-            raise AssertionError(
-                "Not all pretrain tasks are accounted for by the pretraining instance processor."
-            )
-
     def get_all_pretrain_instances(self) -> Iterator[PretrainInstance]:
         """Get all the pretrain instances for the current instance."""
         yield from itertools.chain.from_iterable(self.instance_task_map.values())

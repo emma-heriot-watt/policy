@@ -26,6 +26,7 @@ from transformers import PreTrainedTokenizer
 
 from emma_policy.datamodules.base_dataset import EmmaBaseDataset
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetItem, EmmaVisualFeatures
+from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.utils import get_logger
 from emma_policy.utils.datamodels.simbot import (
     SearchNegativeSampler,
@@ -176,16 +177,15 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         )
 
         raw_target = {
-            "example_id": f"{instance.mission_id}_{instance.annotation_id}_{instance.instruction_id}",
-            "references": target_text,
+            "instance_id": self._get_instance_id(instance),
             "instruction": source_text,
-            "nlu_class": target_text.split()[0],
-            "object_type": " ".join(target_text.split()[1:]),
+            "target": target_text,
             "action_type": instance.actions[0].type,
-            "mission_id": instance.mission_id,
+            "object_type": " ".join(target_text.split()[1:]),
             "frame_idx": frame_idx,
             "features_path": instance.features_path[0],
             "color_images": instance.actions[0].color_images[frame_idx],
+            "task": "vad",
         }
 
         return EmmaDatasetItem(
@@ -202,6 +202,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             scene_features=visual_features.scene_features,
             scene_frame_tokens=visual_features.scene_frame_tokens,
             visual_token_ids=visual_features.visual_token_ids,
+            task=self._get_task_as_tensor(Task.vad),
             raw_target=raw_target,
         )
 
@@ -393,6 +394,11 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         )
 
         return instruction, visual_features, target_text
+
+    def _get_instance_id(self, instance: SimBotInstructionInstance) -> str:
+        """Construct the instance id."""
+        instruction_id = f"mission{instance.mission_id}_instr{instance.instruction_id}"
+        return f"{instruction_id}_ann{instance.annotation_id}_action{instance.actions[-1].type}"
 
     def _prepare_search_instruction(
         self,

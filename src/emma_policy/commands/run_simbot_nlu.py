@@ -2,7 +2,7 @@ import logging
 import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any, Literal, TypedDict, Union
 
 import torch
 from emma_common.api.instrumentation import instrument_app
@@ -27,11 +27,14 @@ from emma_policy.inference.model_wrapper.simbot_nlu_input_builder import SimBotN
 from emma_policy.inference.model_wrapper.simbot_nlu_output_processor import (
     SimBotNLUPredictionProcessor,
 )
-from emma_policy.models.simbot_nlu_policy import SimBotNLUEmmaPolicy
+from emma_policy.models.simbot_combined_policy import SimBotEmmaCombinedPolicy
+from emma_policy.models.simbot_nlu_policy import SimBotNLUEmmaPolicy, postprocess_nlu_output
 
 
 tracer = trace.get_tracer(__name__)
 DEFAULT_ACTION = SimBotNLUIntents.act_one_match.value
+
+NLUModelType = Union[SimBotEmmaCombinedPolicy, SimBotNLUEmmaPolicy]
 
 
 class ApiSettings(BaseSettings):
@@ -43,6 +46,7 @@ class ApiSettings(BaseSettings):
     log_level: str = "debug"
     model_checkpoint_path: FilePath = Path("storage/model/checkpoints/simbot/nlu.ckpt")
     model_name: str = "heriot-watt/emma-base"
+    model_type: Literal["combined", "standalone"] = "combined"
     device: str = "cpu"
     disable_missing_inventory: bool = False
     enable_prediction_patching: bool = True
@@ -63,7 +67,7 @@ class ApiStore(TypedDict, total=False):
 
     input_builder: SimBotNLUInputBuilder
     tokenizer: PreTrainedTokenizer
-    model: SimBotNLUEmmaPolicy
+    model: NLUModelType
     output_processor: SimBotNLUPredictionProcessor
     num_beams: int
     no_repeat_ngram_size: int
@@ -77,13 +81,26 @@ app = FastAPI()
 logger.info("Initializing Inference API")
 
 
-def load_model(checkpoint_path: str, model_name: str, device: str) -> SimBotNLUEmmaPolicy:
+def load_model(
+    checkpoint_path: str,
+    model_name: str,
+    device: str,
+    model_type: Literal["combined", "standalone"],
+) -> NLUModelType:
     """Load an NLU checkpoint."""
-    model = SimBotNLUEmmaPolicy(
-        model_name=model_name,
-        num_beams=api_store["num_beams"],
-        max_generated_text_length=api_store["max_generated_text_length"],
-    ).load_from_checkpoint(checkpoint_path)
+    if model_type == "combined":
+        model = SimBotEmmaCombinedPolicy(
+            model_name=model_name,
+            num_beams=api_store["num_beams"],
+            max_generated_text_length=api_store["max_generated_text_length"],
+        ).load_from_checkpoint(checkpoint_path)
+    else:
+        model = SimBotNLUEmmaPolicy(
+            model_name=model_name,
+            num_beams=api_store["num_beams"],
+            max_generated_text_length=api_store["max_generated_text_length"],
+        ).load_from_checkpoint(checkpoint_path)
+
     model.to(device)
     model.eval()
     return model
@@ -114,6 +131,7 @@ async def startup_event() -> None:
         checkpoint_path=str(settings.model_checkpoint_path),
         model_name=settings.model_name,
         device=settings.device,
+        model_type=settings.model_type,
     )
     logging.info(f"Model is on device: {api_store['model'].device}")
     logging.info("Inference service is setup!")
@@ -153,12 +171,15 @@ async def generate(request: Request, response: Response) -> str:
         # the agent has already clarified or acted.
         if len(simbot_request.environment_history) == 1:
             batch, instruction = api_store["input_builder"](simbot_request)
-            try:
+            try:  # noqa: WPS229
                 with torch.no_grad():
-                    action = api_store["model"].inference_step(batch)[0]
+                    actions = api_store["model"].inference_step(batch)
+
+                decoded_action = postprocess_nlu_output(api_store["tokenizer"], actions)[0]
+
                 action = api_store["output_processor"](
                     instruction=instruction,
-                    prediction=action,
+                    prediction=decoded_action,
                     frame_features=simbot_request.environment_history[-1].features,
                 )
 

@@ -5,6 +5,7 @@ from typing import Any, Optional, Union
 
 import torch
 from overrides import overrides
+from transformers import PreTrainedTokenizer
 from transformers.generation_utils import (
     BeamSampleOutput,
     BeamSearchOutput,
@@ -29,6 +30,27 @@ PredictType = Union[
 
 log = logging.getLogger(__name__)
 ForcedWordIdsList = list[list[list[int]]]
+
+
+def postprocess_nlu_output(tokenizer: PreTrainedTokenizer, output: PredictType) -> list[str]:
+    """Remove special tokens from predicted outputs."""
+    special_tokens = [
+        tokenizer.bos_token,
+        tokenizer.eos_token,
+        tokenizer.pad_token,
+    ]
+    output_sentences = tokenizer.batch_decode(output, skip_special_tokens=False)
+    output_sentences = [
+        remove_sequence_special_tokens(sentence, special_tokens) for sentence in output_sentences
+    ]
+    return output_sentences
+
+
+def remove_sequence_special_tokens(sentence: str, special_tokens: list[str]) -> str:
+    """Remove the start, end of sequence and padding tokens from a string."""
+    for special_token in special_tokens:
+        sentence = sentence.replace(special_token, "")
+    return sentence
 
 
 class SimBotNLUEmmaPolicy(EmmaPolicy):
@@ -146,9 +168,8 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
             self._test_results["groundtruths"].extend(
                 [sample["references"] for sample in batch.raw_target]  # type: ignore[union-attr]
             )
-            for sent in self._tokenizer.batch_decode(prediction_output, skip_special_tokens=False):
-                sent = self._remove_sequence_special_tokens(sent)
-                self._test_results["predictions"].append(sent)
+            sent = postprocess_nlu_output(self._tokenizer, prediction_output)
+            self._test_results["predictions"].extend(sent)
 
     @overrides(check_signature=False)
     def predict_step(self, batch: EmmaDatasetBatch, batch_idx: int) -> PredictType:
@@ -176,10 +197,10 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
         return output
 
     @overrides(check_signature=False)
-    def inference_step(self, batch: EmmaDatasetBatch, batch_idx: int = 0) -> list[str]:
+    def inference_step(self, batch: EmmaDatasetBatch, batch_idx: int = 0) -> PredictType:
         """Inference step."""
-        output_tokens = self.predict_step(batch, batch_idx)
-        return self._postprocess_nlu_output(output_tokens)
+        return self.predict_step(batch, batch_idx)
+        # return postprocess_nlu_output(self.tokenizer, output_tokens)
 
     def compute_metrics(self, prediction_output: torch.Tensor, batch: EmmaDatasetBatch) -> None:
         """Compute the evaluation metrics."""
@@ -191,22 +212,3 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
         ]
         self.validation_accuracy(predictions, references)
         self.log("validation_accuracy", self.validation_accuracy)
-
-    def _postprocess_nlu_output(self, output: list[str]) -> list[str]:
-        """Remove special tokens from predicted outputs."""
-        output_sentences = self._tokenizer.batch_decode(output, skip_special_tokens=False)
-        output_sentences = [
-            self._remove_sequence_special_tokens(sentence) for sentence in output_sentences
-        ]
-        return output_sentences
-
-    def _remove_sequence_special_tokens(self, sentence: str) -> str:
-        """Remove the start, end of sequence and padding tokens from a string."""
-        special_tokens = [
-            self._tokenizer.bos_token,
-            self._tokenizer.eos_token,
-            self._tokenizer.pad_token,
-        ]
-        for special_token in special_tokens:
-            sentence = sentence.replace(special_token, "")
-        return sentence

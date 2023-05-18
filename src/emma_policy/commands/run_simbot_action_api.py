@@ -2,7 +2,7 @@ import logging
 import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
-from typing import Any, Optional, TypedDict
+from typing import Any, Literal, Optional, TypedDict, Union
 
 import torch
 from emma_common.api.instrumentation import instrument_app
@@ -32,10 +32,13 @@ from emma_policy.inference.model_wrapper.simbot_action_output_processor import (
     post_process_action,
 )
 from emma_policy.inference.model_wrapper.simbot_raw_text_matcher import SimBotActionRawTextMatcher
+from emma_policy.models.simbot_combined_policy import SimBotEmmaCombinedPolicy
 from emma_policy.models.simbot_emma_policy import SimBotEmmaPolicy
 
 
 tracer = trace.get_tracer(__name__)
+
+PolicyModelType = Union[SimBotEmmaCombinedPolicy, SimBotEmmaPolicy]
 
 
 class ApiSettings(BaseSettings):
@@ -47,6 +50,8 @@ class ApiSettings(BaseSettings):
     log_level: str = "debug"
     model_checkpoint_path: FilePath = Path("storage/model/checkpoints/simbot/action.ckpt")
     model_name: str = "heriot-watt/emma-base"
+    model_type: Literal["combined", "standalone"] = "combined"
+
     device: str = "cpu"
     raw_text_match_json: Path = Path("storage/constants/simbot_low_level_examples.json")
     raw_distance_threshold: int = 2
@@ -69,7 +74,7 @@ class ApiStore(TypedDict, total=False):
     input_builder: SimBotActionInputBuilder
     raw_text_matcher: SimBotActionRawTextMatcher
     tokenizer: PreTrainedTokenizer
-    model: SimBotEmmaPolicy
+    model: PolicyModelType
     action_output_processor: SimBotActionPredictionProcessor
     find_output_processor: SimBotFindPredictionProcessor
     max_length_per_action_sequence: int
@@ -83,9 +88,18 @@ app = FastAPI()
 logger.info("Initializing Inference API")
 
 
-def load_model(checkpoint_path: str, model_name: str, device: str) -> SimBotEmmaPolicy:
+def load_model(
+    checkpoint_path: str,
+    model_name: str,
+    device: str,
+    model_type: Literal["combined", "standalone"],
+) -> PolicyModelType:
     """Load a SimBotAction checkpoint."""
-    model = SimBotEmmaPolicy(model_name=model_name)
+    model: PolicyModelType
+    if model_type == "combined":
+        model = SimBotEmmaCombinedPolicy(model_name=model_name)
+    else:
+        model = SimBotEmmaPolicy(model_name=model_name)
     model = model.load_from_checkpoint(checkpoint_path)
     model.to(device)
     model.eval()
@@ -111,6 +125,7 @@ async def startup_event() -> None:
         checkpoint_path=str(settings.model_checkpoint_path),
         model_name=settings.model_name,
         device=settings.device,
+        model_type=settings.model_type,
     )
     logging.info(f"Model is on device: {api_store['model'].device}")
 
@@ -178,14 +193,12 @@ async def generate_find(request: Request, response: Response) -> list[str]:
     if sticky_note_case is not None:
         return [sticky_note_case]
 
-    (_, batch, decoder_input_ids, step_index) = api_store["input_builder"](
+    (instruction, batch, decoder_input_ids, step_index) = api_store["input_builder"](
         simbot_request, task=Task.visual_grounding
     )
     with tracer.start_as_current_span("Model inference"):
         if batch is not None:
-            max_length = api_store["max_length_per_action_sequence"]
             if decoder_input_ids is not None:
-                max_length += decoder_input_ids.shape[1]
                 len_decode = decoder_input_ids.shape[1]
             else:
                 len_decode = 0
@@ -194,7 +207,6 @@ async def generate_find(request: Request, response: Response) -> list[str]:
                     model_output = api_store["model"].inference_step(
                         batch,
                         decoder_input_ids=decoder_input_ids,
-                        max_length=max_length,
                         num_beams=api_store["num_beams"],
                         no_repeat_ngram_size=api_store["no_repeat_ngram_size"],
                     )
@@ -236,14 +248,12 @@ async def grab_from_history(request: Request, response: Response) -> Optional[in
     )
     with tracer.start_as_current_span("Model inference"):
         if batch is not None:
-            max_length = api_store["max_length_per_action_sequence"]
             len_decode = 0
             try:
                 with torch.no_grad():
                     model_output = api_store["model"].inference_step(
                         batch,
                         decoder_input_ids=None,
-                        max_length=max_length,
                         num_beams=api_store["num_beams"],
                         no_repeat_ngram_size=api_store["no_repeat_ngram_size"],
                     )
@@ -311,9 +321,9 @@ async def generate(request: Request, response: Response) -> str:
     )
     with tracer.start_as_current_span("Model inference"):
         if batch is not None:
-            max_length = api_store["max_length_per_action_sequence"]
+            # max_length = api_store["max_length_per_action_sequence"]
             if decoder_input_ids is not None:
-                max_length += decoder_input_ids.shape[1]
+                # max_length += decoder_input_ids.shape[1]
                 len_decode = decoder_input_ids.shape[1]
             else:
                 len_decode = 0
@@ -322,7 +332,6 @@ async def generate(request: Request, response: Response) -> str:
                     model_output = api_store["model"].inference_step(
                         batch,
                         decoder_input_ids=decoder_input_ids,
-                        max_length=max_length,
                         num_beams=api_store["num_beams"],
                         no_repeat_ngram_size=api_store["no_repeat_ngram_size"],
                     )
@@ -428,4 +437,5 @@ def parse_api_args() -> Namespace:
 
 
 if __name__ == "__main__":
+    main()
     main()

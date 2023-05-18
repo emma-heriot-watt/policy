@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.47.0](https://github.com/emma-simbot/policy/compare/v1.46.0...v1.47.0) (2023-05-18)
+
+
+### Features
+
+* unified task ([#801](https://github.com/emma-simbot/policy/issues/801)) ([e4ed79e](https://github.com/emma-simbot/policy/commit/e4ed79efc7b65fa5103c0766adf6ee99b26ee0d0))
+
 ## [1.46.0](https://github.com/emma-simbot/policy/compare/v1.45.7...v1.46.0) (2023-05-15)
 
 

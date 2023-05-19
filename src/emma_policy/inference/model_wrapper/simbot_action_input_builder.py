@@ -55,6 +55,7 @@ class SimBotActionInputBuilder:
         # assert len(feature_dicts) == len(step_index)
         batch: Optional[EmmaDatasetBatch] = None
         decoder_input_ids: Optional[torch.Tensor] = None
+
         if instruction is not None and instruction:
             instruction = f"Inventory: {inventory}. {instruction}"
             logger.debug(f"Predicting action for instruction: {instruction}")

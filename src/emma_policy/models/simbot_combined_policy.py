@@ -249,9 +249,13 @@ class SimBotEmmaCombinedPolicy(EmmaPolicy):
         num_beams: int = 5,
         no_repeat_ngram_size: int = 0,
         use_force_word_ids: bool = False,
+        max_length: Optional[int] = None,
     ) -> PredictType:
         """Simbot Inference step."""
         bad_words_ids = self._get_inference_banned_frame_ids(batch)
+        max_generated_length = (
+            max_length if max_length is not None else self._max_generated_text_length
+        )
 
         inputs_embeds = self.emma.emma.embed_inputs(
             scene_features=batch.scene_features,
@@ -270,7 +274,7 @@ class SimBotEmmaCombinedPolicy(EmmaPolicy):
                 attention_mask=batch.attention_mask,
                 global_attention_mask=batch.global_attention_mask,
                 decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
-                max_length=self._max_generated_text_length,
+                max_length=max_generated_length,
                 decoder_input_ids=decoder_input_ids,
                 num_beams=num_beams,
                 no_repeat_ngram_size=no_repeat_ngram_size,
@@ -283,7 +287,7 @@ class SimBotEmmaCombinedPolicy(EmmaPolicy):
                 attention_mask=batch.attention_mask,
                 global_attention_mask=batch.global_attention_mask,
                 decoder_encoder_attention_mask=batch.decoder_encoder_attention_mask,
-                max_length=self._max_generated_text_length,
+                max_length=max_generated_length,
                 num_beams=num_beams,
                 no_repeat_ngram_size=no_repeat_ngram_size,
                 bad_words_ids=bad_words_ids,  # type: ignore[arg-type]

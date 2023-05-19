@@ -23,6 +23,7 @@ from uvicorn import Config, Server
 from emma_policy._version import __version__  # noqa: WPS436
 from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.datamodules.simbot_action_datamodule import prepare_action_tokenizer
+from emma_policy.datamodules.simbot_combined_datamodule import prepare_combined_tokenizer
 from emma_policy.inference.model_wrapper.simbot_action_input_builder import (
     SimBotActionInputBuilder,
 )
@@ -114,7 +115,10 @@ async def startup_event() -> None:
     api_store["num_beams"] = args.num_beams
     api_store["no_repeat_ngram_size"] = args.no_repeat_ngram_size
 
-    api_store["tokenizer"] = prepare_action_tokenizer(settings.model_name)
+    if settings.model_type == "combined":
+        api_store["tokenizer"] = prepare_combined_tokenizer(settings.model_name)
+    else:
+        api_store["tokenizer"] = prepare_action_tokenizer(settings.model_name)
     api_store["input_builder"] = SimBotActionInputBuilder(
         tokenizer=api_store["tokenizer"],
         device=settings.device,
@@ -321,9 +325,9 @@ async def generate(request: Request, response: Response) -> str:
     )
     with tracer.start_as_current_span("Model inference"):
         if batch is not None:
-            # max_length = api_store["max_length_per_action_sequence"]
+            max_length = api_store["max_length_per_action_sequence"]
             if decoder_input_ids is not None:
-                # max_length += decoder_input_ids.shape[1]
+                max_length += decoder_input_ids.shape[1]
                 len_decode = decoder_input_ids.shape[1]
             else:
                 len_decode = 0
@@ -334,6 +338,7 @@ async def generate(request: Request, response: Response) -> str:
                         decoder_input_ids=decoder_input_ids,
                         num_beams=api_store["num_beams"],
                         no_repeat_ngram_size=api_store["no_repeat_ngram_size"],
+                        max_length=max_length,
                     )
                     action = api_store["tokenizer"].batch_decode(
                         model_output[:, len_decode:], skip_special_tokens=False

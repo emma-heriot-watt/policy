@@ -21,6 +21,7 @@ from transformers import PreTrainedTokenizer
 from uvicorn import Config, Server
 
 from emma_policy._version import __version__  # noqa: WPS436
+from emma_policy.datamodules.simbot_combined_datamodule import prepare_combined_tokenizer
 from emma_policy.datamodules.simbot_nlu_datamodule import prepare_nlu_tokenizer
 from emma_policy.datamodules.simbot_nlu_dataset import SimBotNLUIntents
 from emma_policy.inference.model_wrapper.simbot_nlu_input_builder import SimBotNLUInputBuilder
@@ -112,7 +113,10 @@ async def startup_event() -> None:
     args = parse_api_args()
     api_store["max_generated_text_length"] = args.max_generated_text_length
     api_store["num_beams"] = args.num_beams
-    api_store["tokenizer"] = prepare_nlu_tokenizer()
+    if settings.model_type == "combined":
+        api_store["tokenizer"] = prepare_combined_tokenizer(settings.model_name)
+    else:
+        api_store["tokenizer"] = prepare_nlu_tokenizer(settings.model_name)
     api_store["input_builder"] = SimBotNLUInputBuilder(
         tokenizer=api_store["tokenizer"],
         device=settings.device,

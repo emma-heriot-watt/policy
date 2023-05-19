@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.47.1](https://github.com/emma-simbot/policy/compare/v1.47.0...v1.47.1) (2023-05-19)
+
+
+### Bug Fixes
+
+* combined tokenizer ([#802](https://github.com/emma-simbot/policy/issues/802)) ([c5c72ee](https://github.com/emma-simbot/policy/commit/c5c72eeb74192bfd94a0c6d2b70960f1c5a3f5dc))
+
 ## [1.47.0](https://github.com/emma-simbot/policy/compare/v1.46.0...v1.47.0) (2023-05-18)
 
 

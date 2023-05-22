@@ -2165,14 +2165,14 @@ grpc = ["grpcio (>=1.44.0,<2.0.0dev)"]
 
 [[package]]
 name = "gradio"
-version = "3.30.0"
+version = "3.32.0"
 description = "Python library for easily interacting with trained machine learning models"
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "gradio-3.30.0-py3-none-any.whl", hash = "sha256:ef084eb4b13835dc86d4c8feecc730c9e9c3974ab768b5c5e69187bab630354c"},
-    {file = "gradio-3.30.0.tar.gz", hash = "sha256:9ed78a9dafffb72108eb2efe962e17c5b144c3c111d499230495cc1288e54c11"},
+    {file = "gradio-3.32.0-py3-none-any.whl", hash = "sha256:68d2ebfadcabb0a088e90328fcde18dbc063237a092f3a414a2defe2b674f10f"},
+    {file = "gradio-3.32.0.tar.gz", hash = "sha256:bcdd97bccffe5dd904574d060cf685082ac7261a51164bb0854e9648fbd45ec1"},
 ]
 
 [package.dependencies]

@@ -214,7 +214,7 @@ class SimBotCombinedDataModule(LightningDataModule):
             batch_size=self._val_batch_size,
             num_workers=self._num_workers,
             collate_fn=collate_fn,
-            shuffle=False,
+            shuffle=True,
             pin_memory=False,
         )
 

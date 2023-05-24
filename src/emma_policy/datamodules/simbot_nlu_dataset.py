@@ -176,6 +176,16 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             target_text, return_tensors=self._return_tensor_type, truncation=True
         )
 
+        target_token_ids = target_encoding.input_ids.squeeze(0)
+        # Prepare the decoder input ids
+        # We have to do this for multitask training
+        decoder_input_ids = torch.full_like(
+            target_token_ids,
+            fill_value=self.tokenizer.eos_token_id,  # type: ignore[arg-type]
+        )
+        # Now shift them to the right
+        decoder_input_ids[1:] = target_token_ids[:-1].clone()  # noqa: WPS362
+
         raw_target = {
             "instance_id": self._get_instance_id(instance),
             "instruction": source_text,
@@ -191,7 +201,8 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         return EmmaDatasetItem(
             input_token_ids=input_encoding.input_ids.squeeze(0),
             text_attention_mask=input_encoding.attention_mask.squeeze(0),
-            target_token_ids=target_encoding.input_ids.squeeze(0),
+            target_token_ids=target_token_ids,
+            decoder_input_ids=decoder_input_ids,
             decoder_attention_mask=target_encoding.attention_mask.squeeze(0),
             object_attention_mask=visual_features.object_attention_mask,
             object_coordinates=visual_features.object_coordinates,

@@ -17,7 +17,7 @@ defaults:
 
 # name of the run determines folder name in logs
 # it's also accessed by loggers
-name: "simbot_combined_bsz1024_lr1e-4_batch12"
+name: "combined_human_vision_aug_dowsampled_cdf_aug_lr0.0001"
 checkpoint_dir: "${work_dir}/storage/model/checkpoints/simbot/${name}"
 
 seed: 12345
@@ -28,24 +28,26 @@ trainer:
   gpus: [0]
 
   resume_from_checkpoint: null
-  max_epochs: 128
+  max_epochs: 80
 
   # number of validation steps to execute at the beginning of the training
   num_sanity_val_steps: 0
   gradient_clip_val: 1.0
-  accumulate_grad_batches: 8
+  accumulate_grad_batches: 16
   strategy: ddp_find_unused_parameters_false
   precision: 16
   replace_sampler_ddp: False
   reload_dataloaders_every_n_epochs: 1
-  limit_val_batches: 2048
+  limit_train_batches: 2048
+  limit_test_batches: 7500
   check_val_every_n_epoch: 2
 
 model:
   _target_: emma_policy.models.simbot_combined_policy.SimBotEmmaCombinedPolicy
 
   model_name: heriot-watt/emma-base
-  initialization_checkpoint: null
+  # initialization_checkpoint: storage/model/checkpoints/emma_base_full_cc3mcocovg_balanced_bsz2048_lr0.0003_ratio3_no_global_embeds.ckpt
+  initialization_checkpoint: storage/model/checkpoints/simbot/combined_human_vision_aug_dowsampled_cdf_aug_lr0.0001/epoch_075.ckpt
   num_beams: 5
   max_generated_text_length: 80
   lr: 0.0001
@@ -54,7 +56,7 @@ model:
   lr_scheduler: linear_with_warmup
   num_warmup_steps: 0.1
   label_smoothing: 0.1
-  save_results_path: storage/datasets/simbot/${name}.json
+  save_results_path: combined_human_vision_aug_dowsampled_cdf_aug_lr0.0001_test_predictions.json
   strict: False
   resize_embeddings: True
   test_single_instance: True
@@ -63,13 +65,13 @@ datamodule:
   _target_: emma_policy.datamodules.simbot_combined_datamodule.SimBotCombinedDataModule
 
   model_name: heriot-watt/emma-base
-  simbot_action_train_db_file: storage/db_emnlp/simbot_actions_train_annotations_v7.3_final_human_vision_aug_cdf_aug.db
-  simbot_action_valid_db_file: storage/db_emnlp/simbot_actions_valid_annotations_v7.3_final_vision_aug_cdf_aug.db
-  simbot_vad_train_db_file: storage/db_emnlp/simbot_clarifications_train_annotations_v7.3_final_human_vision_aug_cdf_aug.db
-  simbot_vad_valid_db_file: storage/db_emnlp/simbot_clarifications_valid_annotations_v7.3_final_vision_aug_cdf_aug.db
-  train_batch_size: 32
-  val_batch_size: 64
-  num_workers: 2
+  simbot_action_train_db_file: storage/db_emnlp/simbot_actions_train_annotations_human_vision_aug_downsampled_cdf_aug.db
+  simbot_action_valid_db_file: storage/db_emnlp/simbot_actions_valid_annotations_human_vision_aug_downsampled_cdf_aug.db
+  simbot_vad_train_db_file: storage/db_emnlp/simbot_clarifications_train_annotations_human_vision_aug_downsampled_cdf_aug.db
+  simbot_vad_valid_db_file: storage/db_emnlp/simbot_clarifications_valid_annotations_human_vision_aug_downsampled_cdf_aug.db
+  train_batch_size: 16
+  val_batch_size: 1
+  num_workers: 0
   max_lang_tokens: 128
   max_frames: 15
   tokenizer_truncation_side: right
@@ -128,7 +130,7 @@ logger:
     project: "paper_simbot_combined"
     name: ${name}
     save_dir: "logs/"
-    offline: False # set True to store all logs only locally
+    offline: True # set True to store all logs only locally
     id: null # pass correct id to resume experiment!
     entity: "emma-simbot"
     log_model: False

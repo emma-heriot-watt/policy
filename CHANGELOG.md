@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.47.2](https://github.com/emma-simbot/policy/compare/v1.47.1...v1.47.2) (2023-05-24)
+
+
+### Bug Fixes
+
+* create decoder input ids for the vad task ([#803](https://github.com/emma-simbot/policy/issues/803)) ([fdfcf4e](https://github.com/emma-simbot/policy/commit/fdfcf4ebeacccf9bf354df8d8243ebae86da3cb4))
+
 ## [1.47.1](https://github.com/emma-simbot/policy/compare/v1.47.0...v1.47.1) (2023-05-19)
 
 

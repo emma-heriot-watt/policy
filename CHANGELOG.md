@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.48.0](https://github.com/emma-simbot/policy/compare/v1.47.2...v1.48.0) (2023-05-24)
+
+
+### Features
+
+* add-skip-phrase-instructions ([#807](https://github.com/emma-simbot/policy/issues/807)) ([1716256](https://github.com/emma-simbot/policy/commit/1716256a1430155345558f342142feb54570fb4c))
+
 ## [1.47.2](https://github.com/emma-simbot/policy/compare/v1.47.1...v1.47.2) (2023-05-24)
 
 

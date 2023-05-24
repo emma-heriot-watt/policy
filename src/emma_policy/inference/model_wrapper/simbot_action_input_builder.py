@@ -36,6 +36,17 @@ class SimBotActionInputBuilder:
             Task.action_execution: TASK_TEMPLATES_MAP[Task.action_execution][0],
             Task.visual_grounding: TASK_TEMPLATES_MAP[Task.visual_grounding][0],
         }
+        # these are generally instructions that mix the policy tasks and confuse the model
+        # e.g. "locate and pick up the bowl" triggers the search with <act><search> but then this utterance does not go to the utterance queue
+        # this is problematic as we do half the instruction, we just find the bowl but then we dont pick it up
+        self._skip_instruction_phrase_list = [
+            "locate and",
+            "find and",
+            "search and",
+            "look and",
+            "trace and",
+            "seek and",
+        ]
 
     def __call__(self, request: EmmaPolicyRequest, task: Task) -> ActionBuilderOutput:
         """Process the environment output into a batch for the model.
@@ -188,7 +199,11 @@ class SimBotActionInputBuilder:
         for utterance in request.dialogue_history:
             if not utterance.utterance:
                 continue
-            utterance_text = f"{SPEAKER_TOKEN_MAP[utterance.role]} {utterance.utterance}"
+            instruction_utterance = utterance.utterance
+            for phrase in self._skip_instruction_phrase_list:
+                instruction_utterance = instruction_utterance.replace(phrase, "").strip()
+
+            utterance_text = f"{SPEAKER_TOKEN_MAP[utterance.role]} {instruction_utterance}"
             if not utterance_text.endswith(("?", ".")):
                 utterance_text = f"{utterance_text}."
             dialogue.append(utterance_text)
@@ -199,7 +214,6 @@ class SimBotActionInputBuilder:
             logger.debug(f"Found instruction: {instruction}")
         else:
             logger.debug(f"No instruction for request: {request}")
-
         return instruction
 
     def _get_instruction_from_dialogue(self, dialogue: list[str], task: Task) -> Optional[str]:

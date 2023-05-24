@@ -27,6 +27,17 @@ class SimBotNLUInputBuilder:
     def __init__(self, tokenizer: PreTrainedTokenizer, device: str = "cpu") -> None:
         self._tokenizer = tokenizer
         self._device = device
+        # these are generally instructions that mix the policy tasks and confuse the model
+        # e.g. "locate and pick up the bowl" triggers the search with <act><search> but then this utterance does not go to the utterance queue
+        # this is problematic as we do half the instruction, we just find the bowl but then we dont pick it up
+        self._skip_instruction_phrase_list = [
+            "locate and",
+            "find and",
+            "search and",
+            "look and",
+            "trace and",
+            "seek and",
+        ]
 
     def __call__(self, request: EmmaPolicyRequest) -> tuple[EmmaDatasetBatch, str]:
         """Process the environment output into a batch for the model.
@@ -34,12 +45,7 @@ class SimBotNLUInputBuilder:
         The sample batch provides the set of previous observations and previous actions taken by
         the agent in the environment.
         """
-        # Add a fullstop at the end and lowercase
-        inventory = EMPTY_INVENTORY if request.inventory is None else request.inventory
-        instruction = f"Inventory: {inventory}. {request.dialogue_history[-1].utterance}"
-        instruction = format_instruction(instruction)
-        logger.debug(f"Preparing NLU input for instruction: {instruction}")
-        encoded_inputs = self._prepare_input_text(instruction)
+        encoded_inputs, instruction = self._prepare_input_text(request)
         feature_dicts = [feature.dict() for feature in request.environment_history[-1].features]
         feature_dicts = self._prepare_feature_dicts(feature_dicts)
         visual_features = self._prepare_visual_features(feature_dicts)
@@ -48,10 +54,24 @@ class SimBotNLUInputBuilder:
         )
         return self._create_emma_dataset_batch(dataset_item), instruction
 
-    def _prepare_input_text(self, instruction: str) -> BatchEncoding:
+    def _prepare_input_text(self, request: EmmaPolicyRequest) -> tuple[BatchEncoding, str]:
+        # Add the inventory
+        inventory = EMPTY_INVENTORY if request.inventory is None else request.inventory
+        instruction = f"Inventory: {inventory}. {request.dialogue_history[-1].utterance}"
+        # Add a fullstop at the end and lowercase
+        instruction = format_instruction(instruction)
+        # Remove the skip phrases
+        for phrase in self._skip_instruction_phrase_list:
+            instruction = instruction.replace(phrase, "").strip()
+        # Remove the QA
         instruction = instruction.split("<<driver>>")[0].strip()
+
+        logger.debug(f"Preparing NLU input for instruction: {instruction}")
         source_text = f"Predict the system act: {instruction}"
-        return self._tokenizer.encode_plus(source_text, return_tensors="pt", truncation=True)
+        tokenized_instruction = self._tokenizer.encode_plus(
+            source_text, return_tensors="pt", truncation=True
+        )
+        return tokenized_instruction, instruction
 
     def _prepare_feature_dicts(self, feature_dicts: FeatureDictsType) -> FeatureDictsType:
         """Convert feature dicts to tensors."""

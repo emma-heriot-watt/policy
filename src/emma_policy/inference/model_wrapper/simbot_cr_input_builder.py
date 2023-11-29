@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 FeatureDictsType = list[dict[str, Any]]
 
 
-class SimBotNLUInputBuilder:
-    """Build the input for the Emma NLU model."""
+class SimBotCRInputBuilder:
+    """Build the input for the Emma CR model."""
 
     def __init__(self, tokenizer: PreTrainedTokenizer, device: str = "cpu") -> None:
         self._tokenizer = tokenizer
@@ -66,7 +66,7 @@ class SimBotNLUInputBuilder:
         # Remove the QA
         instruction = instruction.split("<<driver>>")[0].strip()
 
-        logger.debug(f"Preparing NLU input for instruction: {instruction}")
+        logger.debug(f"Preparing CR input for instruction: {instruction}")
         source_text = f"Predict the system act: {instruction}"
         tokenized_instruction = self._tokenizer.encode_plus(
             source_text, return_tensors="pt", truncation=True

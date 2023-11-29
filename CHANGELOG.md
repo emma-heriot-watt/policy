@@ -86,20 +86,6 @@ All notable changes to this project will be documented in this file. See
 
 ### Bug Fixes
 
-* sticky note patch ([#785](https://github.com/emma-simbot/policy/issues/785)) ([e6f64d3](https://github.com/emma-simbot/policy/commit/e6f64d3cacf6aab444a2e29899479aaec84c4f25))
-
-## [1.45.0](https://github.com/emma-simbot/policy/compare/v1.44.2...v1.45.0) (2023-04-27)
-
-
-### Features
-
-* patch sticky note ([#784](https://github.com/emma-simbot/policy/issues/784)) ([6cf66a0](https://github.com/emma-simbot/policy/commit/6cf66a0e17a52e2b6d73e128a991d698d957ac36))
-
-## [1.44.2](https://github.com/emma-simbot/policy/compare/v1.44.1...v1.44.2) (2023-04-25)
-
-
-### Bug Fixes
-
 * patching v2 ([#782](https://github.com/emma-simbot/policy/issues/782)) ([827401c](https://github.com/emma-simbot/policy/commit/827401c45854ef482717c2e2a1efbf0cac9bfec3))
 
 ## [1.44.1](https://github.com/emma-simbot/policy/compare/v1.44.0...v1.44.1) (2023-04-25)
@@ -297,26 +283,11 @@ All notable changes to this project will be documented in this file. See
 
 ## [1.28.0](https://github.com/emma-simbot/policy/compare/v1.27.0...v1.28.0) (2023-02-11)
 
-
-### Features
-
-* add new examine sticky examples ([#704](https://github.com/emma-simbot/policy/issues/704)) ([121bcda](https://github.com/emma-simbot/policy/commit/121bcda1be9623904687320120ac6da4433d65f7))
-
-## [1.27.0](https://github.com/emma-simbot/policy/compare/v1.26.0...v1.27.0) (2023-02-08)
-
-
 ### Features
 
 * Add dataset visualization ([#701](https://github.com/emma-simbot/policy/issues/701)) ([da6b764](https://github.com/emma-simbot/policy/commit/da6b764af4cfc3845fbb6fe5b63a2d0c0b854c2e))
 
 ## [1.26.0](https://github.com/emma-simbot/policy/compare/v1.25.1...v1.26.0) (2023-02-07)
-
-
-### Features
-
-* Raw text matching with examine sticky note ([#698](https://github.com/emma-simbot/policy/issues/698)) ([776d364](https://github.com/emma-simbot/policy/commit/776d364ce9f00aff6e16751981c8af6a4a3b2868))
-
-## [1.25.1](https://github.com/emma-simbot/policy/compare/v1.25.0...v1.25.1) (2023-02-06)
 
 
 ### Bug Fixes

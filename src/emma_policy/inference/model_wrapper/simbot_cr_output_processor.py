@@ -3,81 +3,36 @@ from typing import Optional
 
 from emma_common.datamodels import EmmaExtractedFeatures
 
-from emma_policy.datamodules.simbot_nlu_dataset import SimBotNLUIntents
+from emma_policy.datamodules.simbot_cr_dataset import SimBotCRIntents
 
 
-class SimBotNLUPredictionProcessor:
-    """Process SimBot NLU predictions."""
+class SimBotCRPredictionProcessor:
+    """Process SimBot CR predictions."""
 
     def __init__(
         self,
         valid_action_types: list[str],
         default_prediction: str,
         disable_missing_inventory: bool = False,
-        enable_prediction_patching: bool = True,
     ) -> None:
         self.valid_action_types = valid_action_types
         self._disable_missing_inventory = disable_missing_inventory
         self._default_prediction = default_prediction
-        self._enable_prediction_patching = enable_prediction_patching
 
-    def __call__(  # noqa: WPS231
-        self, instruction: str, prediction: str, frame_features: list[EmmaExtractedFeatures]
-    ) -> str:
+    def __call__(self, prediction: str) -> str:
         """Process the prediction."""
         disable_missing_invetory = (
-            prediction.startswith(SimBotNLUIntents.act_missing_inventory.value)
+            prediction.startswith(SimBotCRIntents.act_missing_inventory.value)
             and self._disable_missing_inventory
         )
         if disable_missing_invetory:
             return self._default_prediction
 
-        sticky_note_case = self._check_sticky_note(instruction, prediction, frame_features)
-        if sticky_note_case is not None:
-            return sticky_note_case
-
         object_name = self._get_target_object(prediction)
         if object_name is None:
             return prediction
 
-        if self._enable_prediction_patching:
-            class_labels = self._get_detected_objects(frame_features=frame_features)
-            if prediction.startswith(SimBotNLUIntents.act_no_match.value):
-                prediction = self._special_robotics_lab_button_case(
-                    prediction=prediction,
-                    class_labels=class_labels,
-                )
-
-                prediction = self._special_carrot_machine_case(
-                    instruction=instruction,
-                    prediction=prediction,
-                    class_labels=class_labels,
-                )
-
-                prediction = self._special_color_changer_case(
-                    instruction=instruction,
-                    prediction=prediction,
-                    class_labels=class_labels,
-                )
-            elif prediction.startswith(SimBotNLUIntents.act_too_many_matches.value):
-                prediction = self._rule_based_ambiguity_check(
-                    prediction=prediction,
-                    class_labels=class_labels,
-                    object_name=object_name,
-                )
-            elif prediction.startswith(SimBotNLUIntents.search.value):
-                prediction = self._special_color_changer_case(
-                    instruction=instruction,
-                    prediction=prediction,
-                    class_labels=class_labels,
-                )
-            if prediction.startswith(SimBotNLUIntents.act.value):
-                prediction = self._special_monitor_toggle_case(
-                    instruction=instruction,
-                    prediction=prediction,
-                    class_labels=class_labels,
-                )
-        new_prediction = self._overwrite_the_nlu_prediction(prediction, object_name)
+        new_prediction = self._overwrite_the_cr_prediction(prediction, object_name)
         return new_prediction
 
     def _prediction_type_is_valid(self, prediction: str) -> bool:
@@ -85,21 +40,21 @@ class SimBotNLUPredictionProcessor:
         prediction_type = prediction.split(" ")[0]
         return prediction_type in self.valid_action_types
 
-    def _overwrite_the_nlu_prediction(self, prediction: str, object_name: Optional[str]) -> str:
-        """Check if the predicted NLU output needs to be overwritten."""
+    def _overwrite_the_cr_prediction(self, prediction: str, object_name: Optional[str]) -> str:
+        """Check if the predicted CR output needs to be overwritten."""
         # If the predicted prediction is not valid return the default prediction
         if not self._prediction_type_is_valid(prediction):
             return self._default_prediction
         # For search intents only return <search> object_name
-        if prediction.startswith(SimBotNLUIntents.search.value):
-            return f"{SimBotNLUIntents.search.value} {self._get_target_object(prediction)}"
+        if prediction.startswith(SimBotCRIntents.search.value):
+            return f"{SimBotCRIntents.search.value} {self._get_target_object(prediction)}"
         # For act one_match intents only return <act><one_match>
-        if prediction.startswith(SimBotNLUIntents.act_one_match.value):
-            return SimBotNLUIntents.act_one_match.value
+        if prediction.startswith(SimBotCRIntents.act_one_match.value):
+            return SimBotCRIntents.act_one_match.value
         return prediction
 
     def _get_target_object(self, prediction: str) -> Optional[str]:
-        """Extract the target object from the NLU prediction."""
+        """Extract the target object from the CR prediction."""
         split_parts = prediction.split(" ")
         return " ".join(split_parts[1:]) if len(split_parts) > 1 else None
 
@@ -116,7 +71,7 @@ class SimBotNLUPredictionProcessor:
         self, prediction: str, class_labels: Optional[list[str]], object_name: str
     ) -> str:
         """Change too_many_matches prediction if there is one detected object."""
-        # For now, overwrite the NLU only if there are no multiples in front of you
+        # For now, overwrite the CR only if there are no multiples in front of you
         # So if there's only one object that you are looking at, assume no ambiguity
         if class_labels is None:
             return prediction
@@ -242,41 +197,3 @@ class SimBotNLUPredictionProcessor:
             return "<act><no_match> portal generator monitor"
 
         return prediction
-
-    def _check_sticky_note(
-        self, instruction: str, prediction: str, frame_features: list[EmmaExtractedFeatures]
-    ) -> Optional[str]:
-        """Check if the instruction refers to a sticky note."""
-        entity_labels = frame_features[0].entity_labels
-
-        ignore_instruction = any(
-            [
-                len(frame_features) > 1,
-                entity_labels is None,
-            ]
-        )
-        if ignore_instruction:
-            return None
-
-        patterns = "|".join(
-            [
-                r"\S?sticky\s+",
-                r"\S?stickynote\s+",
-                r"\S?note\S?",
-                r"\S?clue\S?",
-                r"\S?hint\S?",
-                r"\S?postit\S?",
-                r"\S?posted\S?",
-            ]
-        )
-        search_pattern = f"({patterns})"
-        search_result = re.search(search_pattern, instruction)
-
-        if search_result is None:
-            return None
-
-        if prediction.startswith(SimBotNLUIntents.search.value):
-            return f"{SimBotNLUIntents.search.value} sticky note"
-        if "Sticky Note" in entity_labels:
-            return self._default_prediction
-        return "<act><no_match> sticky note"

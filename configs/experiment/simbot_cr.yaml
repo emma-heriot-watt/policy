@@ -17,7 +17,7 @@ defaults:
 
 # name of the run determines folder name in logs
 # it's also accessed by loggers
-name: "simbot_nlu"
+name: "simbot_cr"
 
 seed: 12345
 
@@ -37,7 +37,7 @@ trainer:
   reload_dataloaders_every_n_epochs: 1
 
 model:
-  _target_: emma_policy.models.simbot_nlu_policy.SimBotNLUEmmaPolicy
+  _target_: emma_policy.models.simbot_cr_policy.SimBotCREmmaPolicy
 
   model_name: heriot-watt/emma-base
   initialization_checkpoint: null
@@ -53,7 +53,7 @@ model:
   resize_embeddings: True
 
 datamodule:
-  _target_: emma_policy.datamodules.simbot_nlu_datamodule.SimBotNLUDataModule
+  _target_: emma_policy.datamodules.simbot_cr_datamodule.SimBotCRDataModule
 
   model_name: heriot-watt/emma-base
   train_db_file: storage/db/simbot_clarifications_train.db
@@ -112,7 +112,7 @@ callbacks:
 logger:
   wandb:
     _target_: pytorch_lightning.loggers.wandb.WandbLogger
-    project: "simbot_nlu"
+    project: "simbot_cr"
     name: ${name}
     save_dir: "logs/"
     offline: False # set True to store all logs only locally

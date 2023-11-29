@@ -25,8 +25,8 @@ from emma_policy.datamodules.simbot_action_dataset import (
     SimBotActionDataset,
     compressed_mask_is_bbox,
 )
-from emma_policy.datamodules.simbot_nlu_dataset import (
-    SimBotNLUDataset,
+from emma_policy.datamodules.simbot_cr_dataset import (
+    SimBotCRDataset,
     action_is_object_interaction,
 )
 from emma_policy.utils import decompress_simbot_mask, get_logger
@@ -49,7 +49,7 @@ class FilterSimBotDB:
         valid_output_db_file: Path,
         iou_threshold: float = 0.5,
         minimum_iou_threshold: float = 0.1,
-        simbot_db_type: Literal["action", "nlu"] = "action",
+        simbot_db_type: Literal["action", "cr"] = "action",
         matching_strategy: Literal["threshold_only", "threshold_and_label"] = "threshold_only",
         model_name: str = "heriot-watt/emma-base",
     ) -> None:
@@ -67,7 +67,7 @@ class FilterSimBotDB:
         self._object_assets_to_names = arena_definitions["asset_to_label"]
         self._label_to_idx = arena_definitions["label_to_idx"]
 
-        self.dataset: Union[SimBotActionDataset, SimBotNLUDataset]
+        self.dataset: Union[SimBotActionDataset, SimBotCRDataset]
         if simbot_db_type == "action":
             self._action_idx = -1
             self._purge_instance = self._discard_action_unmatched_instance
@@ -79,9 +79,9 @@ class FilterSimBotDB:
             )
         else:
             self._action_idx = 0
-            self._purge_instance = self._discard_nlu_unmatched_instance
+            self._purge_instance = self._discard_cr_unmatched_instance
             self.dataset_name = DatasetName.simbot_clarifications.name
-            self.dataset = SimBotNLUDataset(
+            self.dataset = SimBotCRDataset(
                 dataset_db_path=valid_input_db_file,
                 tokenizer=tokenizer,
                 iou_threshold=args.iou_threshold,
@@ -226,7 +226,7 @@ class FilterSimBotDB:
             return instance
         return None
 
-    def _discard_nlu_unmatched_instance(
+    def _discard_cr_unmatched_instance(
         self, instance: SimBotInstructionInstance
     ) -> Optional[SimBotInstructionInstance]:
         """Discard instances where the target object does not match any predicted bounding box."""
@@ -342,7 +342,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--valid_output_db_path", type=Path)
     parser.add_argument(
-        "--simbot_db_type", choices=["action", "nlu"], help="The type of SimBot task."
+        "--simbot_db_type", choices=["action", "cr"], help="The type of SimBot task."
     )
     parser.add_argument(
         "--iou_threshold",

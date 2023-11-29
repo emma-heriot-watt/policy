@@ -5,7 +5,6 @@ from pytest_cases import parametrize_with_cases
 from transformers import PreTrainedModel
 
 from emma_policy.datamodules.pretrain_datamodule import EmmaPretrainDataModule
-from emma_policy.datamodules.teach_edh_datamodule import TeachEdhDataModule
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
 
 
@@ -16,15 +15,11 @@ def case_pretrain_datamodule(
     return emma_pretrain_datamodule
 
 
-def case_teach_edh_datamodule(teach_edh_datamodule: TeachEdhDataModule) -> TeachEdhDataModule:
-    return teach_edh_datamodule
-
-
 # ----------------------------------- Tests ---------------------------------- #
 @parametrize_with_cases("datamodule", cases=".", glob="*_datamodule")
 def test_pretrain_model_forward_works_on_train_data(
     emma_model_for_causal_lm: PreTrainedModel,
-    datamodule: Union[EmmaPretrainDataModule, TeachEdhDataModule],
+    datamodule: EmmaPretrainDataModule,
 ) -> None:
     train_loader = datamodule.train_dataloader()
     batch = next(iter(train_loader))

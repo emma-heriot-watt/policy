@@ -98,9 +98,6 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         if instance.vision_augmentation:
             return self.simbot_vision_augmentation(instance)
         return self.simbot_action_execution(instance)
-        # except Exception as e:
-        #     print(e)
-        #     breakpoint()
 
     def simbot_vision_augmentation(  # noqa: WPS210, WPS231
         self, instance: SimBotInstructionInstance
@@ -366,19 +363,13 @@ class SimBotActionDataset(EmmaBaseDataset[EmmaDatasetItem]):
         ]
 
         gt_object_dict = action.get_action_data
-        # If the groundtruth object is a sticky note, the groundtruth bbox
-        # coordinates are currently provided directly in the mask
-        # TODO: this could potentially be improved if we have the segmentation masks for the sticky notes as well instead of the bounding boxes
         object_mask = gt_object_dict["object"]["mask"]
-        if object_name == "Sticky Note":
-            ground_truth_bbox = torch.tensor(object_mask[0]).float()
 
+        if compressed_mask_is_bbox(object_mask):
+            ground_truth_bbox = torch.tensor(object_mask, dtype=torch.float32).unsqueeze(0)
         else:
-            if compressed_mask_is_bbox(object_mask):
-                ground_truth_bbox = torch.tensor(object_mask, dtype=torch.float32).unsqueeze(0)
-            else:
-                gt_binary_mask = decompress_simbot_mask(object_mask)
-                ground_truth_bbox = masks_to_boxes(torch.tensor(gt_binary_mask).unsqueeze(0))
+            gt_binary_mask = decompress_simbot_mask(object_mask)
+            ground_truth_bbox = masks_to_boxes(torch.tensor(gt_binary_mask).unsqueeze(0))
 
         ground_truth_bbox[:, (0, 2)] /= self._image_width
         ground_truth_bbox[:, (1, 3)] /= self._image_height

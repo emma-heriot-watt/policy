@@ -1,5 +1,4 @@
 import logging
-import re
 from typing import Any, Optional
 
 import torch
@@ -113,63 +112,6 @@ class SimBotActionInputBuilder:
             else:
                 logger.error(f"Found unsupported task: {task}")
         return (instruction, batch, decoder_input_ids, step_index)
-
-    def check_carrot_case(self, request: EmmaPolicyRequest) -> bool:
-        """Check if the previous action toggled the carrot machine."""
-        if len(request.environment_history) < 2:
-            return False
-
-        previous_action = request.environment_history[-2]
-        if previous_action.output is None:
-            return False
-
-        if "<stop>" in previous_action.output:
-            return False
-
-        return previous_action.output.startswith(
-            "toggle everything's a carrot machine <frame_token_"
-        )
-
-    def check_sticky_note_case(
-        self, request: EmmaPolicyRequest, is_action: bool = True
-    ) -> Optional[str]:
-        """Check if the instruction refers to a sticky note."""
-        features = request.environment_history[-1].features
-        entity_labels = features[0].entity_labels
-
-        ignore_instruction = any(
-            [
-                len(request.environment_history) > 1,
-                len(features) > 1,
-                entity_labels is None,
-                len(request.dialogue_history) > 1,
-                request.dialogue_history[-1].role == "agent",
-            ]
-        )
-        if ignore_instruction:
-            return None
-
-        patterns = "|".join(
-            [
-                r"\S?sticky\s+",
-                r"\S?stickynote\s+",
-                r"\S?note\S?",
-                r"\S?clue\S?",
-                r"\S?hint\S?",
-                r"\S?postit\S?",
-                r"\S?posted\S?",
-            ]
-        )
-        search_pattern = f"({patterns})"
-        search_result = re.search(search_pattern, request.dialogue_history[-1].utterance)
-
-        if search_result is not None and "Sticky Note" in entity_labels:
-            vis_token = entity_labels.index("Sticky Note") + 1
-            if is_action:
-                return f"goto sticky note <frame_token_1> <vis_token_{vis_token}> <stop>.</s>"
-            return f"<frame_token_1> <vis_token_{vis_token}>"
-
-        return None
 
     def _prepare_decoder_input_ids(
         self, previous_actions: Optional[str] = None

@@ -1,41 +1,30 @@
 import logging
-import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Any, Literal, TypedDict, Union
 
 import torch
-from emma_common.api.instrumentation import instrument_app
-from emma_common.aws.cloudwatch import add_cloudwatch_handler_to_logger
 from emma_common.datamodels import TorchDataMixin
-from emma_common.logging import (
-    InstrumentedInterceptHandler,
-    logger,
-    setup_logging,
-    setup_rich_logging,
-)
+from emma_common.logging import logger, setup_rich_logging
 from fastapi import FastAPI, Request, Response, status
-from opentelemetry import trace
 from pydantic import BaseSettings, FilePath
 from transformers import PreTrainedTokenizer
 from uvicorn import Config, Server
 
-from emma_policy._version import __version__  # noqa: WPS436
 from emma_policy.datamodules.simbot_combined_datamodule import prepare_combined_tokenizer
-from emma_policy.datamodules.simbot_nlu_datamodule import prepare_nlu_tokenizer
-from emma_policy.datamodules.simbot_nlu_dataset import SimBotNLUIntents
-from emma_policy.inference.model_wrapper.simbot_nlu_input_builder import SimBotNLUInputBuilder
-from emma_policy.inference.model_wrapper.simbot_nlu_output_processor import (
-    SimBotNLUPredictionProcessor,
+from emma_policy.datamodules.simbot_cr_datamodule import prepare_cr_tokenizer
+from emma_policy.datamodules.simbot_cr_dataset import SimBotCRIntents
+from emma_policy.inference.model_wrapper.simbot_cr_input_builder import SimBotCRInputBuilder
+from emma_policy.inference.model_wrapper.simbot_cr_output_processor import (
+    SimBotCRPredictionProcessor,
 )
 from emma_policy.models.simbot_combined_policy import SimBotEmmaCombinedPolicy
-from emma_policy.models.simbot_nlu_policy import SimBotNLUEmmaPolicy, postprocess_nlu_output
+from emma_policy.models.simbot_cr_policy import SimBotCREmmaPolicy, postprocess_cr_output
 
 
-tracer = trace.get_tracer(__name__)
-DEFAULT_ACTION = SimBotNLUIntents.act_one_match.value
+DEFAULT_ACTION = SimBotCRIntents.act_one_match.value
 
-NLUModelType = Union[SimBotEmmaCombinedPolicy, SimBotNLUEmmaPolicy]
+CRModelType = Union[SimBotEmmaCombinedPolicy, SimBotCREmmaPolicy]
 
 
 class ApiSettings(BaseSettings):
@@ -45,31 +34,20 @@ class ApiSettings(BaseSettings):
     host: str = "0.0.0.0"  # noqa: S104
     workers: int = 1
     log_level: str = "debug"
-    model_checkpoint_path: FilePath = Path("storage/model/checkpoints/simbot/nlu.ckpt")
+    model_checkpoint_path: FilePath = Path("storage/model/checkpoints/simbot/cr.ckpt")
     model_name: str = "heriot-watt/emma-base"
     model_type: Literal["combined", "standalone"] = "combined"
     device: str = "cpu"
     disable_missing_inventory: bool = False
-    enable_prediction_patching: bool = True
-
-    # Observability
-    traces_to_opensearch: bool = False
-    log_to_cloudwatch: bool = False
-    aws_profile: str = "TeamProfile"
-    watchtower_log_group_name: str = "simbot_challenge"
-    watchtower_log_stream_name: str = "nlu/{machine_name}/{logger_name}/{process_id}"
-
-    otlp_endpoint: str = "localhost:4317"
-    opensearch_service_name: str = "nlu"
 
 
 class ApiStore(TypedDict, total=False):
     """Common state for the API."""
 
-    input_builder: SimBotNLUInputBuilder
+    input_builder: SimBotCRInputBuilder
     tokenizer: PreTrainedTokenizer
-    model: NLUModelType
-    output_processor: SimBotNLUPredictionProcessor
+    model: CRModelType
+    output_processor: SimBotCRPredictionProcessor
     num_beams: int
     no_repeat_ngram_size: int
     max_generated_text_length: int
@@ -87,8 +65,8 @@ def load_model(
     model_name: str,
     device: str,
     model_type: Literal["combined", "standalone"],
-) -> NLUModelType:
-    """Load an NLU checkpoint."""
+) -> CRModelType:
+    """Load an CR checkpoint."""
     if model_type == "combined":
         model = SimBotEmmaCombinedPolicy(
             model_name=model_name,
@@ -96,7 +74,7 @@ def load_model(
             max_generated_text_length=api_store["max_generated_text_length"],
         ).load_from_checkpoint(checkpoint_path)
     else:
-        model = SimBotNLUEmmaPolicy(
+        model = SimBotCREmmaPolicy(
             model_name=model_name,
             num_beams=api_store["num_beams"],
             max_generated_text_length=api_store["max_generated_text_length"],
@@ -116,19 +94,18 @@ async def startup_event() -> None:
     if settings.model_type == "combined":
         api_store["tokenizer"] = prepare_combined_tokenizer(settings.model_name)
     else:
-        api_store["tokenizer"] = prepare_nlu_tokenizer(settings.model_name)
-    api_store["input_builder"] = SimBotNLUInputBuilder(
+        api_store["tokenizer"] = prepare_cr_tokenizer(settings.model_name)
+    api_store["input_builder"] = SimBotCRInputBuilder(
         tokenizer=api_store["tokenizer"],
         device=settings.device,
     )
     api_store["valid_action_types"] = [
-        intent.value for intent in SimBotNLUIntents if intent.is_nlu_output
+        intent.value for intent in SimBotCRIntents if intent.is_cr_output
     ]
-    api_store["output_processor"] = SimBotNLUPredictionProcessor(
+    api_store["output_processor"] = SimBotCRPredictionProcessor(
         valid_action_types=api_store["valid_action_types"],
         default_prediction=DEFAULT_ACTION,
         disable_missing_inventory=settings.disable_missing_inventory,
-        enable_prediction_patching=settings.enable_prediction_patching,
     )
     logging.info(f"Loading model on device `{settings.device}`")
     api_store["model"] = load_model(
@@ -169,48 +146,33 @@ async def generate(request: Request, response: Response) -> str:
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         raise request_err
 
-    with tracer.start_as_current_span("Model inference"):
-        logger.debug("Preparing the model input")
-        # If the environment history is greater than 1,
-        # the agent has already clarified or acted.
-        if len(simbot_request.environment_history) == 1:
-            batch, instruction = api_store["input_builder"](simbot_request)
-            try:  # noqa: WPS229
-                with torch.no_grad():
-                    actions = api_store["model"].inference_step(batch)
+    logger.debug("Preparing the model input")
+    # If the environment history is greater than 1,
+    # the agent has already clarified or acted.
+    if len(simbot_request.environment_history) == 1:
+        batch, instruction = api_store["input_builder"](simbot_request)
+        try:  # noqa: WPS229
+            with torch.no_grad():
+                actions = api_store["model"].inference_step(batch)
 
-                decoded_action = postprocess_nlu_output(api_store["tokenizer"], actions)[0]
+            decoded_action = postprocess_cr_output(api_store["tokenizer"], actions)[0]
 
-                action = api_store["output_processor"](
-                    instruction=instruction,
-                    prediction=decoded_action,
-                    frame_features=simbot_request.environment_history[-1].features,
-                )
+            action = api_store["output_processor"](prediction=decoded_action)
 
-            except Exception as err:
-                # TODO: report session ID for better debugging
-                error_message = f"Failed to get next action for request `{simbot_request}"
-                logger.error(error_message, exc_info=err)
-                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-                raise err
-        else:
-            action = DEFAULT_ACTION
+        except Exception as err:
+            # TODO: report session ID for better debugging
+            error_message = f"Failed to get next action for request `{simbot_request}"
+            logger.error(error_message, exc_info=err)
+            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            raise err
+    else:
+        action = DEFAULT_ACTION
     return action
 
 
 def main() -> None:
     """Runs a server that serves any instance of an EMMA policy model."""
-    if settings.traces_to_opensearch:
-        instrument_app(
-            app,
-            otlp_endpoint=settings.otlp_endpoint,
-            service_name=settings.opensearch_service_name,
-            service_version=__version__,
-            service_namespace="SimBot",
-        )
-        setup_logging(sys.stdout, InstrumentedInterceptHandler())
-    else:
-        setup_rich_logging(rich_traceback_show_locals=False)
+    setup_rich_logging(rich_traceback_show_locals=False)
 
     server = Server(
         Config(
@@ -220,15 +182,6 @@ def main() -> None:
             log_level=settings.log_level,
         )
     )
-    if settings.log_to_cloudwatch:
-        add_cloudwatch_handler_to_logger(
-            boto3_profile_name=settings.aws_profile,
-            log_stream_name=settings.watchtower_log_stream_name,
-            log_group_name=settings.watchtower_log_group_name,
-            send_interval=1,
-            enable_trace_logging=settings.traces_to_opensearch,
-        )
-
     server.run()
 
 

@@ -14,10 +14,10 @@ from transformers.generation_utils import (
 )
 
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
-from emma_policy.datamodules.simbot_nlu_datamodule import prepare_nlu_tokenizer
+from emma_policy.datamodules.simbot_cr_datamodule import prepare_cr_tokenizer
 from emma_policy.models.emma_policy import EmmaPolicy
 from emma_policy.models.model_output_emma import EmmaSeq2SeqLMOutput
-from emma_policy.utils.simbot_nlu_metrics import SimbotActionTypeF1, SimbotNLUExactMatch
+from emma_policy.utils.simbot_cr_metrics import SimbotActionTypeF1, SimbotCRExactMatch
 
 
 PredictType = Union[
@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 ForcedWordIdsList = list[list[list[int]]]
 
 
-def postprocess_nlu_output(tokenizer: PreTrainedTokenizer, output: PredictType) -> list[str]:
+def postprocess_cr_output(tokenizer: PreTrainedTokenizer, output: PredictType) -> list[str]:
     """Remove special tokens from predicted outputs."""
     special_tokens = [
         tokenizer.bos_token,
@@ -53,7 +53,7 @@ def remove_sequence_special_tokens(sentence: str, special_tokens: list[str]) -> 
     return sentence
 
 
-class SimBotNLUEmmaPolicy(EmmaPolicy):
+class SimBotCREmmaPolicy(EmmaPolicy):
     """Emma Lightning Module."""
 
     def __init__(
@@ -64,12 +64,12 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
         save_results_path: Optional[Path] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(model_name=f"{model_name}-nlu", **kwargs)
+        super().__init__(model_name=f"{model_name}-cr", **kwargs)
         self.model_name = model_name
         self._question_answers: dict[str, list[str]] = {"predictions": [], "references": []}
 
         self._num_beams = num_beams
-        self._tokenizer = prepare_nlu_tokenizer(model_name=model_name)
+        self._tokenizer = prepare_cr_tokenizer(model_name=model_name)
         self._min_length = 1
         self._max_generated_text_length = max_generated_text_length
 
@@ -95,7 +95,7 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
             self._num_beams += 1  # constrains need num_beams > 1
         self.task_metrics = None  # type: ignore[assignment]
         self.validation_action_type_F1 = SimbotActionTypeF1(tokenizer=self._tokenizer)
-        self.validation_accuracy = SimbotNLUExactMatch()
+        self.validation_accuracy = SimbotCRExactMatch()
 
         self._results_path = save_results_path
         self._test_results: dict[str, list[str]] = {
@@ -168,7 +168,7 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
             self._test_results["groundtruths"].extend(
                 [sample["references"] for sample in batch.raw_target]  # type: ignore[union-attr]
             )
-            sent = postprocess_nlu_output(self._tokenizer, prediction_output)
+            sent = postprocess_cr_output(self._tokenizer, prediction_output)
             self._test_results["predictions"].extend(sent)
 
     @overrides(check_signature=False)
@@ -200,7 +200,7 @@ class SimBotNLUEmmaPolicy(EmmaPolicy):
     def inference_step(self, batch: EmmaDatasetBatch, batch_idx: int = 0) -> PredictType:
         """Inference step."""
         return self.predict_step(batch, batch_idx)
-        # return postprocess_nlu_output(self.tokenizer, output_tokens)
+        # return postprocess_cr_output(self.tokenizer, output_tokens)
 
     def compute_metrics(self, prediction_output: torch.Tensor, batch: EmmaDatasetBatch) -> None:
         """Compute the evaluation metrics."""

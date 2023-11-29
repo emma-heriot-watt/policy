@@ -6,7 +6,7 @@ from torchmetrics import F1Score, Metric
 from transformers import PreTrainedTokenizer
 
 
-class SimbotNLUExactMatch(Metric):
+class SimbotCRExactMatch(Metric):
     """Loss for a exact match."""
 
     def __init__(self, dist_sync_on_step: bool = True, threshold: float = 0.5) -> None:

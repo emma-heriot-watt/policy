@@ -7,18 +7,18 @@ from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from emma_policy.datamodules.collate import collate_fn
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch
-from emma_policy.datamodules.simbot_nlu_dataset import SimBotNLUDataset, SimBotNLUIntents
+from emma_policy.datamodules.simbot_cr_dataset import SimBotCRDataset, SimBotCRIntents
 from emma_policy.utils import DistributedWeightedSampler, compute_weights
 
 
-def prepare_nlu_tokenizer(
+def prepare_cr_tokenizer(
     model_name: str = "heriot-watt/emma-base",
     tokenizer_truncation_side: Literal["left", "right"] = "right",
     max_lang_tokens: Optional[int] = 64,
 ) -> PreTrainedTokenizer:
     """Add special tokens to tokenizer."""
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    special_tokens = [intent.value for intent in SimBotNLUIntents if intent.is_special_token]
+    special_tokens = [intent.value for intent in SimBotCRIntents if intent.is_special_token]
     # doesn't add if they are already there
     tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
     tokenizer.truncation_side = tokenizer_truncation_side
@@ -28,13 +28,13 @@ def prepare_nlu_tokenizer(
     return tokenizer
 
 
-def get_nlu_classes() -> list[str]:
-    """Get the NLU classes."""
-    return [intent.name for intent in SimBotNLUIntents if intent.is_nlu_output]
+def get_cr_classes() -> list[str]:
+    """Get the CR classes."""
+    return [intent.name for intent in SimBotCRIntents if intent.is_cr_output]
 
 
-class SimBotNLUDataModule(LightningDataModule):
-    """Data module to load SimBot instructions for the EMMA NLU model."""
+class SimBotCRDataModule(LightningDataModule):
+    """Data module to load SimBot instructions for the EMMA CR model."""
 
     def __init__(
         self,
@@ -84,7 +84,7 @@ class SimBotNLUDataModule(LightningDataModule):
 
     def setup_tokenizer(self) -> PreTrainedTokenizer:
         """Add special tokens to tokenizer."""
-        self.tokenizer = prepare_nlu_tokenizer(
+        self.tokenizer = prepare_cr_tokenizer(
             model_name=self._model_name,
             tokenizer_truncation_side=self.tokenizer_truncation_side,
             max_lang_tokens=self._max_lang_tokens,
@@ -95,27 +95,27 @@ class SimBotNLUDataModule(LightningDataModule):
         """Setup datasets for the dataloaders."""
         self.setup_tokenizer()
 
-        self._train_dataset = SimBotNLUDataset(
+        self._train_dataset = SimBotCRDataset(
             dataset_db_path=self._train_db_file,
             tokenizer=self.tokenizer,
             is_train=True,
             shuffle_objects=True,
         )
 
-        self._valid_dataset = SimBotNLUDataset(
+        self._valid_dataset = SimBotCRDataset(
             dataset_db_path=self._valid_db_file,
             tokenizer=self.tokenizer,
             is_train=False,
         )
 
-        self._test_dataset = SimBotNLUDataset(
+        self._test_dataset = SimBotCRDataset(
             dataset_db_path=self._test_db_file,
             tokenizer=self.tokenizer,
             is_train=False,
         )
 
     def train_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
-        """Generate train dataloader for SimBot NLU instances."""
+        """Generate train dataloader for SimBot CR instances."""
         if self._weighted_sampling:
             training_sampler_weights = compute_weights(
                 self._train_dataset.data_intents,
@@ -141,7 +141,7 @@ class SimBotNLUDataModule(LightningDataModule):
         )
 
     def val_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
-        """Generate valid dataloader for SimBot NLU instances."""
+        """Generate valid dataloader for SimBot CR instances."""
         return DataLoader(
             self._valid_dataset,  # type: ignore[arg-type]
             batch_size=self._val_batch_size,
@@ -151,7 +151,7 @@ class SimBotNLUDataModule(LightningDataModule):
         )
 
     def test_dataloader(self) -> DataLoader[EmmaDatasetBatch]:
-        """Generate test dataloader for SimBot NLU instances."""
+        """Generate test dataloader for SimBot CR instances."""
         return DataLoader(
             self._test_dataset,  # type: ignore[arg-type]
             batch_size=self._val_batch_size,

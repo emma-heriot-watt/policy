@@ -40,8 +40,8 @@ from emma_policy.utils.datamodels.simbot import (
 logger = get_logger(__name__)
 
 
-class SimBotNLUIntents(Enum):
-    """SimBot NLU intent types."""
+class SimBotCRIntents(Enum):
+    """SimBot CR intent types."""
 
     act = "<act>"
     search = "<search>"
@@ -72,7 +72,7 @@ class SimBotNLUIntents(Enum):
         }
 
     @property
-    def is_nlu_output(self) -> bool:
+    def is_cr_output(self) -> bool:
         """Wether an intent is a valid output."""
         return self in {
             self.act_one_match,
@@ -98,8 +98,8 @@ def action_is_object_interaction(action: SimBotAction) -> bool:
     return "officeRoom" not in object_metadata
 
 
-class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
-    """Dataset for AreanNLU.
+class SimBotCRDataset(EmmaBaseDataset[EmmaDatasetItem]):
+    """Dataset for AreanCR.
 
     Each instance is loaded from the DatasetDb file and converted to an instance of
     `EmmaDatasetItem` before being returned.
@@ -126,11 +126,11 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         )
 
         self.is_train = is_train
-        self.data_intents: list[SimBotNLUIntents] = []
+        self.data_intents: list[SimBotCRIntents] = []
         self._synthetic_negative_candidates: list[int] = []
         self._question_type_intent_map = {
-            SimBotClarificationTypes.location: SimBotNLUIntents.act_no_match,
-            SimBotClarificationTypes.disambiguation: SimBotNLUIntents.act_too_many_matches,
+            SimBotClarificationTypes.location: SimBotCRIntents.act_no_match,
+            SimBotClarificationTypes.disambiguation: SimBotCRIntents.act_too_many_matches,
         }
         self._prepare_data()
         arena_definitions = get_arena_definitions()
@@ -155,7 +155,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
 
     @overrides(check_signature=False)
     def __getitem__(self, index: int) -> EmmaDatasetItem:
-        """Get the SimBot NLU instance at the given index as an instance of `EmmaDatasetItem`."""
+        """Get the SimBot CR instance at the given index as an instance of `EmmaDatasetItem`."""
         with self.db:
             instance_str = self.db[index]
         instance = SimBotInstructionInstance.parse_raw(instance_str)
@@ -250,7 +250,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             )
             if missing_holding_object:
                 instance.actions[0].inventory_object_id = None
-                target_text = SimBotNLUIntents.act_missing_inventory.value
+                target_text = SimBotCRIntents.act_missing_inventory.value
 
                 object_readable_name = get_object_readable_name_from_object_id(
                     object_id=holding_object,
@@ -259,7 +259,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 )
 
             else:
-                target_text = SimBotNLUIntents.act_one_match.value
+                target_text = SimBotCRIntents.act_one_match.value
                 object_readable_name = self._get_target_object_name(
                     action=instance.actions[0],
                     name_type="readable",
@@ -296,10 +296,10 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             inventory_object_id=instance.actions[0].inventory_object_id,
         )
         # First try to get the target for a clarification
-        target_text = self._get_nlu_human_question(instance)
+        target_text = self._get_cr_human_question(instance)
         # If target_text is an empty list, we have an action
         if not target_text:
-            target_text = SimBotNLUIntents.act_one_match.value
+            target_text = SimBotCRIntents.act_one_match.value
             object_readable_name = self._get_target_object_name(
                 action=instance.actions[0],
                 name_type="readable",
@@ -328,7 +328,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 instruction=instruction,
                 inventory_object_id=instance.actions[0].inventory_object_id,
             )
-            target_text = self._get_nlu_synthetic_too_many_matches(instance)
+            target_text = self._get_cr_synthetic_too_many_matches(instance)
         else:
             instruction, target_text = self._augment_synthetic_action(instance)
         return instruction, target_text
@@ -361,12 +361,12 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             visual_features = self._load_visual_features(
                 features_path=negative_instance.features_path[0]
             )
-            target_text = f"{SimBotNLUIntents.search_no_match.value} {object_readable_name}"
+            target_text = f"{SimBotCRIntents.search_no_match.value} {object_readable_name}"
             is_negative = True
         elif action_object_metadata["mask"] is None:
             # A negative search sample
             visual_features = self._load_visual_features(features_path=instance.features_path[0])
-            target_text = f"{SimBotNLUIntents.search_no_match.value} {object_readable_name}"
+            target_text = f"{SimBotCRIntents.search_no_match.value} {object_readable_name}"
             is_negative = True
 
         else:
@@ -387,13 +387,13 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             )
             # If there is a matching bounding box, append its visual token to the target text
             if ground_truth_flags.shape[0] == 0:
-                target_text = f"{SimBotNLUIntents.search_no_match.value} {object_readable_name}"
+                target_text = f"{SimBotCRIntents.search_no_match.value} {object_readable_name}"
                 is_negative = True
             elif ground_truth_flags.shape[0] == 1:
-                target_text = f"{SimBotNLUIntents.search_one_match.value} {object_readable_name}"
+                target_text = f"{SimBotCRIntents.search_one_match.value} {object_readable_name}"
             else:
                 target_text = (
-                    f"{SimBotNLUIntents.search_too_many_matches.value} {object_readable_name}"
+                    f"{SimBotCRIntents.search_too_many_matches.value} {object_readable_name}"
                 )
 
         instruction = self._prepare_search_instruction(
@@ -450,7 +450,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             instruction, target_text = self._augment_synthetic_inventory(
                 instance=instance,
                 missing_inventory_proba=self._one_match_to_missining_inventory_proba,
-                target_text=SimBotNLUIntents.act_one_match.value,
+                target_text=SimBotCRIntents.act_one_match.value,
             )
         else:
             visual_features = self._load_visual_features(features_path=instance.features_path[0])
@@ -466,7 +466,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             instruction, target_text = self._augment_synthetic_inventory(
                 instance=instance,
                 missing_inventory_proba=self._no_match_to_missining_inventory_proba,
-                target_text=SimBotNLUIntents.act_no_match.value,
+                target_text=SimBotCRIntents.act_no_match.value,
                 include_location_in_attributes=False,
             )
 
@@ -495,7 +495,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
 
         return instruction
 
-    def _get_nlu_human_question(self, instance: SimBotInstructionInstance) -> Optional[str]:
+    def _get_cr_human_question(self, instance: SimBotInstructionInstance) -> Optional[str]:
         """Get the target text and question type vector from a human question.
 
         Examples to avoid:
@@ -519,9 +519,9 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
 
         return question_as_target
 
-    def _get_nlu_synthetic_too_many_matches(self, instance: SimBotInstructionInstance) -> str:
+    def _get_cr_synthetic_too_many_matches(self, instance: SimBotInstructionInstance) -> str:
         """Get the target text and question type vector from a synthetic question."""
-        question_as_target = SimBotNLUIntents.act_too_many_matches.value
+        question_as_target = SimBotCRIntents.act_too_many_matches.value
         object_name = self._get_target_object_name(instance.actions[0], name_type="class")
         if object_name:
             question_as_target = f"{question_as_target} {object_name}"
@@ -575,7 +575,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
                 inventory_object_id=None,
                 instruction=instruction,
             )
-            target_text = SimBotNLUIntents.act_missing_inventory.value
+            target_text = SimBotCRIntents.act_missing_inventory.value
             object_readable_name = get_object_readable_name_from_object_id(
                 object_id=instance.actions[0].inventory_object_id,
                 object_assets_to_names=self._object_assets_to_names,
@@ -618,21 +618,21 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
                     continue
                 self._synthetic_negative_candidates.append(index)
 
-    def _get_data_intent(self, instance: SimBotInstructionInstance) -> SimBotNLUIntents:
+    def _get_data_intent(self, instance: SimBotInstructionInstance) -> SimBotCRIntents:
         if instance.actions[0].type == "Search":
             action_object_metadata = instance.actions[0].get_action_data["object"]
             if action_object_metadata["mask"] is None:
-                return SimBotNLUIntents.search_no_match
-            return SimBotNLUIntents.search_one_match
+                return SimBotCRIntents.search_no_match
+            return SimBotCRIntents.search_one_match
         if instance.instruction.necessary_question_answers:
             qa_pair = instance.instruction.necessary_question_answers[0]
             return self._question_type_intent_map.get(
-                qa_pair.question_type, SimBotNLUIntents.act_one_match
+                qa_pair.question_type, SimBotCRIntents.act_one_match
             )
 
         elif instance.ambiguous:
-            return SimBotNLUIntents.act_too_many_matches
-        return SimBotNLUIntents.act_one_match
+            return SimBotCRIntents.act_too_many_matches
+        return SimBotCRIntents.act_one_match
 
     def _get_instance_frame(self, instance: SimBotInstructionInstance, target_text: str) -> int:
         """Get either the image infront of you or the image with the target object."""
@@ -656,8 +656,8 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
         return visual_features
 
     def _is_no_match(self, target_text: str) -> bool:
-        """Check if the instance NLU label is no_match."""
-        return SimBotNLUIntents.no_match.value in target_text
+        """Check if the instance CR label is no_match."""
+        return SimBotCRIntents.no_match.value in target_text
 
     def _get_target_object_name(
         self, action: SimBotAction, name_type: Literal["class", "readable"] = "readable"
@@ -754,7 +754,7 @@ class SimBotNLUDataset(EmmaBaseDataset[EmmaDatasetItem]):
             inventory_object_id=instance.actions[0].inventory_object_id,
         )
 
-        target_text = SimBotNLUIntents.act_no_match.value
+        target_text = SimBotCRIntents.act_no_match.value
         if object_readable_name:
             target_text = f"{target_text} {object_readable_name}"
 

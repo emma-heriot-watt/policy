@@ -14,7 +14,7 @@ from transformers import AutoTokenizer, PreTrainedTokenizer
 from emma_policy.datamodules.collate import collate_fn
 from emma_policy.datamodules.emma_dataclasses import EmmaDatasetBatch, EmmaDatasetItem
 from emma_policy.datamodules.simbot_action_dataset import SimBotActionDataset
-from emma_policy.datamodules.simbot_nlu_dataset import SimBotNLUDataset, SimBotNLUIntents
+from emma_policy.datamodules.simbot_cr_dataset import SimBotCRDataset, SimBotCRIntents
 from emma_policy.utils import DistributedWeightedSampler, compute_weights
 
 
@@ -29,7 +29,7 @@ def prepare_combined_tokenizer(
     """Add special tokens to tokenizer."""
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     # vad special tokens
-    vad_special_tokens = [intent.value for intent in SimBotNLUIntents if intent.is_special_token]
+    vad_special_tokens = [intent.value for intent in SimBotCRIntents if intent.is_special_token]
     action_special_tokens = SimBotAction_SPECIAL_TOKENS
     combined_special_tokens = vad_special_tokens + action_special_tokens
 
@@ -122,7 +122,7 @@ class SimBotCombinedDataModule(LightningDataModule):
         )
 
         # Train
-        train_vad_dataset = SimBotNLUDataset(
+        train_vad_dataset = SimBotCRDataset(
             dataset_db_path=self._simbot_vad_train_db_file,
             tokenizer=self._tokenizer,
             is_train=True,
@@ -144,7 +144,7 @@ class SimBotCombinedDataModule(LightningDataModule):
             allow_paraphrasing=True,
         )
 
-        valid_vad_dataset = SimBotNLUDataset(
+        valid_vad_dataset = SimBotCRDataset(
             dataset_db_path=self._simbot_vad_valid_db_file,
             tokenizer=self._tokenizer,
             is_train=False,
@@ -163,7 +163,7 @@ class SimBotCombinedDataModule(LightningDataModule):
             allow_paraphrasing=True,
         )
 
-        test_vad_dataset = SimBotNLUDataset(
+        test_vad_dataset = SimBotCRDataset(
             dataset_db_path=self._simbot_vad_valid_db_file,
             tokenizer=self._tokenizer,
             is_train=False,
@@ -222,7 +222,7 @@ class SimBotCombinedDataModule(LightningDataModule):
         """Proportional temperature scaling to mitigate action type imbalance."""
         action_db = DatasetDb(self._simbot_action_train_db_file)
         # First pass through the dataset to get action type counts
-        actions: list[Union[str, SimBotNLUIntents]] = []
+        actions: list[Union[str, SimBotCRIntents]] = []
         for _, _, instance_str in action_db:
             instance = SimBotInstructionInstance.parse_raw(instance_str)
             actions.append(self._get_action_type(instance.actions[-1]))

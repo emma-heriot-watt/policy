@@ -13,7 +13,7 @@ from tqdm import tqdm
 from transformers import AutoTokenizer
 
 from emma_policy.datamodules.simbot_action_dataset import SimBotActionDataset
-from emma_policy.datamodules.simbot_nlu_dataset import SimBotNLUDataset
+from emma_policy.datamodules.simbot_cr_dataset import SimBotCRDataset
 
 
 logging.basicConfig()
@@ -86,9 +86,9 @@ def get_data_from_action_dataset(args: argparse.Namespace) -> dict[str, Any]:
     return data_dict
 
 
-def get_data_from_nlu_dataset(args: argparse.Namespace) -> dict[str, Any]:
-    """Get the visualization data from the NLU dataset."""
-    train_dataset = SimBotNLUDataset(
+def get_data_from_cr_dataset(args: argparse.Namespace) -> dict[str, Any]:
+    """Get the visualization data from the CR dataset."""
+    train_dataset = SimBotCRDataset(
         dataset_db_path=args.dataset_db,
         tokenizer=AutoTokenizer.from_pretrained("heriot-watt/emma-base"),
         is_train=True,
@@ -98,13 +98,9 @@ def get_data_from_nlu_dataset(args: argparse.Namespace) -> dict[str, Any]:
     data_per_action = defaultdict(list)
 
     for index, instance in tqdm(enumerate(train_dataset)):  # type: ignore[arg-type]
-        data.append(instance.raw_target["nlu_class"])
-        data_per_object[instance.raw_target["object_type"]].append(
-            instance.raw_target["nlu_class"]
-        )
-        data_per_action[instance.raw_target["action_type"]].append(
-            instance.raw_target["nlu_class"]
-        )
+        data.append(instance.raw_target["cr_class"])
+        data_per_object[instance.raw_target["object_type"]].append(instance.raw_target["cr_class"])
+        data_per_action[instance.raw_target["action_type"]].append(instance.raw_target["cr_class"])
 
         if index == len(train_dataset) - 1:
             break
@@ -119,8 +115,8 @@ def get_data_for_visualization(args: argparse.Namespace) -> dict[str, Any]:
     if args.cache_dir.exists():
         with open(args.cache_dir) as file_in:
             return json.load(file_in)
-    elif args.dataset_type == "nlu":
-        return get_data_from_nlu_dataset(args)
+    elif args.dataset_type == "cr":
+        return get_data_from_cr_dataset(args)
     return get_data_from_action_dataset(args)
 
 
@@ -181,7 +177,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset_type",
         type=str,
-        choices=["nlu", "action"],
+        choices=["cr", "action"],
         help="Type of the dataset",
     )
     parser.add_argument(

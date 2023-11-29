@@ -28,3 +28,10 @@ def emma_pretrain_datamodule(
     dm.setup()
 
     return dm
+
+
+class DataModuleCases:
+    def case_pretrain(
+        self, emma_pretrain_datamodule: EmmaPretrainDataModule
+    ) -> EmmaPretrainDataModule:
+        return emma_pretrain_datamodule

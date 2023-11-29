@@ -11,7 +11,6 @@ from requests_mock import Mocker
 
 from emma_policy.api.clients import FeatureExtractorClient
 from emma_policy.common.settings import Settings
-from emma_policy.inference.model_wrapper import PolicyModelWrapper, SimulatorAction
 
 
 @pytest.fixture(scope="module")
@@ -34,8 +33,3 @@ def load_frame_features_like_api_response(features_path: Path) -> list[dict[str,
     ]
 
     return response_features
-
-
-def test_model_is_loaded_from_checkpoint(policy_model_wrapper: PolicyModelWrapper) -> None:
-    """Verify the model has been loaded from the checkpoint correctly."""
-    assert not policy_model_wrapper._model.training

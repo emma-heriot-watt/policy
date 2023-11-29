@@ -15,6 +15,7 @@ def load_coco_ids(coco_splits_path: Path) -> set[str]:
     We only extract the image ID's, which are in the form `COCO_val2014_000000238836`.
     """
     with open(coco_splits_path) as in_file:
+        print(coco_splits_path)
         data_list = json.load(in_file)
 
     image_ids: set[str] = set()

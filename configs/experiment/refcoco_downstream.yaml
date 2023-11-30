@@ -57,13 +57,13 @@ datamodule:
   refcoco_train_db_file: storage/db/refcoco_train.db
   refcoco_valid_db_file: storage/db/refcoco_valid.db
   refcoco_test_db_file: storage/db/refcoco_test.db
-  train_batch_size: 90
+  train_batch_size: 32
   val_batch_size: 100
-  num_workers: 0
+  num_workers: 4
   max_lang_tokens: 64
   tokenizer_truncation_side: right
   shuffle_objects: False
-  train_with_golden_bbox_prob: 1.0
+  train_with_golden_bbox_prob: 0.5
 
 callbacks:
   model_checkpoint:

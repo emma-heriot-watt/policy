@@ -52,9 +52,9 @@ datamodule:
   nlvr2_train_db_file: storage/db/nlvr2_fixtures/nlvr_train.db
   nlvr2_valid_db_file: storage/db/nlvr2_fixtures/nlvr_valid_seen.db
   nlvr2_test_db_file: storage/db/nlvr2_fixtures/nlvr_valid_unseen.db
-  train_batch_size: 100
-  val_batch_size: 100
-  num_workers: 0
+  train_batch_size: 64
+  val_batch_size: 128
+  num_workers: 4
   max_lang_tokens: 512
   tokenizer_truncation_side: right
 

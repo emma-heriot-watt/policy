@@ -69,9 +69,8 @@ We've separated specific groups of dependencies so that you only need to install
 
 - For demonstrating using Gradio, run `poetry install --with demo`
 
-## Writing code and running things
 
-### Project structure
+## Project structure
 
 This is organised in very similarly to structure from the [Lightning-Hydra-Template](https://github.com/ashleve/lightning-hydra-template#project-structure) to facilitate reproducible research code.
 
@@ -83,55 +82,68 @@ This is organised in very similarly to structure from the [Lightning-Hydra-Templ
 - `tests` — [pytest](https://docs.pytest.org/en/) scripts to verify the code
 - `src` — where the main code lives
 
-### Running things
 
-Train model with default configuration
+## Downloading data
 
-```bash
-# train on CPU
-python run.py trainer.gpus=0
+### Checkpoints
+All checkpoints are available here on [HugginFace](https://huggingface.co/gpantaz/emma_models/tree/main)
 
-# train on 1 GPU
-python run.py trainer.gpus=1
+These checkpoints include:
+| Model name      | Description |
+| :---            |    :----   |
+| [emma_base_pretrain.ckpt](https://huggingface.co/gpantaz/emma_models/blob/main/emma_base_pretrain.ckpt) | The EMMA base pretrained checkpoint |
+|[unified_emma_base_finetune_arena.ckpt](https://huggingface.co/gpantaz/emma_models/blob/main/unified_emma_base_finetune_arena.ckpt)| The EMMA-unified variant fine tuned on the DTC task|
+|[modular_action_emma_base_finetune_arena.ckpt](https://huggingface.co/gpantaz/emma_models/blob/main/modular_action_emma_base_finetune_arena.ckpt)|The EMMA-modular variant fine tuned on the DTC task that performs action execution and visual grounding
+|[vivl_finetune_arena.ckpt](https://huggingface.co/gpantaz/emma_models/blob/main/vivl_finetune_arena.ckpt)| The finetuned VinVL checkpoint|
+
+
+### DBs
+The DBs are required for pre-training and fine tuning and are available on [Hugginface](https://huggingface.co/datasets/gpantaz/emma_datasets/tree/main)
+
+We are providing DBs:
+1. Pretraining on image-based tasks (one-db per task)
+2. Finetuning on image-based tasks (one-db per task)
+3. Finetuning on the DTC tasks (one-db for action execution / visual grounding & one db for the contextual routing task)
+
+Make sure that these are placed under `storage/db` folder or alternatively set the path to the dbs within each experiment config
+
+
+### Features
+The image features for all image-base tasks and the DTC benchmark on [Huggingface](https://huggingface.co/datasets/gpantaz/emma_features/tree/main)
+
+The image features were extracted using the pretrained [VinVL checkpoint](https://github.com/pzzhang/VinVL). For the DTC benchmark we have finetuned the checkpoint on the Alexa Arena data.
+
+
+## Pretraining
+First make sure that you have downloaded the pretraining db and the corresponding features
+
+
+```
+python run.py experiment=pretrain.yaml
 ```
 
-Train model with chosen experiment configuration from [configs/experiment/](configs/experiment/)
+## Downstream
 
-```bash
-python run.py experiment=experiment_name.yaml
+### COCO
+```
+python run.py experiment=coco_downstream.yaml
 ```
 
-You can override any parameter from command line like this
-
-```bash
-python run.py trainer.max_epochs=20 datamodule.train_batch_size=64
+### VQAv2
+```
+python run.py experiment=vqa_v2_downstream.yaml
 ```
 
-Especially when you're trying to specify extra parameters for the class `Trainer` from
-[PyTorch-Lightning](https://pytorch-lightning.readthedocs.io/en/latest/api/pytorch_lightning.trainer.trainer.html#module-pytorch_lightning.trainer.trainer),
-you might run into trouble when running a command like the following:
-
-```bash
-python run.py trainer.precision=16 datamodule.train_batch_size=64
+### RefCOCOg
+```
+python run.py experiment=refcoco_downstream.yaml
 ```
 
-This is because Hydra allows you to modify only parameters specified in the configuration file. So
-if you don't have `precision` among them, Hydra will complain. If you're sure that the parameters
-is allowed, just change the previous command as follows:
-
-```bash
-python run.py +trainer.precision=16 datamodule.train_batch_size=64
+#### NLVR^2
+```
+python run.py experiment=nlvr2_downstream.yaml
 ```
 
-In this way, Hydra will automatically _append_ the new parameter to the configuration dictionary of
-the `Trainer` we're trying to instantiate.
 
-<details>
-<summary>It's annoying, why do I have to do that? </summary>
 
-<br>
 
-We're working on a possible fix and we're exploring different options. If you're interested in
-this, please follow this [issue](https://github.com/emma-simbot/research-base/issues/26).
-
-</details>

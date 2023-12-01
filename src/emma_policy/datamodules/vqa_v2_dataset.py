@@ -27,7 +27,6 @@ class VQAv2Dataset(EmmaBaseDataset[EmmaDatasetItem]):
         tokenizer: PreTrainedTokenizer,
         max_frames: int = 0,
     ) -> None:
-
         super().__init__(
             dataset_db_path=dataset_db_path,
             tokenizer=tokenizer,

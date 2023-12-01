@@ -48,7 +48,6 @@ def test_simbot_target_tokens(
     action_text: str,
     emma_tokenizer: EmmaTokenizer,
 ) -> None:
-
     target_encoding = emma_tokenizer.encode_plus(target_text, return_tensors="pt", truncation=True)
     full_target_token_ids = target_encoding.input_ids.squeeze(0)
     target_token_ids = mask_past_target_actions(

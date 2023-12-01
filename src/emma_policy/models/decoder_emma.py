@@ -50,7 +50,6 @@ class EmmaDecoder(LEDDecoder):
     ) -> tuple[torch.FloatTensor, ...]:
         """Get output from a single decoder layer."""
         if self.gradient_checkpointing and self.training:
-
             if use_cache:
                 logger.warning(
                     "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."

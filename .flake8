@@ -49,6 +49,10 @@ extend-ignore =
 		# Google Python style is not RST until after processed by Napoleon
 		# See https://github.com/peterjc/flake8-rst-docstrings/issues/17
 		RST201,RST203,RST301,
+		# It happens too often
+		C416, C419,
+		# This is new and cba to change the repo
+		S113
 extend-select =
 	# Should raise AssertionError instead of assert False
 	B011,
@@ -69,8 +73,6 @@ extend-select =
 	# Within an except clause, raise exceptions with `raise ... from err` or `raise ...
 	# from None` to distinguish them from errors in exception handling
 	B904,
-	# Alternative to E501 regarding line length
-	B950,
 	#	Counterpart to W503, enforce having the operator at the start of a new line.
 	W504,
 

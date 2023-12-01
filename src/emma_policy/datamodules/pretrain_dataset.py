@@ -833,7 +833,6 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
         width: int,
         height: int,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-
         gt_bbox = []
         for region in regions:
             gt_bbox_coord = BoxMode.convert(
@@ -894,7 +893,6 @@ class EmmaPretrainDataset(EmmaBaseDataset[Optional[EmmaDatasetItem]]):
             trajectory_text.extend(split_action_name(action.api_action.action))
             # Match the object to a predicted bounding box
             if "bbox" in action.discrete_action.args:
-
                 bbox_coord = action.discrete_action.args["bbox"]  # noqa: WPS529
                 gt_bbox = torch.tensor(
                     [

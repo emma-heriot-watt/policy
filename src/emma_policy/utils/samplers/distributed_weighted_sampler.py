@@ -17,7 +17,6 @@ class DistributedWeightedSampler(Sampler[int]):
         rank: Optional[int] = None,
         replacement: bool = True,
     ) -> None:
-
         if num_replicas is None:
             if not torch.distributed.is_available():
                 raise RuntimeError("Requires distributed package to be available")

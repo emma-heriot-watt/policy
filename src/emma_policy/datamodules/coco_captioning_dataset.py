@@ -29,7 +29,6 @@ class COCOCaptioningDataset(EmmaBaseDataset[EmmaDatasetItem]):
         merged_annotations: bool = True,
         is_train: bool = True,
     ) -> None:
-
         if not merged_annotations:
             raise NotImplementedError(
                 "Expecting dbs where every instance is an image associated with all of its captions."

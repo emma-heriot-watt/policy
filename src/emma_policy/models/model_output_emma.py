@@ -7,7 +7,9 @@ from transformers.file_utils import ModelOutput
 
 @dataclass
 class EmmaSeq2SeqModelOutput(ModelOutput):
-    """Base class for model encoder's outputs that also contains : pre-computed hidden states that can speed up sequential decoding.
+    """Base class for encoder outputs.
+
+    Also contains pre-computed hidden states that can speed up sequential decoding.
 
     Args:
         last_hidden_state (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):

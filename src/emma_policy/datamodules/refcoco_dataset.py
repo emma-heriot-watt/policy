@@ -35,7 +35,6 @@ class RefCocoDataset(EmmaBaseDataset[EmmaDatasetItem]):
         shuffle_objects: bool = False,
         train_with_golden_bbox_prob: float = 1.0,
     ) -> None:
-
         super().__init__(
             dataset_db_path=dataset_db_path,
             tokenizer=tokenizer,

@@ -35,7 +35,6 @@ class NLVR2EmmaPolicy(EmmaPolicy):
         nlvr2_metrics: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
-
         self._tokenizer = AutoTokenizer.from_pretrained(model_name)
         self._pred_gt: dict[str, list[str]] = {
             "predictions": [],

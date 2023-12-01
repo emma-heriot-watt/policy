@@ -70,7 +70,7 @@ class FeatureExtractorClient:
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as err:
-            raise SystemExit(err)
+            raise SystemExit(err) from err
 
         data = response.json()
         feature_response = FeatureResponse(
@@ -103,7 +103,7 @@ class FeatureExtractorClient:
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as err:
-            raise SystemExit(err)
+            raise SystemExit(err) from err
 
         data = response.json()
 

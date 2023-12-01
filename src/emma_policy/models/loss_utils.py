@@ -9,7 +9,8 @@ def tiny_value_of_dtype(dtype: torch.dtype) -> float:
 
     This is used to avoid numerical issues such as division by zero. This is different from
     `info_value_of_dtype(dtype).tiny` because it causes some NaN bugs. Only supports floating point
-    dtypes. Implementation from AllenNLP: https://github.com/allenai/allennlp/blob/39c40fe38cd2fd36b3465b0b3c031f54ec824160/allennlp/nn/util.py#L2010-L2024
+    dtypes. Implementation from AllenNLP:
+    https://github.com/allenai/allennlp/blob/39c40fe38cd2fd36b3465b0b3c031f54ec824160/allennlp/nn/util.py#L2010-L2024
     """
     if not dtype.is_floating_point:
         raise TypeError("Only supports floating point dtypes.")

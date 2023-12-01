@@ -13,7 +13,8 @@ def decompress_simbot_mask(
 ) -> Union[torch.Tensor, typing.NDArray[np.float64]]:
     """Decompress a compressed mask array.
 
-    Adopted from https://us-east-1.console.aws.amazon.com/codesuite/codecommit/repositories/AlexaSimbotMLToolbox/browse/refs/heads/main/--/AlexaSimbotToolbox/arena_wrapper/util/__init__.py?region=us-east-1
+    Adopted from
+    https://us-east-1.console.aws.amazon.com/codesuite/codecommit/repositories/AlexaSimbotMLToolbox/browse/refs/heads/main/--/AlexaSimbotToolbox/arena_wrapper/util/__init__.py?region=us-east-1
     """
     mask = np.zeros((image_width, image_height))
     for start_idx, run_len in compressed_mask:
@@ -29,7 +30,8 @@ def compress_simbot_mask(
 ) -> list[list[int]]:
     """Compress a binary 2D array mask for the simbot arena.
 
-    Adopted from https://us-east-1.console.aws.amazon.com/codesuite/codecommit/repositories/AlexaSimbotMLToolbox/browse/refs/heads/main/--/AlexaSimbotToolbox/arena_wrapper/util/__init__.py?region=us-east-1
+    Adopted from
+    https://us-east-1.console.aws.amazon.com/codesuite/codecommit/repositories/AlexaSimbotMLToolbox/browse/refs/heads/main/--/AlexaSimbotToolbox/arena_wrapper/util/__init__.py?region=us-east-1
     """
     # list of lists of run lengths for 1s, which are assumed to be less frequent.
     run_len_compressed: list[list[int]] = []

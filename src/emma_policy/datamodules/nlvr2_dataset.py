@@ -27,7 +27,6 @@ class NLVR2Dataset(EmmaBaseDataset[EmmaDatasetItem]):
         max_frames: int = 0,
         use_task_prefix: bool = False,
     ) -> None:
-
         super().__init__(
             dataset_db_path=dataset_db_path, tokenizer=tokenizer, max_frames=max_frames
         )

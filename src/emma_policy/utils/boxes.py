@@ -100,10 +100,10 @@ class BoxModeConverter:
 
         try:
             converted_box = convert_functions[from_mode][to_mode](box)
-        except KeyError:
+        except KeyError as err:
             raise NotImplementedError(
                 f"Conversion from BoxMode {from_mode} to {to_mode} is not supported."
-            )
+            ) from err
 
         return converted_box
 

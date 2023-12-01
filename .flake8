@@ -14,6 +14,8 @@ extend-ignore =
 		E501,
 		# Stop finding commented out code because it's mistaking shape annotations for code
 		E800,
+		# Don't complain about asserts
+		S101,
 		# Stop complaining about using functions from random
 		S311,
 		# Ignore errors for internal mypy traceback, stderr output, or an unmatched line.

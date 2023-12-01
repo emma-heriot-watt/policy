@@ -360,3 +360,5 @@ storage/*
 !storage/fixtures/
 !storage/fixtures/**/*.jpeg
 storage/constants/mscoco_resplit_train.json
+
+.rtx.toml

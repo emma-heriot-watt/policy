@@ -4,16 +4,9 @@ version = "1.48.0"
 description = ""
 authors = ["Amit Parekh <amit.parekh@hw.ac.uk>"]
 readme = "README.md"
-repository = "https://github.com/emma-simbot/policy"
+repository = "https://github.com/emma-heriot-watt/policy"
 
 packages = [{ include = "emma_policy", from = "src" }]
-
-[tool.poe]
-envfile = ".env"
-
-
-[tool.poe.poetry_hooks]
-post_install = "install-everything-else"
 
 
 [tool.poe.tasks]
@@ -43,66 +36,56 @@ cmd = "pytest -v --durations=40 --color=yes --junitxml=pytest.xml --cov=src -m '
 help = "Update torch to use the latest CUDA version"
 shell = "python scripts/update_torch_cuda.py"
 
-[tool.poe.tasks.outdated]
-help = 'Show all outdated top-level dependencies'
-shell = """
-			poetry show --outdated | grep --file=<(poetry show --tree | grep '^\\w' | sed 's/^\\([^ ]*\\).*/^\\1\\\\s/')
-		"""
-interpreter = "bash"
 
 [[tool.poe.tasks.download-training-data]]
 help = "Download mscoco_resplit_train.json"
 shell = "wget -O storage/constants/mscoco_resplit_train.json https://www.dropbox.com/sh/m26a281y97ok6wm/AAA-97WOmyvcWLaaf2jFRrT8a/mscoco_resplit_train.json\\?dl\\=0"
 interpreter = "bash"
 
-[[tool.poe.tasks.install-everything-else]]
-help = 'Download the spacy pipeline'
-shell = """python -m spacy download en_core_web_lg"""
-interpreter = "bash"
-
 [tool.poetry.dependencies]
-python = "~3.9"
+python = ">=3.9,<3.10"
 torch = "1.11.0"
 torchvision = "0.12.0"
 pytorch-lightning = "1.5.10"
 transformers = "4.18.0"
 torchmetrics = "0.7.3"
-wandb = "^0.12.17"
-hydra-core = "^1.1.2"
-hydra-colorlog = "^1.1.0"
-overrides = "^6.1.0"
-numpy = "^1.22.2"
-spacy = "^3.2.4"
-scipy = "^1.8.0"
-emma-datasets = { git = "https://github.com/emma-simbot/datasets", branch = "main" }
-emma-common = {git = "https://github.com/emma-simbot/common"}
-pydantic = { extras = ["dotenv"], version = "^1.10.2" }
+wandb = ">=0.12.17"
+hydra-core = ">=1.1.2"
+hydra-colorlog = ">=1.1.0"
+overrides = ">=6.1.0"
+numpy = ">=1.22.2,<1.24"
+scipy = ">=1.8.0"
+spacy = "3.7.2"
+pydantic = { extras = ["dotenv"], version = ">=1.10.2,<2" }
+emma-datasets = { git = "https://github.com/emma-heriot-watt/datasets.git" }
+emma-common = { git = "https://github.com/emma-heriot-watt/common.git" }
+en-core-web-lg = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.7.1/en_core_web_lg-3.7.1-py3-none-any.whl" }
 
 [tool.poetry.group.dev.dependencies]
-wemake-python-styleguide = "^0.16.0"
-pytest = "^7.1.1"
-ipykernel = "^6.13.0"
-pre-commit = "^2.18.1"
-poethepoet = "^0.13.1"
-pytest-cov = "^3.0.0"
-jupyterlab = "^3.3.4"
-pudb = "^2022.1"
-isort = "^5.10.1"
-pytest-cases = "^3.6.11"
-black = { version = "^22.3.0", extras = ["jupyter"] }
-pytest-order = "^1.0.1"
-mypy = "^0.950"
-types-requests = "^2.27.19"
-pytest-mock = "^3.7.0"
-types-mock = "^4.0.13"
-flake8-pytest-style = "^1.6.0"
-pytest-xdist = "^2.5.0"
-filelock = "^3.6.0"
-requests-mock = "^1.9.3"
+wemake-python-styleguide = ">=0.16.0"
+pytest = ">=7.1.1"
+ipykernel = ">=6.13.0"
+pre-commit = ">=2.18.1"
+poethepoet = ">=0.13.1"
+pytest-cov = ">=3.0.0"
+jupyterlab = ">=3.3.4"
+pudb = ">=2022.1"
+isort = ">=5.10.1"
+pytest-cases = ">=3.6.11"
+black = { version = ">=22.3.0", extras = ["jupyter"] }
+pytest-order = ">=1.0.1"
+mypy = ">=0.950"
+types-requests = ">=2.27.19"
+pytest-mock = ">=3.7.0"
+types-mock = ">=4.0.13"
+flake8-pytest-style = ">=1.6.0"
+pytest-xdist = ">=2.5.0"
+filelock = ">=3.6.0"
+requests-mock = ">=1.9.3"
 
 
 [tool.poetry.group.demo.dependencies]
-gradio = "^3.7"
+gradio = ">=3.7"
 
 
 [tool.black]

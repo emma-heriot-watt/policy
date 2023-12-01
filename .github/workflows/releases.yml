@@ -2,8 +2,7 @@ name: Releases
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 env:
   PYTHON_VERSION: 3.9
@@ -29,42 +28,8 @@ jobs:
     uses: "./.github/workflows/tests.yml"
     secrets: inherit
 
-  release:
-    name: Release
-    runs-on: ubuntu-latest
+  build_image:
+    name: Build image
+    uses: "./.github/workflows/build-image.yml"
+    secrets: inherit
     needs: [continuous-integration, tests]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.PAT }}
-
-      - name: Setup Git
-        env:
-          PAT: ${{ secrets.PAT }}
-          USERNAME: ${{ secrets.SIMBOT_BOT_USERNAME }}
-          EMAIL: ${{ secrets.SIMBOT_BOT_EMAIL }}
-        run: |
-          git config user.name "${USERNAME}"
-          git config user.email "${EMAIL}"
-          git config --global url."https://${PAT}@github.com/".insteadOf "https://github.com/"
-
-      - name: Install Poetry
-        run: pipx install poetry
-
-      - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "lts/*"
-
-      - name: Install semantic release
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
-        run: |
-          npm install --no-save @bjoluc/semantic-release-config-poetry
-          npx semantic-release

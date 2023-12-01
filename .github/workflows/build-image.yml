@@ -1,6 +1,7 @@
 name: Build and push images
 
 on:
+  workflow_call:
   workflow_dispatch:
   release:
     types: [published]
@@ -28,16 +29,16 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Install Poetry
-        run: pipx install poetry
-
       - name: Define image suffix
         id: image-tag
         env:
           TORCH_VERSION_SUFFIX: ${{ matrix.torch_version_suffix }}
         run: |
-          IMAGE_TAG=$(poetry version -s | tr -d 'v')
-          IMAGE_TAG=$(echo "$IMAGE_TAG$TORCH_VERSION_SUFFIX" | tr + -)
+          if [ -z "$TORCH_VERSION_SUFFIX" ]; then
+            TORCH_VERSION_SUFFIX="cpu"
+            exit 0
+          fi
+          IMAGE_TAG=$(echo "$IMAGE_TAG$TORCH_VERSION_SUFFIX" | tr -d "+")
           echo "tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Log in to the Container registry

@@ -7,18 +7,17 @@ on:
 
 env:
   PYTHON_VERSION: 3.9
-  NODE_VERSION: 16
 
 jobs:
   labeler:
     name: Update labels
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Check out the repository
         uses: actions/checkout@v3
 
       - name: Run Labeler
-        uses: crazy-max/ghaction-github-labeler@v4.2.0
+        uses: crazy-max/ghaction-github-labeler@v4.1.0
 
   continuous-integration:
     name: Continuous Integration
@@ -32,48 +31,36 @@ jobs:
 
   release:
     name: Release
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: [continuous-integration, tests]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.PAT }}
 
       - name: Setup Git
         env:
           PAT: ${{ secrets.PAT }}
+          USERNAME: ${{ secrets.SIMBOT_BOT_USERNAME }}
+          EMAIL: ${{ secrets.SIMBOT_BOT_EMAIL }}
         run: |
-          git config user.name "emma-simbot-bot"
-          git config user.email "gdgp7yme8hn6zghsuoms@feedly.email"
+          git config user.name "${USERNAME}"
+          git config user.email "${EMAIL}"
           git config --global url."https://${PAT}@github.com/".insteadOf "https://github.com/"
+
+      - name: Install Poetry
+        run: pipx install poetry
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Setup Node ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v3
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-
-      - name: Get npm cache directory
-        id: npm-cache-dir
-        run: |
-          echo "::set-output name=dir::$(npm config get cache)"
-
-      - name: Load npm cache
-        uses: actions/cache@v3
-        id: npm-cache
-        with:
-          path: ${{ steps.npm-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          node-version: "lts/*"
 
       - name: Install semantic release
         env:

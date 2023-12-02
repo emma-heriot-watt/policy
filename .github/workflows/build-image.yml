@@ -35,10 +35,9 @@ jobs:
           TORCH_VERSION_SUFFIX: ${{ matrix.torch_version_suffix }}
         run: |
           if [ -z "$TORCH_VERSION_SUFFIX" ]; then
-            TORCH_VERSION_SUFFIX="cpu"
-            exit 0
+            TORCH_VERSION_SUFFIX="+cpu"
           fi
-          IMAGE_TAG=$(echo "$IMAGE_TAG$TORCH_VERSION_SUFFIX" | tr -d "+")
+          IMAGE_TAG=$(echo "$TORCH_VERSION_SUFFIX" | tr -d "+")
           echo "tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Log in to the Container registry

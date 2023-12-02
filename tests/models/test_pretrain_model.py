@@ -1,5 +1,3 @@
-from typing import Union
-
 import torch
 from pytest_cases import parametrize_with_cases
 from transformers import PreTrainedModel

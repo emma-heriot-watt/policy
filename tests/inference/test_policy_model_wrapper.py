@@ -1,13 +1,8 @@
-import itertools
-from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 import pytest
 import torch
-from emma_datasets.datamodels.datasets import TeachEdhInstance
-from PIL import Image
-from requests_mock import Mocker
 
 from emma_policy.api.clients import FeatureExtractorClient
 from emma_policy.common.settings import Settings

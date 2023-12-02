@@ -25,10 +25,7 @@ from emma_policy.datamodules.simbot_action_dataset import (
     SimBotActionDataset,
     compressed_mask_is_bbox,
 )
-from emma_policy.datamodules.simbot_cr_dataset import (
-    SimBotCRDataset,
-    action_is_object_interaction,
-)
+from emma_policy.datamodules.simbot_cr_dataset import SimBotCRDataset, action_is_object_interaction
 from emma_policy.utils import decompress_simbot_mask, get_logger
 
 

@@ -1,5 +1,6 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 
 ablation_percentages = np.array([0, 0.25, 0.5, 0.75, 1.0])
 

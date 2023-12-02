@@ -69,7 +69,6 @@ We've separated specific groups of dependencies so that you only need to install
 
 - For demonstrating using Gradio, run `poetry install --with demo`
 
-
 ## Project structure
 
 This is organised in very similarly to structure from the [Lightning-Hydra-Template](https://github.com/ashleve/lightning-hydra-template#project-structure) to facilitate reproducible research code.
@@ -82,41 +81,41 @@ This is organised in very similarly to structure from the [Lightning-Hydra-Templ
 - `tests` — [pytest](https://docs.pytest.org/en/) scripts to verify the code
 - `src` — where the main code lives
 
-
 ## Downloading data
 
 ### Checkpoints
+
 All checkpoints are available here on [HugginFace](https://huggingface.co/gpantaz/emma_models/tree/main)
 
 These checkpoints include:
-| Model name      | Description |
-| :---            |    :----   |
+| Model name | Description |
+| :--- | :---- |
 | [emma_base_pretrain.ckpt](https://huggingface.co/gpantaz/emma_models/blob/main/emma_base_pretrain.ckpt) | The EMMA base pretrained checkpoint |
 |[unified_emma_base_finetune_arena.ckpt](https://huggingface.co/gpantaz/emma_models/blob/main/unified_emma_base_finetune_arena.ckpt)| The EMMA-unified variant fine tuned on the DTC task|
 |[modular_action_emma_base_finetune_arena.ckpt](https://huggingface.co/gpantaz/emma_models/blob/main/modular_action_emma_base_finetune_arena.ckpt)|The EMMA-modular variant fine tuned on the DTC task that performs action execution and visual grounding
 |[vivl_finetune_arena.ckpt](https://huggingface.co/gpantaz/emma_models/blob/main/vivl_finetune_arena.ckpt)| The finetuned VinVL checkpoint|
 
-
 ### DBs
+
 The DBs are required for pre-training and fine tuning and are available on [Hugginface](https://huggingface.co/datasets/gpantaz/emma_datasets/tree/main)
 
 We are providing DBs:
+
 1. Pretraining on image-based tasks (one-db per task)
 2. Finetuning on image-based tasks (one-db per task)
 3. Finetuning on the DTC tasks (one-db for action execution / visual grounding & one db for the contextual routing task)
 
 Make sure that these are placed under `storage/db` folder or alternatively set the path to the dbs within each experiment config
 
-
 ### Features
+
 The image features for all image-base tasks and the DTC benchmark on [Huggingface](https://huggingface.co/datasets/gpantaz/emma_features/tree/main)
 
 The image features were extracted using the pretrained [VinVL checkpoint](https://github.com/pzzhang/VinVL). For the DTC benchmark we have finetuned the checkpoint on the Alexa Arena data.
 
-
 ## Pretraining
-First make sure that you have downloaded the pretraining db and the corresponding features
 
+First make sure that you have downloaded the pretraining db and the corresponding features
 
 ```
 python run.py experiment=pretrain.yaml
@@ -125,25 +124,25 @@ python run.py experiment=pretrain.yaml
 ## Downstream
 
 ### COCO
+
 ```
 python run.py experiment=coco_downstream.yaml
 ```
 
 ### VQAv2
+
 ```
 python run.py experiment=vqa_v2_downstream.yaml
 ```
 
 ### RefCOCOg
+
 ```
 python run.py experiment=refcoco_downstream.yaml
 ```
 
 #### NLVR^2
+
 ```
 python run.py experiment=nlvr2_downstream.yaml
 ```
-
-
-
-

@@ -93,7 +93,7 @@ These checkpoints include:
 | [emma_base_pretrain.ckpt](https://huggingface.co/gpantaz/emma_models/blob/main/emma_base_pretrain.ckpt) | The EMMA base pretrained checkpoint |
 |[unified_emma_base_finetune_arena.ckpt](https://huggingface.co/gpantaz/emma_models/blob/main/unified_emma_base_finetune_arena.ckpt)| The EMMA-unified variant fine tuned on the DTC task|
 |[modular_action_emma_base_finetune_arena.ckpt](https://huggingface.co/gpantaz/emma_models/blob/main/modular_action_emma_base_finetune_arena.ckpt)|The EMMA-modular variant fine tuned on the DTC task that performs action execution and visual grounding
-|[vivl_finetune_arena.ckpt](https://huggingface.co/gpantaz/emma_models/blob/main/vivl_finetune_arena.ckpt)| The finetuned VinVL checkpoint|
+|[vinvl_finetune_arena.ckpt](https://huggingface.co/gpantaz/emma_models/blob/main/vivl_finetune_arena.ckpt)| The finetuned VinVL checkpoint|
 
 ### DBs
 
@@ -105,7 +105,7 @@ We are providing DBs:
 2. Finetuning on image-based tasks (one-db per task)
 3. Finetuning on the DTC tasks (one-db for action execution / visual grounding & one db for the contextual routing task)
 
-Make sure that these are placed under `storage/db` folder or alternatively set the path to the dbs within each experiment config
+Make sure that these are placed under `storage/db` folder or alternatively set the path to the dbs within each experiment config.
 
 ### Features
 
@@ -115,7 +115,7 @@ The image features were extracted using the pretrained [VinVL checkpoint](https:
 
 ## Pretraining
 
-First make sure that you have downloaded the pretraining db and the corresponding features
+First, make sure that you have downloaded the pretraining db and the corresponding features.
 
 ```
 python run.py experiment=pretrain.yaml
@@ -145,4 +145,12 @@ python run.py experiment=refcoco_downstream.yaml
 
 ```
 python run.py experiment=nlvr2_downstream.yaml
+```
+
+#### DTC - Unified model
+
+When initializing from the pretrained model, which doesn't include the special tokens for the downstream CR and action prediction tasks, you will need to manually edit the vocabulary size in the [model config]([heriot-watt/emma-base-combined/config.json](https://github.com/emma-heriot-watt/policy/blob/main/heriot-watt/emma-base-cr/config.json)https://github.com/emma-heriot-watt/policy/blob/main/heriot-watt/emma-base-cr/config.json). For initialization from the pretrained `emma-base`, set the `vocab_size` to 10252.
+
+```
+python run.py experiment=simbot_combined.yaml
 ```

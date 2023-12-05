@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, cast
 
 import torch
 from emma_common.datamodels import EmmaExtractedFeatures, EmmaPolicyRequest
@@ -99,4 +99,4 @@ class SimBotFindPredictionProcessor:
         width = bbox_coords[:, 2] - bbox_coords[:, 0]
         height = bbox_coords[:, 3] - bbox_coords[:, 1]
         areas = width * height
-        return indices[torch.argmax(areas).item()]  # type:ignore[call-overload]
+        return indices[cast(int, torch.argmax(areas).item())]

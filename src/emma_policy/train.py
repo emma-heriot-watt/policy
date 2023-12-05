@@ -156,7 +156,7 @@ class TrainModel:
             )
         if "resize_embeddings" in config.model and config.model.resize_embeddings:
             model.resize_model_embeddings(  # type: ignore[operator]
-                tokenizer=datamodule.setup_tokenizer()
+                tokenizer=datamodule.setup_tokenizer()  # type: ignore[attr-defined]
             )
 
         callbacks: list[Callback] = []

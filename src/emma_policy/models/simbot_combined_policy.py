@@ -88,7 +88,11 @@ class SimBotEmmaCombinedPolicy(EmmaPolicy):
             decoder_input_ids = self._decoder_input_ids
 
             outputs = {
-                example_id: {"prediction": generated_action, "groundtruth": gt, "teacher_forcing": dec}  # type: ignore[misc]
+                example_id: {
+                    "prediction": generated_action,
+                    "groundtruth": gt,
+                    "teacher_forcing": dec,
+                }
                 for example_id, generated_action, gt, dec in zip(
                     all_example_ids,
                     generated_actions,
@@ -107,14 +111,10 @@ class SimBotEmmaCombinedPolicy(EmmaPolicy):
                 generated_actions = [None for _ in range(world_size)]  # type: ignore[misc]
                 torch.distributed.all_gather_object(generated_actions, self._generated_actions)
                 if torch.distributed.get_rank() == 0:
-                    all_example_ids = list(
-                        itertools.chain.from_iterable(all_example_ids)  # type: ignore[arg-type]
-                    )
-                    generated_actions = list(
-                        itertools.chain.from_iterable(generated_actions)  # type: ignore[arg-type]
-                    )
+                    all_example_ids = list(itertools.chain.from_iterable(all_example_ids))
+                    generated_actions = list(itertools.chain.from_iterable(generated_actions))
                     outputs = {
-                        example_id: generated_action  # type:ignore[misc]
+                        example_id: generated_action  # type: ignore[misc]
                         for example_id, generated_action in zip(all_example_ids, generated_actions)
                     }
                     self._save_results(outputs)
@@ -317,16 +317,16 @@ class SimBotEmmaCombinedPolicy(EmmaPolicy):
         if batch.decoder_input_ids is None:
             raise AssertionError("Expected decoder input ids for single instance testing")
 
-        separator_positions = torch.where(
-            batch.decoder_input_ids[0] == self._separator_token_id  # type:ignore[index]
-        )[0]
+        separator_positions = torch.where(batch.decoder_input_ids[0] == self._separator_token_id)[
+            0
+        ]
 
         if separator_positions.shape[0] > 1:
             end_index = int(separator_positions[-2].item()) + 1
-            decoder_input_ids = batch.decoder_input_ids[:, :end_index]  # type:ignore[index]
+            decoder_input_ids = batch.decoder_input_ids[:, :end_index]
 
         else:
-            decoder_input_ids = batch.decoder_input_ids[:, 0].unsqueeze(0)  # type:ignore[index]
+            decoder_input_ids = batch.decoder_input_ids[:, 0].unsqueeze(0)
 
         outputs = self.inference_step(
             batch, decoder_input_ids=decoder_input_ids, max_length=self._max_generated_text_length
@@ -350,5 +350,6 @@ class SimBotEmmaCombinedPolicy(EmmaPolicy):
         return outputs
 
     def _save_results(self, outputs: dict[str, Any]) -> None:
-        with open(self._results_path, "w") as fp:  # type: ignore[arg-type]
+        assert self._results_path is not None
+        with open(self._results_path, "w") as fp:
             json.dump(outputs, fp, indent=4)

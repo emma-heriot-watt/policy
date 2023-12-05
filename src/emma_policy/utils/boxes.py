@@ -8,7 +8,7 @@ import numpy as np
 import torch
 
 
-RawBoxType = Union[list[float], tuple[float, ...], torch.Tensor, np.ndarray]
+RawBoxType = Union[list[float], tuple[float, ...], torch.Tensor, np.ndarray]  # type: ignore[type-arg]
 
 
 @unique

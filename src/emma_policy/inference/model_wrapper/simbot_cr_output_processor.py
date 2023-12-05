@@ -122,7 +122,7 @@ class SimBotCRPredictionProcessor:
         if match is not None:
             color_result = re.search("(red|blue|green)", match.group())
             if color_result is not None:
-                color = color_result.group()  # type: ignore[union-attr]
+                color = color_result.group()
                 color_button = f"{color} button"
                 if color_button in class_labels:
                     return self._default_prediction

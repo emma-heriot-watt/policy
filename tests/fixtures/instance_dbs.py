@@ -33,7 +33,7 @@ def pretrain_db_dir_path(cached_db_dir_path: Path, instances_db_path: Path) -> P
     return cached_db_dir_path
 
 
-class TeachEdhInstanceFeaturesPathPropertyMock(PropertyMock):  # type: ignore[misc]
+class TeachEdhInstanceFeaturesPathPropertyMock(PropertyMock):
     """Mock the `features_path` property within the TeachEdhInstance.
 
     The features path within each instance is derived automatically and NOT hard-coded into the
@@ -41,7 +41,7 @@ class TeachEdhInstanceFeaturesPathPropertyMock(PropertyMock):  # type: ignore[mi
     and return something else.
     """
 
-    def __get__(self, obj: TeachEdhInstance, obj_type: Any = None) -> Path:  # noqa: WPS110
+    def __get__(self, obj: TeachEdhInstance, obj_type: Any = None) -> Path:  # type: ignore[override]
         """Get the features path from the fixtures.
 
         This updates the `return_value`, which is used by `unittest.Mock` to return a value.
@@ -51,7 +51,7 @@ class TeachEdhInstanceFeaturesPathPropertyMock(PropertyMock):  # type: ignore[mi
         return self()
 
 
-class TeachEdhInstanceFutureFeaturesPathPropertyMock(PropertyMock):  # type: ignore[misc]
+class TeachEdhInstanceFutureFeaturesPathPropertyMock(PropertyMock):
     """Mock the `future_features_path` property within the TeachEdhInstance.
 
     The future features path within each instance is derived automatically and NOT hard-coded into
@@ -59,7 +59,7 @@ class TeachEdhInstanceFutureFeaturesPathPropertyMock(PropertyMock):  # type: ign
     property and return something else.
     """
 
-    def __get__(self, obj: TeachEdhInstance, obj_type: Any = None) -> Path:  # noqa: WPS110
+    def __get__(self, obj: TeachEdhInstance, obj_type: Any = None) -> Path:  # type: ignore[override]
         """Get the future features path from the fixtures.
 
         This updates the `return_value`, which is used by `unittest.Mock` to return a value.

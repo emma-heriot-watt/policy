@@ -1,25 +1,16 @@
 import logging
-import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Any, Literal, Optional, TypedDict, Union
 
 import torch
-from emma_common.api.instrumentation import instrument_app
-from emma_common.aws.cloudwatch import add_cloudwatch_handler_to_logger
 from emma_common.datamodels import TorchDataMixin
-from emma_common.logging import (
-    InstrumentedInterceptHandler,
-    logger,
-    setup_logging,
-    setup_rich_logging,
-)
+from emma_common.logging import logger, setup_rich_logging
 from fastapi import FastAPI, Request, Response, status
 from pydantic import BaseSettings, FilePath
 from transformers import PreTrainedTokenizer
 from uvicorn import Config, Server
 
-from emma_policy._version import __version__  # noqa: WPS436
 from emma_policy.datamodules.pretrain_instances import Task
 from emma_policy.datamodules.simbot_action_datamodule import prepare_action_tokenizer
 from emma_policy.datamodules.simbot_combined_datamodule import prepare_combined_tokenizer
@@ -139,21 +130,6 @@ async def healthcheck(response: Response) -> str:
     logger.info(f"Policy API Response: {policy_response}")
 
     return "success"
-
-
-# [deprecated!]
-# @app.post("/generate_raw_text_match", status_code=status.HTTP_200_OK)
-# async def generate_raw_text_match(request: Request, response: Response) -> Optional[str]:
-#     """Endpoint for simple raw text matching."""
-#     try:
-#         simbot_request = GenerateRequest.parse_obj(await request.json())
-#     except Exception as request_err:
-#         logging.exception("Unable to parse request", exc_info=request_err)
-#         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-#         raise request_err
-#     with tracer.start_as_current_span("Raw text match"):
-#         output_string = api_store["raw_text_matcher"](simbot_request)
-#     return output_string
 
 
 @app.post("/generate_find", status_code=status.HTTP_200_OK)
@@ -324,17 +300,7 @@ async def generate(request: Request, response: Response) -> str:
 
 def main() -> None:
     """Runs the server."""
-    if settings.traces_to_opensearch:
-        instrument_app(
-            app,
-            otlp_endpoint=settings.otlp_endpoint,
-            service_name=settings.opensearch_service_name,
-            service_version=__version__,
-            service_namespace="SimBot",
-        )
-        setup_logging(sys.stdout, InstrumentedInterceptHandler())
-    else:
-        setup_rich_logging(rich_traceback_show_locals=False)
+    setup_rich_logging(rich_traceback_show_locals=False)
 
     server = Server(
         Config(
@@ -345,15 +311,6 @@ def main() -> None:
         )
     )
 
-    if settings.log_to_cloudwatch:
-        add_cloudwatch_handler_to_logger(
-            boto3_profile_name=settings.aws_profile,
-            log_stream_name=settings.watchtower_log_stream_name,
-            log_group_name=settings.watchtower_log_group_name,
-            send_interval=1,
-            enable_trace_logging=settings.traces_to_opensearch,
-        )
-
     server.run()
 
 
@@ -361,7 +318,6 @@ def parse_api_args() -> Namespace:
     """Parse any arguments."""
     arg_parser = ArgumentParser()
 
-    # TODO: move this to an inference config
     arg_parser.add_argument(
         "--tokenizer_truncation_side",
         type=str,
@@ -398,5 +354,4 @@ def parse_api_args() -> Namespace:
 
 
 if __name__ == "__main__":
-    main()
     main()

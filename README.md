@@ -150,7 +150,7 @@ python run.py experiment=nlvr2_downstream.yaml
 
 #### DTC - Unified model
 
-When initializing from the pretrained model, which doesn't include the special tokens for the downstream CR and action prediction tasks, you will need to manually edit the vocabulary size in the [model config]([heriot-watt/emma-base-combined/config.json](https://github.com/emma-heriot-watt/policy/blob/main/heriot-watt/emma-base-cr/config.json)https://github.com/emma-heriot-watt/policy/blob/main/heriot-watt/emma-base-cr/config.json). For initialization from the pretrained `emma-base`, set the `vocab_size` to 10252.
+When initializing from the pretrained model, which doesn't include the special tokens for the downstream CR and action prediction tasks, you will need to manually edit the vocabulary size in the [model config](<[heriot-watt/emma-base-combined/config.json](https://github.com/emma-heriot-watt/policy/blob/main/heriot-watt/emma-base-cr/config.json)https://github.com/emma-heriot-watt/policy/blob/main/heriot-watt/emma-base-cr/config.json>). For initialization from the pretrained `emma-base`, set the `vocab_size` to 10252.
 
 ```
 python run.py experiment=simbot_combined.yaml

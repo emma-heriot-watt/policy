@@ -71,9 +71,7 @@ class EmmaPolicy(pl.LightningModule):
                 )
                 dataset_size = int(dataset_size * self.trainer.limit_train_batches)
             else:
-                dataset_size = len(  # type: ignore[unreachable]
-                    self.trainer.datamodule.train_dataloader()
-                )
+                dataset_size = len(self.trainer.datamodule.train_dataloader())  # type: ignore[attr-defined]
             num_devices = max(1, self.trainer.num_gpus, self.trainer.num_processes)
 
         # Check if using tpus

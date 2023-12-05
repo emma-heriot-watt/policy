@@ -88,7 +88,7 @@ class PretrainInstanceCreator:
         """Get the pretraining instances for the given task."""
         return self.instance_task_map[task]
 
-    @property  # type: ignore[misc]
+    @property
     @image_task_check
     def mlm(self) -> Iterator[PretrainInstance]:  # noqa: WPS231
         """Get pretrain instances for the MLM task."""
@@ -125,7 +125,7 @@ class PretrainInstanceCreator:
 
         yield from all_captions
 
-    @property  # type: ignore[misc]
+    @property
     @image_task_check
     def itm(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the ITM task."""
@@ -137,7 +137,7 @@ class PretrainInstanceCreator:
             for caption in self.instance.captions
         )
 
-    @property  # type: ignore[misc]
+    @property
     @image_task_check
     def visual_grounding(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the visual grounding task."""
@@ -150,7 +150,7 @@ class PretrainInstanceCreator:
             task=Task.visual_grounding,
         )
 
-    @property  # type: ignore[misc]
+    @property
     @image_task_check
     def dense_captioning(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the dense captioning task."""
@@ -163,7 +163,7 @@ class PretrainInstanceCreator:
             task=Task.dense_captioning,
         )
 
-    @property  # type: ignore[misc]
+    @property
     @image_task_check
     def relation_detection(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the relation detection task."""
@@ -210,7 +210,7 @@ class PretrainInstanceCreator:
             task=Task.relation_detection,
         )
 
-    @property  # type: ignore[misc]
+    @property
     @image_task_check
     def captioning(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the captioning task."""
@@ -222,7 +222,7 @@ class PretrainInstanceCreator:
             for caption in self.instance.captions
         )
 
-    @property  # type: ignore[misc]
+    @property
     @image_task_check
     def vqa(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instances for the VQA task."""
@@ -238,7 +238,7 @@ class PretrainInstanceCreator:
             for qa_pair in self.instance.qa_pairs
         )
 
-    @property  # type: ignore[misc]
+    @property
     @video_task_check
     def instruction_prediction(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instance for the instruction prediction for a given subgoal."""
@@ -259,7 +259,7 @@ class PretrainInstanceCreator:
             for caption in self.instance.captions
         )
 
-    @property  # type: ignore[misc]
+    @property
     @video_task_check
     def goal_prediction(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instance for the goal prediction for a given trajectory."""
@@ -282,7 +282,7 @@ class PretrainInstanceCreator:
             for task_description in self.instance.task_description
         )
 
-    @property  # type: ignore[misc]
+    @property
     @video_task_check
     def action_execution(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instance for the action execution task given a subgoal instruction."""
@@ -304,7 +304,7 @@ class PretrainInstanceCreator:
             for caption in self.instance.captions
         )
 
-    @property  # type: ignore[misc]
+    @property
     @video_task_check
     def vtm(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instance for the video-text matching task given a subgoal."""
@@ -327,7 +327,7 @@ class PretrainInstanceCreator:
             for caption in self.instance.captions
         )
 
-    @property  # type: ignore[misc]
+    @property
     @video_task_check
     def fom(self) -> Iterator[PretrainInstance]:
         """Get the pretrain instance for the feature order modeling task given a subgoal."""
@@ -346,7 +346,7 @@ class PretrainInstanceCreator:
             for caption in self.instance.captions
         )
 
-    @property  # type: ignore[misc]
+    @property
     @video_task_check
     def vmlm(self) -> Iterator[PretrainInstance]:
         """Get pretrain instances for the video MLM task."""

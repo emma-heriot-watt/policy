@@ -176,7 +176,7 @@ class SimBotActionInputBuilder:
         """Parse the feature dicts and actions from the current request."""
         feature_dicts: list[dict[str, torch.Tensor]] = []
         step_index: list[int] = []
-        previous_actions = []
+        previous_actions: list[str] = []
         total_steps = len(request.environment_history)
         for idx, step in enumerate(request.environment_history, 1):
             if step.output is None and idx < total_steps:
@@ -196,7 +196,7 @@ class SimBotActionInputBuilder:
         if previous_actions:
             # Currently the implementation allows None previous actios
             # but in practice this should never happen.
-            previous_actions_str = " ".join(previous_actions)  # type: ignore[arg-type]
+            previous_actions_str = " ".join(previous_actions)
         return (feature_dicts, previous_actions_str, step_index)
 
     def _prepare_input_text(self, instruction: str, task: Task) -> BatchEncoding:

@@ -1,0 +1,144 @@
+repos:
+  # -------------------------- Version control checks -------------------------- #
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: check-vcs-permalinks
+        name: Ensure links to VCS websites are permalinks
+      - id: detect-private-key
+        name: Detect private key
+      - id: check-case-conflict
+        name: Check issues with file name casing
+      - id: check-symlinks
+        name: Check for symlinks which point to nothing
+      - id: destroyed-symlinks
+        name: Check for destroyed symlinks
+
+  - repo: https://github.com/sirosen/check-jsonschema
+    rev: 0.27.2
+    hooks:
+      - id: check-github-workflows
+        name: Validate GitHub workflows
+        types: [yaml]
+
+  # ----------------------------- Check file issues ---------------------------- #
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-toml
+        name: Check TOML
+        types: [toml]
+      - id: check-yaml
+        name: Check YAML
+        args: [--allow-multiple-documents]
+        types: [yaml]
+      - id: end-of-file-fixer
+        name: Fix end of files
+        types: [text]
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+        args: [--markdown-linebreak-ext=md]
+        types: [text]
+      - id: mixed-line-ending
+        name: Check line endings
+      - id: fix-encoding-pragma
+        name: Remove any encoding pragma
+        args: [--remove]
+
+  # ------------------------------ Python checking ----------------------------- #
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: debug-statements
+        name: Check for debugger statements
+        types: [python]
+
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: python-use-type-annotations
+        name: Using type annotations over comments
+        types: [python]
+      - id: python-check-blanket-noqa
+        name: Check for blanket `# noqa`
+        types: [python]
+      - id: python-check-blanket-type-ignore
+        name: "Check for blanket `# type: ignore`"
+        types: [python]
+      - id: python-no-log-warn
+        name: Check for deprecated `.warn()` method of python loggers
+        types: [python]
+
+  # ----------------------------- Automatic linters ---------------------------- #
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.15.0
+    hooks:
+      - id: pyupgrade
+        name: Update syntax for newer Python
+        types: [python]
+        args: ["--py39-plus"]
+  - repo: https://github.com/sirosen/texthooks
+    rev: 0.6.3
+    hooks:
+      - id: fix-smartquotes
+        name: Fix Smart Quotes
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.5.0
+    hooks:
+      - id: yesqa
+        name: Remove unnecessary `# noqa` comments
+        types: [python]
+        additional_dependencies: [wemake-python-styleguide]
+
+  # ------------------------------ Python imports ------------------------------ #
+  - repo: https://github.com/hakancelik96/unimport
+    rev: 1.1.0
+    hooks:
+      - id: unimport
+        name: Remove any unused imports
+        types: [python]
+        args:
+          [
+            --remove,
+            --exclude,
+            '^.*/?__init__\.py$',
+            --include-star-import,
+            --gitignore,
+          ]
+  - repo: https://github.com/MarcoGorelli/absolufy-imports
+    rev: v0.3.1
+    hooks:
+      - id: absolufy-imports
+        types: [python]
+        name: Convert relative imports to absolute
+  - repo: https://github.com/timothycrosley/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        name: Format imports
+        additional_dependencies: [toml]
+        types: [python]
+        exclude: ^.*/?setup\.py$
+
+  # -------------------------------- Formatting -------------------------------- #
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        name: Prettier
+        exclude: ^.*/?CHANGELOG\.md$
+  - repo: https://github.com/myint/docformatter
+    rev: v1.7.5
+    hooks:
+      - id: docformatter
+        name: Format docstrings
+        types: [python]
+        args: [--in-place, --wrap-summaries=99, --wrap-descriptions=99]
+  - repo: https://github.com/psf/black
+    rev: 23.11.0
+    hooks:
+      - id: black-jupyter
+        types: [python]
+        name: Format code

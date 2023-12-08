@@ -1,0 +1,17 @@
+storage/
+!storage/constants/
+tests/
+demos/
+logs/
+notebooks/
+scripts/
+**/*_*cache*_*
+/.*
+*.lock
+*.ini
+*.toml
+*.md
+!pyproject.toml
+!poetry.lock
+!README.md
+Dockerfile

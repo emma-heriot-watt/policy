@@ -1,0 +1,120 @@
+# @package _global_
+
+# to execute this experiment run:
+# python run.py experiment=example_full.yaml
+
+defaults:
+  - override /mode: exp.yaml
+  - override /trainer: null
+  - override /model: null
+  - override /datamodule: null
+  - override /callbacks: null
+  - override /logger: null
+
+# we override default configurations with nulls to prevent them from loading at all
+# instead we define all modules and their paths directly in this config,
+# so everything is stored in one place
+
+# name of the run determines folder name in logs
+# it's also accessed by loggers
+name: "coco_downstream"
+
+seed: 12345
+
+trainer:
+  _target_: pytorch_lightning.Trainer
+
+  gpus: 0
+
+  resume_from_checkpoint: null
+  max_epochs: 20
+
+  # number of validation steps to execute at the beginning of the training
+  num_sanity_val_steps: 0
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 4
+
+model:
+  _target_: emma_policy.models.coco_emma_policy.COCOCaptioningEmmaPolicy
+
+  model_name: heriot-watt/emma-base
+  initialization_checkpoint: null
+  # default hyperparameters for VL-Bart-base COCOVG_pretrain
+  num_beams: 5
+  max_text_length: 20
+  coco_metrics: ["BLEU", "CIDEr"]
+  lr: 0.00003
+  weight_decay: 0.01
+  optimizer: adamw
+  lr_scheduler: linear_with_warmup
+  num_warmup_steps: 0.05
+  label_smoothing: 0.0
+
+datamodule:
+  _target_: emma_policy.datamodules.coco_captioning_datamodule.COCOCaptioningDataModule
+
+  model_name: heriot-watt/emma-base
+  coco_cap_train_db_file: storage/db/coco_train.db
+  coco_cap_restvalid_db_file: storage/db/coco_restval.db
+  coco_cap_valid_db_file: storage/db/coco_valid.db
+  coco_cap_test_db_file: storage/db/coco_test.db
+  train_batch_size: 80
+  val_batch_size: 100
+  num_workers: 0
+  max_lang_tokens: 64
+  tokenizer_truncation_side: right
+
+callbacks:
+  model_checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    monitor: "valid_CIDEr" # name of the logged metric which determines when model is improving
+    mode: "max" # "min" means higher metric value is better, can be also "max"
+    save_top_k: 1 # save k best models (determined by above metric)
+    save_last: True # additionaly always save model from last epoch
+    verbose: False
+    dirpath: "${checkpoint_dir}"
+    filename: "epoch_{epoch:03d}"
+    auto_insert_metric_name: False
+  # early_stopping:
+  #   _target_: pytorch_lightning.callbacks.EarlyStopping
+  #   monitor: "train_loss" # name of the logged metric which determines when model is improving
+  #   mode: "min" # "min" means higher metric value is better, can be also "max"
+  #   patience: 100 # how many validation epochs of not improving until training stops
+  #   min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
+  rich_progress_bar:
+    _target_: pytorch_lightning.callbacks.RichProgressBar
+    refresh_rate_per_second: 5
+
+  model_summary:
+    _target_: pytorch_lightning.callbacks.RichModelSummary
+    max_depth: -1
+
+  lr_monitor:
+    _target_: pytorch_lightning.callbacks.LearningRateMonitor
+    logging_interval: "step"
+  watch_model:
+    _target_: emma_policy.callbacks.wandb.WatchModel
+    log: null
+    log_freq: 100
+    log_graph: False
+
+  upload_code_as_artifact:
+    _target_: emma_policy.callbacks.wandb.artifacts.UploadCode
+    code_dir: ${work_dir}/src
+
+  upload_ckpts_as_artifact:
+    _target_: emma_policy.callbacks.wandb.artifacts.UploadCheckpoints
+    checkpoint_dir: "${checkpoint_dir}"
+    only_upload_best: True
+
+logger:
+  wandb:
+    _target_: pytorch_lightning.loggers.wandb.WandbLogger
+    project: "mscoco_fine_tuning"
+    name: ${name}
+    save_dir: "logs/"
+    offline: False # set True to store all logs only locally
+    id: null # pass correct id to resume experiment!
+    entity: "emma-simbot"
+    log_model: False
+    job_type: "train"

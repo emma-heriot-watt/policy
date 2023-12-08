@@ -1,0 +1,68 @@
+name: Build and push images
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+env:
+  PYTHON_VERSION: 3.9
+  REGISTRY: ghcr.io
+  BASE_IMAGE: emma-heriot-watt/base:latest
+  BUILDER_IMAGE: emma-heriot-watt/builder:latest
+  REPOSITORY: emma-heriot-watt/policy
+
+jobs:
+  build_image:
+    name: Build and push image
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        torch_version_suffix: ["", "+cu113"]
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Define image suffix
+        id: image-tag
+        env:
+          TORCH_VERSION_SUFFIX: ${{ matrix.torch_version_suffix }}
+        run: |
+          if [ -z "$TORCH_VERSION_SUFFIX" ]; then
+            TORCH_VERSION_SUFFIX="+cpu"
+          fi
+          IMAGE_TAG=$(echo "$TORCH_VERSION_SUFFIX" | tr -d "+")
+          echo "tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
+          tags: |
+            ${{ steps.image-tag.outputs.tag }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            BASE_IMAGE_NAME=${{ env.REGISTRY }}/${{ env.BASE_IMAGE }}
+            BUILDER_IMAGE_NAME=${{ env.REGISTRY }}/${{ env.BUILDER_IMAGE }}
+            TORCH_VERSION_SUFFIX=${{ matrix.torch_version_suffix }}

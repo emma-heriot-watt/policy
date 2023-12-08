@@ -1,0 +1,169 @@
+name: Continuous Integration
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches: [main]
+
+env:
+  PYTHON_VERSION: 3.9
+
+jobs:
+  changes:
+    name: Check for Python file changes
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    outputs:
+      python: ${{steps.filter.outputs.python}}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            python:
+              - '**/*.py'
+              - 'pyproject.toml'
+              - 'poetry.lock'
+              - '.github/workflows/continuous_integration.yml'
+              - '.mypy.ini'
+              - '.flake8'
+
+  typecheck:
+    name: Type check Python
+    needs: [changes]
+    if: ${{needs.changes.outputs.python == 'true' && !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Setup reviewdog
+        uses: reviewdog/action-setup@v1
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "poetry"
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Load mypy cache
+        uses: actions/cache@v3
+        id: mypy-cache
+        with:
+          path: .mypy_cache
+          key: ${{ runner.os }}-mypy-cache-${{ hashFiles('poetry.lock') }}-${{hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-mypy-cache-${{ hashFiles('poetry.lock') }}-${{hashFiles('pyproject.toml') }}
+            ${{ runner.os }}-mypy-cache-
+
+      - name: Run mypy with reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          exit_val="0"
+          [[ $GITHUB_EVENT_NAME == "pull_request" ]] && reporter="github-pr-review" || reporter="github-check"
+          poetry run mypy \
+            --show-column-numbers \
+            --show-absolute-path \
+            --no-error-summary . 2>&1 | reviewdog \
+            -efm="%f:%l:%c: %t%*[^:]: %m" \
+            -name="mypy" \
+            -filter-mode=nofilter \
+            -fail-on-error \
+            -reporter="${reporter}" || exit_val="$?"
+          if [[ "${exit_val}" -ne '0' ]]; then
+            exit 1
+          fi
+
+  lint:
+    name: Lint Python
+    needs: [changes]
+    if: ${{needs.changes.outputs.python == 'true' && !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup reviewdog
+        uses: reviewdog/action-setup@v1
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "poetry"
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run flake8
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          exit_val="0"
+          [[ $GITHUB_EVENT_NAME == "pull_request" ]] && reporter="github-pr-review" || reporter="github-check"
+          poetry run flake8 \
+            --format=default . 2>&1 | reviewdog \
+            -f=pep8 \
+            -name="flake8" \
+            -fail-on-error \
+            -filter-mode=file \
+            -reporter="${reporter}" || exit_val="$?"
+          if [[ "${exit_val}" -ne '0' ]]; then
+            exit 1
+          fi
+
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install pre-commit
+        run: |
+          pip install pre-commit
+
+      - name: Load cached pre-commit environment
+        uses: actions/cache@v3
+        id: pre-commit-cache
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ runner.os }}-pre-commit-${{ hashFiles('**/.pre-commit-config.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pre-commit-
+
+      - name: Run pre-commit hook
+        id: run-pre-commit-hooks
+        run: |
+          git add .pre-commit-config.yaml
+          pre-commit run --color=always --all-files
+
+      - name: Annotate any changes using reviewdog
+        if: ${{ failure() }}
+        id: reviewdog-suggester
+        uses: reviewdog/action-suggester@v1
+        with:
+          tool_name: pre-commit

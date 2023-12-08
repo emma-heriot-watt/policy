@@ -1,0 +1,90 @@
+---
+# Labels names are important as they are used by Release Drafter to decide
+# regarding where to record them in changelog or if to skip them.
+#
+# The repository labels will be automatically configured using this file and
+# the GitHub Action https://github.com/marketplace/actions/github-labeler.
+## more info https://github.com/crazy-max/ghaction-github-labeler
+
+# ------------------------- Conventional Commit types ------------------------ #
+# From https://github.com/commitizen/conventional-commit-types/blob/master/index.json
+
+- name: feature
+  description: A new enhancement or feature
+  color: 0A8844
+  from_name: "enhancement"
+
+- name: fix
+  description: A bug fix
+  color: d23832
+  from_name: "bug"
+
+- name: documentation
+  description: Documentation changes only
+  color: F695C4
+
+- name: style
+  description: Changes that do not affect meaning of code (formatting, etc.)
+  color: FBCA0C
+
+- name: refactor
+  description: Code change that neither fixes a bug nor adds a feature
+  color: FBCA0C
+  from_name: refactoring
+
+- name: performance
+  description: Code change that improves performance
+  color: F2A33C
+
+- name: test
+  description: Adding missing tests or correcting existing tests
+  color: EE328E
+
+- name: build
+  description: Changes that affect the build system or external dependencies
+  color: 962EDD
+
+- name: continuous integration
+  description: Changes to CI configuration and scripts
+  color: FCBFE3
+
+- name: chore
+  description: Other changes that don't modify src or test files
+  color: A8D8F0
+
+- name: revert
+  description: Revert a previous commit
+  color: A8D8F0
+
+- name: backwards incompatible
+  description: incompatible changes to how the application works
+  color: AB2232
+
+- name: question
+  description: Further information is requested
+  color: EE328E
+
+# ------------------------------- Dependencies ------------------------------- #
+- name: dependencies
+  description: Pull requests that update dependencies
+  color: 0366d6
+
+# ------------------------------ Utility labels ------------------------------ #
+- name: automerge
+  color: "ffffff"
+  description: "Automerge this PR"
+
+- name: "stale"
+  color: "ffffff"
+  description: ""
+# - name: duplicate
+#   description: This issue or pull request already exists
+#   color: ffffff
+
+# - name: invalid
+#   description: This doesn't seem right
+#   color: ffffff
+
+# - name: wontfix
+#   description: This will not be worked on
+#   color: ffffff

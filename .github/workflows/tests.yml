@@ -1,0 +1,73 @@
+name: Tests
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  pull_request:
+    branches: [main]
+    paths-ignore: ["**/*.md", "**/*.rst"]
+
+env:
+  PYTHON_VERSION: 3.9
+  # Disable tokenizers parallelism because this doesn't help, and can cause issues in distributed tests.
+  TOKENIZERS_PARALLELISM: "false"
+  # Disable multithreading with OMP because this can lead to dead-locks in distributed tests.
+  OMP_NUM_THREADS: "1"
+  # See https://github.com/pytorch/pytorch/issues/37377#issuecomment-677851112.
+  MKL_THREADING_LAYER: "GNU"
+
+jobs:
+  changes:
+    name: Check for Python file changes
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    outputs:
+      python: ${{steps.filter.outputs.python}}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            python:
+              - '**/*.py'
+              - 'storage/fixtures/**/*'
+              - 'pyproject.toml'
+              - 'poetry.lock'
+              - '.github/workflows/tests.yml'
+
+  python:
+    name: Run Python test suite
+    defaults:
+      run:
+        shell: bash
+
+    runs-on: ubuntu-latest
+    needs: [changes]
+    if: ${{needs.changes.outputs.python == 'true' && !github.event.pull_request.draft }}
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "poetry"
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run test suite
+        run: poetry run poe test-everything | tee pytest-coverage.txt
+
+      - name: Comment the coverage
+        if: ${{ always() && github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' }}
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: ./pytest-coverage.txt
+          junitxml-path: ./pytest.xml

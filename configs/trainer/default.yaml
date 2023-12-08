@@ -1,0 +1,13 @@
+_target_: pytorch_lightning.Trainer
+
+gpus: 0
+
+resume_from_checkpoint: null
+max_epochs: 100
+limit_train_batches: 1000
+
+# number of validation steps to execute at the beginning of the training
+num_sanity_val_steps: 0
+gradient_clip_val: 1.0
+# Set reload_dataloaders_every_n_epochs to 1 when balanancing the pretraining data
+reload_dataloaders_every_n_epochs: 0

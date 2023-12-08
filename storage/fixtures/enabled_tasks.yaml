@@ -1,0 +1,21 @@
+enabled_tasks:
+  image:
+    - mlm
+    - itm
+    # - visual_grounding
+    # - dense_captioning
+    # - captioning
+    # - vqa
+    # - instruction_prediction
+    # - action_execution
+    # - vtm
+  video:
+    # - mlm
+    # - itm
+    # - visual_grounding
+    # - dense_captioning
+    # - captioning
+    # - vqa
+    # - instruction_prediction
+    # - action_execution
+    # - vtm

@@ -1,0 +1,23 @@
+_target_: emma_policy.datamodules.pretrain_datamodule.EmmaPretrainDataModule
+
+model_name: heriot-watt/emma-small
+pretrain_db_dir_path: ${work_dir}/storage/db/
+batch_size: 32
+load_valid_data: True
+num_workers: 4
+balance_datasets: False
+enabled_tasks:
+  image:
+    - mlm
+    - itm
+    # - visual_grounding
+    # - dense_captioning
+    - captioning
+    - vqa
+    # - relation_detection
+  video:
+    # - instruction_prediction
+    # - action_execution
+    # - vtm
+    # - vmlm
+# pin_memory: False
